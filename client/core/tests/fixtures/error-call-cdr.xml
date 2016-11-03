@@ -1,0 +1,231 @@
+<?xml version="1.0"?>
+<cdr core-uuid="370fd8a7-7e11-4af5-9b80-c5ea96aff708">
+  <channel_data>
+    <state>CS_REPORTING</state>
+    <direction>inbound</direction>
+    <state_number>11</state_number>
+    <flags>0=1;1=1;36=1;37=1;39=1;52=1;110=1;111=1;115=1;117=1</flags>
+    <caps>1=1;2=1;3=1;4=1;5=1;6=1</caps>
+  </channel_data>
+  <variables>
+    <direction>inbound</direction>
+    <uuid>0006a2fa-b032-43e8-9d70-708f363fe3b7</uuid>
+    <session_id>808</session_id>
+    <sip_from_user>IMSI510555550000087</sip_from_user>
+    <sip_from_port>5062</sip_from_port>
+    <sip_from_uri>IMSI510555550000087%40127.0.0.1%3A5062</sip_from_uri>
+    <sip_from_host>127.0.0.1</sip_from_host>
+    <channel_name>sofia/openbts/IMSI510555550000087%40127.0.0.1%3A5062</channel_name>
+    <sip_call_id>510553e8140010-9679ac7639eb719d</sip_call_id>
+    <ep_codec_string>GSM%408000h%4020i%4013200b</ep_codec_string>
+    <sip_local_network_addr>127.0.0.1</sip_local_network_addr>
+    <sip_network_ip>127.0.0.1</sip_network_ip>
+    <sip_network_port>5062</sip_network_port>
+    <sip_received_ip>127.0.0.1</sip_received_ip>
+    <sip_received_port>5062</sip_received_port>
+    <sip_via_protocol>udp</sip_via_protocol>
+    <sip_authorized>true</sip_authorized>
+    <sip_acl_authed_by>domains</sip_acl_authed_by>
+    <sip_from_user_stripped>IMSI510555550000087</sip_from_user_stripped>
+    <sip_from_tag>OBTSzyvmhqbgkpanxqbg</sip_from_tag>
+    <sofia_profile_name>openbts</sofia_profile_name>
+    <recovery_profile_name>openbts</recovery_profile_name>
+    <sip_P-Preferred-Identity>%3Csip%3AIMSI510555550000087%40127.0.0.1%3E</sip_P-Preferred-Identity>
+    <sip_cid_type>pid</sip_cid_type>
+    <sip_full_via>SIP/2.0/UDP%20127.0.0.1%3A5062%3Bbranch%3Dz9hG4bKOBTSozqeouzgxlnrzvug</sip_full_via>
+    <sip_full_from>%3Csip%3AIMSI510555550000087%40127.0.0.1%3A5062%3E%3Btag%3DOBTSzyvmhqbgkpanxqbg</sip_full_from>
+    <sip_full_to>%3Csip%3A6281248174025%40127.0.0.1%3E</sip_full_to>
+    <sip_req_user>6281248174025</sip_req_user>
+    <sip_req_port>5060</sip_req_port>
+    <sip_req_uri>6281248174025%40127.0.0.1%3A5060</sip_req_uri>
+    <sip_req_host>127.0.0.1</sip_req_host>
+    <sip_to_user>6281248174025</sip_to_user>
+    <sip_to_uri>6281248174025%40127.0.0.1</sip_to_uri>
+    <sip_to_host>127.0.0.1</sip_to_host>
+    <sip_contact_user>IMSI510555550000087</sip_contact_user>
+    <sip_contact_port>5062</sip_contact_port>
+    <sip_contact_uri>IMSI510555550000087%40127.0.0.1%3A5062</sip_contact_uri>
+    <sip_contact_host>127.0.0.1</sip_contact_host>
+    <sip_user_agent>OpenBTS%204.0TRUNK%20Build%20Date%20Aug%2019%202014</sip_user_agent>
+    <sip_via_host>127.0.0.1</sip_via_host>
+    <sip_via_port>5062</sip_via_port>
+    <max_forwards>70</max_forwards>
+    <presence_id>IMSI510555550000087%40127.0.0.1</presence_id>
+    <sip_h_P-Associated-URI>%3Ctel%3A6285574719959%3E</sip_h_P-Associated-URI>
+    <sip_h_P-PHY-Info>OpenBTS%3B%20TA%3D1%20TE%3D0.544183%20UpRSSI%3D-38.588894%20TxPwr%3D5%20DnRSSIdBm%3D-77%20time%3D1423742585.365</sip_h_P-PHY-Info>
+    <sip_h_P-Access-Network-Info>3GPP-GERAN%3B%20cgi-3gpp%3D5105503e8000a</sip_h_P-Access-Network-Info>
+    <switch_r_sdp>v%3D0%0D%0Ao%3DIMSI510555550000087%200%200%20IN%20IP4%20127.0.0.1%0D%0As%3DTalk%20Time%0D%0At%3D0%200%0D%0Am%3Daudio%2016544%20RTP/AVP%203%0D%0Ac%3DIN%20IP4%20127.0.0.1%0D%0Aa%3Drtpmap%3A3%20GSM/8000%0D%0A</switch_r_sdp>
+    <rtp_use_codec_string>G722,PCMU,PCMA,GSM</rtp_use_codec_string>
+    <rtp_audio_recv_pt>3</rtp_audio_recv_pt>
+    <rtp_use_codec_name>GSM</rtp_use_codec_name>
+    <rtp_use_codec_rate>8000</rtp_use_codec_rate>
+    <rtp_use_codec_ptime>20</rtp_use_codec_ptime>
+    <rtp_last_audio_codec_string>GSM%408000h%4020i</rtp_last_audio_codec_string>
+    <read_codec>GSM</read_codec>
+    <original_read_codec>GSM</original_read_codec>
+    <read_rate>8000</read_rate>
+    <original_read_rate>8000</original_read_rate>
+    <write_codec>GSM</write_codec>
+    <write_rate>8000</write_rate>
+    <dtmf_type>info</dtmf_type>
+    <process_cdr>true</process_cdr>
+    <vbts_callerid>6285574719959</vbts_callerid>
+    <vbts_destid>None</vbts_destid>
+    <vbts_account_balance>500</vbts_account_balance>
+    <call_tariff>2500</call_tariff>
+    <call_uuid>0006a2fa-b032-43e8-9d70-708f363fe3b7</call_uuid>
+    <service_type>error_call</service_type>
+    <export_vars>service_type,service_type,service_type</export_vars>
+    <_localstr>Pulsa%20anda%20tidak%20cukup.</_localstr>
+    <rtp_local_sdp_str>v%3D0%0Ao%3DFreeSWITCH%201423713550%201423713551%20IN%20IP4%20127.0.0.1%0As%3DFreeSWITCH%0Ac%3DIN%20IP4%20127.0.0.1%0At%3D0%200%0Am%3Daudio%2029036%20RTP/AVP%203%0Aa%3Drtpmap%3A3%20GSM/8000%0Aa%3Dptime%3A20%0Aa%3Dsendrecv%0A</rtp_local_sdp_str>
+    <local_media_ip>127.0.0.1</local_media_ip>
+    <local_media_port>29036</local_media_port>
+    <advertised_media_ip>127.0.0.1</advertised_media_ip>
+    <rtp_use_pt>3</rtp_use_pt>
+    <rtp_use_ssrc>175189265</rtp_use_ssrc>
+    <remote_media_ip>127.0.0.1</remote_media_ip>
+    <remote_media_port>16544</remote_media_port>
+    <endpoint_disposition>ANSWER</endpoint_disposition>
+    <current_application>hangup</current_application>
+    <hangup_cause>NORMAL_CLEARING</hangup_cause>
+    <hangup_cause_q850>16</hangup_cause_q850>
+    <digits_dialed>none</digits_dialed>
+    <start_stamp>2015-02-12%2012%3A03%3A05</start_stamp>
+    <profile_start_stamp>2015-02-12%2012%3A03%3A05</profile_start_stamp>
+    <answer_stamp>2015-02-12%2012%3A03%3A06</answer_stamp>
+    <end_stamp>2015-02-12%2012%3A03%3A06</end_stamp>
+    <start_epoch>1423742585</start_epoch>
+    <start_uepoch>1423742585698089</start_uepoch>
+    <profile_start_epoch>1423742585</profile_start_epoch>
+    <profile_start_uepoch>1423742585698089</profile_start_uepoch>
+    <answer_epoch>1423742586</answer_epoch>
+    <answer_uepoch>1423742586038092</answer_uepoch>
+    <bridge_epoch>0</bridge_epoch>
+    <bridge_uepoch>0</bridge_uepoch>
+    <last_hold_epoch>0</last_hold_epoch>
+    <last_hold_uepoch>0</last_hold_uepoch>
+    <hold_accum_seconds>0</hold_accum_seconds>
+    <hold_accum_usec>0</hold_accum_usec>
+    <hold_accum_ms>0</hold_accum_ms>
+    <resurrect_epoch>0</resurrect_epoch>
+    <resurrect_uepoch>0</resurrect_uepoch>
+    <progress_epoch>0</progress_epoch>
+    <progress_uepoch>0</progress_uepoch>
+    <progress_media_epoch>0</progress_media_epoch>
+    <progress_media_uepoch>0</progress_media_uepoch>
+    <end_epoch>1423742586</end_epoch>
+    <end_uepoch>1423742586038092</end_uepoch>
+    <last_app>hangup</last_app>
+    <caller_id>%22IMSI510555550000087%22%20%3CIMSI510555550000087%3E</caller_id>
+    <duration>1</duration>
+    <billsec>0</billsec>
+    <progresssec>0</progresssec>
+    <answersec>1</answersec>
+    <waitsec>0</waitsec>
+    <progress_mediasec>0</progress_mediasec>
+    <flow_billsec>1</flow_billsec>
+    <mduration>340</mduration>
+    <billmsec>0</billmsec>
+    <progressmsec>0</progressmsec>
+    <answermsec>340</answermsec>
+    <waitmsec>0</waitmsec>
+    <progress_mediamsec>0</progress_mediamsec>
+    <flow_billmsec>340</flow_billmsec>
+    <uduration>340003</uduration>
+    <billusec>0</billusec>
+    <progressusec>0</progressusec>
+    <answerusec>340003</answerusec>
+    <waitusec>0</waitusec>
+    <progress_mediausec>0</progress_mediausec>
+    <flow_billusec>340003</flow_billusec>
+    <sip_hangup_disposition>send_bye</sip_hangup_disposition>
+    <rtp_audio_in_raw_bytes>0</rtp_audio_in_raw_bytes>
+    <rtp_audio_in_media_bytes>0</rtp_audio_in_media_bytes>
+    <rtp_audio_in_packet_count>0</rtp_audio_in_packet_count>
+    <rtp_audio_in_media_packet_count>0</rtp_audio_in_media_packet_count>
+    <rtp_audio_in_skip_packet_count>0</rtp_audio_in_skip_packet_count>
+    <rtp_audio_in_jitter_packet_count>0</rtp_audio_in_jitter_packet_count>
+    <rtp_audio_in_dtmf_packet_count>0</rtp_audio_in_dtmf_packet_count>
+    <rtp_audio_in_cng_packet_count>0</rtp_audio_in_cng_packet_count>
+    <rtp_audio_in_flush_packet_count>0</rtp_audio_in_flush_packet_count>
+    <rtp_audio_in_largest_jb_size>0</rtp_audio_in_largest_jb_size>
+    <rtp_audio_in_jitter_min_variance>0.00</rtp_audio_in_jitter_min_variance>
+    <rtp_audio_in_jitter_max_variance>0.00</rtp_audio_in_jitter_max_variance>
+    <rtp_audio_in_jitter_loss_rate>0.00</rtp_audio_in_jitter_loss_rate>
+    <rtp_audio_in_jitter_burst_rate>0.00</rtp_audio_in_jitter_burst_rate>
+    <rtp_audio_in_mean_interval>0.00</rtp_audio_in_mean_interval>
+    <rtp_audio_in_flaw_total>0</rtp_audio_in_flaw_total>
+    <rtp_audio_in_quality_percentage>100.00</rtp_audio_in_quality_percentage>
+    <rtp_audio_in_mos>4.50</rtp_audio_in_mos>
+    <rtp_audio_out_raw_bytes>0</rtp_audio_out_raw_bytes>
+    <rtp_audio_out_media_bytes>0</rtp_audio_out_media_bytes>
+    <rtp_audio_out_packet_count>0</rtp_audio_out_packet_count>
+    <rtp_audio_out_media_packet_count>0</rtp_audio_out_media_packet_count>
+    <rtp_audio_out_skip_packet_count>0</rtp_audio_out_skip_packet_count>
+    <rtp_audio_out_dtmf_packet_count>0</rtp_audio_out_dtmf_packet_count>
+    <rtp_audio_out_cng_packet_count>0</rtp_audio_out_cng_packet_count>
+    <rtp_audio_rtcp_packet_count>0</rtp_audio_rtcp_packet_count>
+    <rtp_audio_rtcp_octet_count>0</rtp_audio_rtcp_octet_count>
+  </variables>
+  <app_log>
+    <application app_name="set" app_data="process_cdr=true" app_stamp="1423742585712761"></application>
+    <application app_name="set" app_data="service_type=free_call" app_stamp="1423742585713347"></application>
+    <application app_name="export" app_data="service_type=free_call" app_stamp="1423742585713920"></application>
+    <application app_name="set" app_data="call_tariff=0" app_stamp="1423742585857033"></application>
+    <application app_name="set" app_data="vbts_callerid=6285574719959" app_stamp="1423742585867562"></application>
+    <application app_name="set" app_data="vbts_destid=None" app_stamp="1423742585876585"></application>
+    <application app_name="set" app_data="vbts_account_balance=500" app_stamp="1423742585886018"></application>
+    <application app_name="set" app_data="service_type=outside_call" app_stamp="1423742585887288"></application>
+    <application app_name="export" app_data="service_type=outside_call" app_stamp="1423742585887945"></application>
+    <application app_name="set" app_data="call_tariff=2500" app_stamp="1423742586030406"></application>
+    <application app_name="set" app_data="service_type=error_call" app_stamp="1423742586032034"></application>
+    <application app_name="export" app_data="service_type=error_call" app_stamp="1423742586032705"></application>
+    <application app_name="python" app_data="endaga_i18n Your account doesn't have sufficient funds." app_stamp="1423742586033360"></application>
+    <application app_name="set" app_data="_localstr=Pulsa anda tidak cukup." app_stamp="1423742586035937"></application>
+    <application app_name="set" app_data="res=" app_stamp="1423742586045169"></application>
+    <application app_name="answer" app_data="" app_stamp="1423742586046216"></application>
+    <application app_name="speak" app_data="flite|slt|Pulsa anda tidak cukup." app_stamp="1423742586054050"></application>
+    <application app_name="hangup" app_data="" app_stamp="1423742586055210"></application>
+  </app_log>
+  <callflow dialplan="XML" unique-id="0c444bc9-2e04-4cbb-b303-09c47b2a70d0" profile_index="1">
+    <extension name="openbts" number="6281248174025">
+      <application app_name="set" app_data="service_type=error_call"></application>
+      <application app_name="export" app_data="service_type=error_call"></application>
+      <application app_name="python" app_data="endaga_i18n Your account doesn't have sufficient funds."></application>
+      <application app_name="set" app_data="res=${python(VBTS_Send_SMS ${vbts_callerid}|888|${_localstr})}"></application>
+      <application app_name="answer" app_data=""></application>
+      <application app_name="speak" app_data="flite|slt|${_localstr}"></application>
+      <application app_name="hangup" app_data=""></application>
+    </extension>
+    <caller_profile>
+      <username>IMSI510555550000087</username>
+      <dialplan>XML</dialplan>
+      <caller_id_name>IMSI510555550000087</caller_id_name>
+      <caller_id_number>IMSI510555550000087</caller_id_number>
+      <callee_id_name></callee_id_name>
+      <callee_id_number></callee_id_number>
+      <ani>IMSI510555550000087</ani>
+      <aniii></aniii>
+      <network_addr>127.0.0.1</network_addr>
+      <rdnis></rdnis>
+      <destination_number>6281248174025</destination_number>
+      <uuid>0006a2fa-b032-43e8-9d70-708f363fe3b7</uuid>
+      <source>mod_sofia</source>
+      <context>default</context>
+      <chan_name>sofia/openbts/IMSI510555550000087@127.0.0.1:5062</chan_name>
+    </caller_profile>
+    <times>
+      <created_time>1423742585698089</created_time>
+      <profile_created_time>1423742585698089</profile_created_time>
+      <progress_time>0</progress_time>
+      <progress_media_time>0</progress_media_time>
+      <answered_time>1423742586038092</answered_time>
+      <bridged_time>0</bridged_time>
+      <last_hold_time>0</last_hold_time>
+      <hold_accum_time>0</hold_accum_time>
+      <hangup_time>1423742586038092</hangup_time>
+      <resurrect_time>0</resurrect_time>
+      <transfer_time>0</transfer_time>
+    </times>
+  </callflow>
+</cdr>

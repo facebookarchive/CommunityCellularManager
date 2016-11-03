@@ -1,0 +1,8 @@
+<extension name="inendaga">
+  <!-- VALID TARGET IP -->
+  <condition field="${newhost}" expression="^\d+\.\d+\.\d+\.\d+$">
+    <action application="set" data='effective_caller_id_name=${username}'/>
+    <action application="set" data='effective_caller_id_number=${username}'/>
+    <action application="bridge" data="sofia/bts/${destination_number}@${newhost}"/>
+  </condition>
+</extension>

@@ -1,0 +1,63 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+{% if tower.nickname %}
+{% tmpl_const "SITENAME" %} | events {{ tower.nickname }}
+{% else %}
+{% tmpl_const "SITENAME" %} | events tower {{ tower.uuid }}
+{% endif %}
+{% endblock %}
+
+
+{% block content %}
+{% include "dashboard/tower_detail/header.html" with tower=tower %}
+
+<div class="row">
+  {% include "dashboard/tower_detail/nav.html" with uuid=tower.uuid active_tab='tower_events'%}
+  <div class="col-xs-10">
+    {% if events %}
+    <table class="table table-striped">
+    <thead>
+        <tr>
+          <th class="col-xs-3">Date</th>
+            <th class="col-xs-3">Event</th>
+        </tr>
+        {% for event in events %}
+        <tr>
+            <td>{{ event.date }}</td>
+            <td>{{ event.get_type_display }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <span class="step-links">
+      {% if events.has_previous %}
+      <a href="?page={{ events.previous_page_number }}">previous</a>
+      {% endif %}
+
+      <span class="current">
+      Page {{ events.number }} of {{ events.paginator.num_pages }}
+      </span>
+
+      {% if events.has_next %}
+      <a href="?page={{ events.next_page_number }}">next</a>
+      {% endif %}
+    </span>
+    {% else %}
+    <h4>No events for this tower!</h4>
+    {% endif %}
+  </div> <!-- /. col (events) -->
+</div> <!-- /.row (events) -->
+{% endblock %}

@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+"""
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+
+This migrates subscribers out of the sipauthserve
+re-adding them to the new postgres based HLR
+"""
+
+from ccm.common import logger
+from core.subscriber import subscriber
+from openbts.components import SIPAuthServe
+
+sip_auth_serve = SIPAuthServe()
+logger.info('Migrating %d subscribers' % sip_auth_serve.count_subscribers())
+
+# Dont re-add to HLR since we're only migrating balances
+# If migrating to another HLR, disable the next line
+subscriber.add_subscriber_to_hlr = lambda a, b, c, d: None
+
+for entry in sip_auth_serve.get_subscribers():
+    logger.notice('Migrating %s with %s balance and %d numbers' %
+        (entry['name'], entry['account_balance'], len(entry['numbers'])))
+
+    subscriber.create_subscriber(entry['name'], entry['openbts_ipaddr'],
+                                 entry['openbts_port'], entry['numbers'][0])
+    subscriber.set_credit(entry['name'], entry['account_balance'])
+    for i in range(1, len(entry['numbers'])):
+        subscriber.add_number(entry['name'], entry['numbers'][i])

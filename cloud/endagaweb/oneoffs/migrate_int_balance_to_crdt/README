@@ -1,0 +1,3 @@
+These migrations were used to convert a database using integer balances (old
+style) to CRDT-based representations. If you are using an integer based system,
+you'll want to use these to update your system.

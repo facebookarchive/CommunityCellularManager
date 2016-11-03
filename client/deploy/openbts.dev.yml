@@ -1,0 +1,85 @@
+---
+#
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- name: Set up development pre-reqs on a local machine
+  hosts: dev
+  become: yes
+  tasks:
+    - include: base.yml
+
+    - include: openbts.yml
+
+    - name: Remove production Etage repo
+      apt_repository: repo='deb http://repo.etagecom.io stable main' state=absent update_cache=no
+
+    - name: Make sure (empty) local repo structure exists
+      become: no
+      shell: mkdir -p ~/endaga-packages/dists/localdev/main/binary-i386/
+
+    - name: Make sure (empty) local repo Packages file exists
+      become: no
+      shell: touch ~/endaga-packages/dists/localdev/main/binary-i386/Packages
+
+    - name: Add local repo (for local development)
+      apt_repository: repo='deb file:/home/vagrant/endaga-packages localdev main' state=present update_cache=no mode=664
+
+    - name: Set the local development repo to order 30
+      shell: sudo mv /etc/apt/sources.list.d/file_home_vagrant_endaga_packages.list /etc/apt/sources.list.d/30_file_home_vagrant_endaga_packages.list || exit 0
+
+    - name: Set the version preferences
+      copy: src=files/endaga-preferences dest=/etc/apt/preferences.d/endaga-preferences
+
+    - name: Install prereqs for FPM
+      apt: pkg=ruby-dev state=present update_cache=yes
+
+    - name: Setup FPM so we can build packages
+      shell: gem install fpm
+
+    - name: Setup build requirements for OpenBTS and FS packages
+      apt: pkg={{ item }} state=present update_cache=no
+      with_items:
+          - build-essential
+          - libtool
+          - autoconf
+          - debhelper
+          - pkg-config
+          - devscripts
+          - dpkg-dev
+          - equivs
+          - python-dev
+          - libxmlrpc-c++8-dev
+          - libftdi-dev
+          - libjpeg-dev
+          - libcurl4-openssl-dev
+          - libpcre3-dev
+          - libspeexdsp-dev
+          - libldns-dev
+          - libedit-dev
+
+    - name: Setup build requirements for python packages
+      apt: pkg={{ item }} state=present update_cache=no
+      with_items:
+          - python-pip
+          - python-pybabel
+
+    - name: Setup requirements for building FS from source (needed to generate working python modules)
+      apt: pkg={{ item }} state=present update_cache=no
+      with_items:
+          - libsqlite3-dev
+
+    - name: Setup requirements for building psycopg2 from source
+      apt: pkg=libpq-dev state=present update_cache=no
+
+    #openvpn is usually installed as a dependency, but we need to disable autostart
+    - name: Install openvpn
+      apt: pkg=openvpn state=present update_cache=no
+    - name: Disable init.d autostart
+      replace: dest=/etc/default/openvpn regexp='#AUTOSTART=\"none\"' replace='AUTOSTART="none"'
+    - name: Turn off init.d vpn
+      command: /etc/init.d/openvpn stop

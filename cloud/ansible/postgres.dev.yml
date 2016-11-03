@@ -1,0 +1,64 @@
+---
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- hosts: db
+  sudo: yes
+  vars:
+    db_name: endagaweb_dev
+    db_user: endaga_dev
+    db_password: endaga_dev
+    ansible_ssh_pipelining: true
+  environment:
+    LANG: en_US.UTF-8
+    LANGUAGE: en_US
+    LC_CTYPE: en_US.UTF-8
+    LC_NUMERIC: en_US.UTF-8
+    LC_TIME: en_US.UTF-8
+    LC_COLLATE: en_US.UTF-8
+    LC_MONETARY: en_US.UTF-8
+    LC_MESSAGES: en_US.UTF-8
+    LC_PAPER: en_US.UTF-8
+    LC_NAME: en_US.UTF-8
+    LC_ADDRESS: en_US.UTF-8
+    LC_TELEPHONE: en_US.UTF-8
+    LC_MEASUREMENT: en_US.UTF-8
+    LC_IDENTIFICATION: en_US.UTF-8
+  tasks:
+    - name: Add all the packages needed for operation
+      apt: pkg={{ item }} state=present update_cache=yes
+      with_items:
+          - postgresql
+          - postgresql-contrib
+          - postgresql-9.3-postgis-2.1 
+          - libpq-dev
+          - python-psycopg2
+
+    - name: Add Endaga DB
+      sudo_user: postgres
+      postgresql_db: name={{ db_name }} state=present
+
+    - name: Add Endaga DB user
+      sudo_user: postgres
+      postgresql_user: db={{ db_name }} name={{ db_user }} password={{ db_password }} priv=ALL role_attr_flags=CREATEDB
+
+    - name: Add postgis support
+      sudo_user: postgres
+      postgresql_ext: name=postgis db={{ db_name }}
+
+    - name: Enable postgres support
+      sudo_user: postgres
+      shell: psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+
+    - name: Listen for remote connections
+      lineinfile: dest=/etc/postgresql/9.3/main/postgresql.conf regexp="listen_address" line="listen_addresses = '*'" state=present
+
+    - name: Allow remote hosts to connect using password auth
+      lineinfile: dest=/etc/postgresql/9.3/main/pg_hba.conf regexp="0.0.0.0" line="host all all 0.0.0.0/0 md5" state=present
+
+    - name: Restart Postgres
+      service: name=postgresql state=restarted

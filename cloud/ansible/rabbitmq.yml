@@ -1,0 +1,59 @@
+---
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- hosts: rabbitmq
+  remote_user: ubuntu
+  become: yes
+  tasks:
+  - name: Add RabbitMQ apt source
+    copy: src=files/rabbitmq.list dest=/etc/apt/sources.list.d/
+  - name: Add RabbitMQ's public key
+    apt_key: url=http://www.rabbitmq.com/rabbitmq-signing-key-public.asc state=present
+  - name: Ensure RabbitMQ is installed
+    apt: pkg=rabbitmq-server state=present update_cache=yes
+  - name: Ensure RabbitMQ is running
+    service: name=rabbitmq-server state=started
+  - name: Delete RabbitMQ default "guest" user
+    rabbitmq_user: user=guest state=absent node=rabbit@{{ ansible_hostname }}
+  - name: Add RabbitMQ admin user
+    rabbitmq_user: user=endaga
+                   password="{{ lookup('ini', 'password section=rabbitmq file=prod_conf.ini') }}"
+                   vhost=/
+                   configure_priv=.*
+                   read_priv=.*
+                   write_priv=.*
+                   state=present
+                   tags=administrator
+                   node=rabbit@{{ ansible_hostname }}
+  - name: Enable RabbitMQ management console
+    rabbitmq_plugin: names=rabbitmq_management state=enabled
+    notify:
+    - restart rabbitmq-server
+
+  - name: Install pip
+    apt: pkg=python-pip state=present update_cache=yes
+  - name: Install flower
+    pip: name=flower state=latest
+  - name: Install supervisor
+    apt: pkg=supervisor state=present
+  - name: Make sure that the config directory exists for supervisor 1
+    file: path=/etc/supervisor state=directory
+  - name: Make sure that the config directory exists for supervisor 2
+    file: path=/etc/supervisor/conf.d state=directory
+  - name: Add config files 1
+    copy: src=files/supervisor/supervisord.conf dest=/etc/supervisor/supervisord.conf
+  - name: Add config files 2
+    copy: src=files/supervisor/conf.d/flower.conf dest=/etc/supervisor/conf.d/flower.conf
+  - name: Make sure supervisor is running
+    service: name=supervisor state=started
+  - name: Make sure flower is running
+    supervisorctl: name=flower state=started
+
+
+#- name: Symlink RabbitMQ bin path to sbin (dumb workaround for rabbitmq_plugin module)
+#shell: ln -s /usr/lib/rabbitmq/bin /usr/lib/rabbitmq/sbin creates=/usr/lib/rabbitmq/sbin

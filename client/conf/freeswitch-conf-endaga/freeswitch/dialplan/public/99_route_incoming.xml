@@ -1,0 +1,18 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<extension name="incoming_call">
+  <!-- See if the destination_number can be found by the system.
+       Return the IMSI if so.
+  -->
+  <condition field='${destination_imsi}' expression="IMSI\d{15}">
+    <action application="set" data="execute_on_answer=sched_hangup +${sec_avail} alloted_timeout" />
+    <action application="bridge" data="sofia/internal/${name}@${ipaddr}:${port}"/>
+  </condition>
+</extension>

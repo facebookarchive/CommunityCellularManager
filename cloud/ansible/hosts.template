@@ -1,0 +1,20 @@
+[webservers]
+deploy.example.com   ansible_ssh_user=ubuntu
+
+[rabbitmq]
+rabbitmq.example.com    ansible_ssh_user=ubuntu
+
+[repo]
+repo.example.com ansible_ssh_user=ubuntu
+
+[certifier]
+cert.example.com    ansible_ssh_user=ubuntu
+
+[bts_vpn_endpoints]
+vpn.example.com  ansible_ssh_user=ubuntu
+
+[sip]
+sip.example.com    ansible_ssh_user=ubuntu
+
+[smpp]
+smpp.example.com     ansible_ssh_user=ubuntu

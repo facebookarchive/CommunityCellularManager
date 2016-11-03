@@ -1,0 +1,5 @@
+The files in this directory are used for testing. They contain the output from
+Osmocom software. These test fixtures are part of CCM and are licensed under
+the BSD-style license found in the LICENSE file in the root directory of this
+source tree. An additional grant of patent rights can be found in the PATENTS
+file in the same directory.

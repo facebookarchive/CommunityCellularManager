@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+"""
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+
+Enforces a minimum sub balance of zero.
+
+This runs as a postinst for the endaga metapackage.
+"""
+
+import syslog
+
+from ccm.common import logger
+from core.subscriber import subscriber
+from core import billing
+
+
+imsis = [sub['name'] for sub in subscriber.get_subscribers()]
+for imsi in imsis:
+    if subscriber.get_account_balance(imsi) < 0:
+        logger.warning('clamping %s account balance to zero' % imsi)
+        subscriber.set_credit(imsi, 0)

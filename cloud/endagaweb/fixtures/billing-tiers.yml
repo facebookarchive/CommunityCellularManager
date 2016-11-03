@@ -1,0 +1,86 @@
+---
+#
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+# This file is used by the 0035 data migration to create Destinations,
+# BillingTiers and DestinationGroups.  It is only for bootstrapping these
+# objects, it is not actually opened when we need to get the price of a
+# service.
+#
+# Prices are given in millicents unless otherwise specified.  Price thresholds
+# are based on the nexmo price spreadsheet.
+#
+# The cost to the operator is the price ceiling converted to millicents.  A
+# markup can be added later in django-admin.
+
+- name: Off-Network Sending, Tier A
+  directionality: off_network_send
+  sms_price_ceiling_euro: 0.03  # 3000 millicents USD
+  voice_price_ceiling_euro: 0.08  # 9000 millicents USD
+  # Manually set operator prices based on Jul 28, 2015 conversations.
+  cost_to_operator_per_sms: 2000
+  cost_to_operator_per_min: 5000
+  countries: [
+    CA, CY, DK, GB, ID, IS, MT, MX, PH, SE, US,
+  ]
+
+- name: Off-Network Sending, Tier B
+  directionality: off_network_send
+  sms_price_ceiling_euro: 0.05  # 5000 millicents USD
+  voice_price_ceiling_euro: 0.12  # 13000 millicents USD
+  cost_to_operator_per_sms: 5000
+  cost_to_operator_per_min: 13000
+  countries: [
+    AE, AN, AO, AS, AU, BD, BH, BM, BN, BO, BS, BT, CN, CR, CZ, EE, FI, GE, GR,
+    GT, GU, HK, HN, IE, IN, IR, JO, JP, KE, KG, KH, KR, KW, LA, LK, LT, LV, MN,
+    MO, MP, MW, MY, MZ, NA, NG, NP, PE, PK, PL, PR, PT, PY, RO, SA, SD, SG, SK,
+    TH, TM, TR, TW, UZ, VE, VI, VN, ZM,
+  ]
+
+- name: Off-Network Sending, Tier C
+  directionality: off_network_send
+  sms_price_ceiling_euro: 0.10  # 11000 millicents USD
+  voice_price_ceiling_euro: 0.25  # 27000 millicents USD
+  cost_to_operator_per_sms: 11000
+  cost_to_operator_per_min: 27000
+  countries: [
+    AD, AF, AG, AI, AL, AM, AR, AT, AW, BB, BE, BF, BG, BJ, BR, BW, BZ, CD, CI,
+    CL, CM, CO, CV, DE, DM, DO, EC, EG, ER, ES, ET, FJ, FO, GD, GF, GH, GI, GP,
+    GQ, GY, HR, HT, HU, IL, IQ, IT, JM, KN, KY, KZ, LB, LC, LU, LY, MD, MM, MQ,
+    MS, MU, NC, NE, NI, NL, 'NO', NZ, OM, PA, PS, PW, QA, RU, RW, SM, SR, SS,
+    SV, SY, SZ, TC, TJ, TT, TZ, UA, UG, UY, VC, VG, YE, ZA,
+  ]
+
+- name: Off-Network Sending, Tier D
+  directionality: off_network_send
+  sms_price_ceiling_euro: 0.13  # 14000 millicents USD
+  voice_price_ceiling_euro: 10  # 1098000 millicents USD
+  cost_to_operator_per_sms: 14000
+  cost_to_operator_per_min: 1098000
+  countries: [
+    AZ, BA, BI, BY, CF, CG, CH, CK, CU, DJ, DZ, FM, FR, GA, GL, GM, GN, GW, KI,
+    KM, KP, LI, LR, LS, MA, MC, ME, MG, MK, ML, MR, MV, NR, PF, PG, PM, RE, RS,
+    SB, SC, SI, SL, SN, SO, ST, TD, TG, TL, TN, TO, VU, WS, ZW,
+  ]
+
+- name: Off-Network Receiving Tier
+  directionality: off_network_receive
+  # Nexmo inbound SMS are free, but we will add a bit of margin here by
+  # default.
+  cost_to_operator_per_sms: 500
+  cost_to_operator_per_min: 2000
+
+- name: On-Network Sending Tier
+  directionality: on_network_send
+  cost_to_operator_per_sms: 0
+  cost_to_operator_per_min: 0
+
+- name: On-Network Receiving Tier
+  directionality: on_network_receive
+  cost_to_operator_per_sms: 0
+  cost_to_operator_per_min: 0

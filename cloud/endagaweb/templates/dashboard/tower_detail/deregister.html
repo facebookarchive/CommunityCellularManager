@@ -1,0 +1,166 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+{% if tower.nickname %}
+{% tmpl_const "SITENAME" %} | deregistering {{ tower.nickname }}
+{% else %}
+{% tmpl_const "SITENAME" %} | deregistering tower {{ tower.uuid }}
+{% endif %}
+{% endblock %}
+
+
+{% block pagestyle %}
+<style>
+  #deregister-tower-messages-container .alert {
+    margin-top: 20px;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+{% include "dashboard/tower_detail/header.html" with tower=tower %}
+
+<div class='modal fade' id='deregister-tower-modal'>
+  <div class='modal-dialog'>
+    <div class='modal-content'>
+      <div class='modal-header'>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class='modal-title'>
+          Confirmation
+        </h4>
+      </div>
+      <div class='modal-body'>
+        <p>
+          Are you sure you want to deregister
+          <strong>
+            {% if tower.nickname %}
+              {{ tower.nickname }}
+            {% else %}
+              Tower {{ tower.uuid }}
+            {% endif %}
+          </strong>
+          ?
+        </p>
+      </div>
+      <div class='modal-footer'>
+        <button type='button' class='btn btn-default' data-dismiss='modal'>Cancel</button>
+        <button class='btn btn-primary' type='button' id='deregister-tower-submit'>Deregister</button>
+        <div id='deregister-tower-messages-container'></div>
+      </div>
+    </div>
+  </div>
+</div><!-- /.deregister-tower-modal -->
+
+
+<div class = 'row'>
+  {% include "dashboard/tower_detail/nav.html" with uuid=tower.uuid active_tab='deregister'%}
+
+  {% if endaga_version > '00000.00003.00019' or status == 'no-data' %}
+  <div class='content col-xs-12 col-sm-6'>
+    <p>
+      Taking this action will remove the tower from your network
+      and reset the hardware to a "factory default" state.
+      The tower will no longer provide service on your network.
+    </p>
+    <p>
+      If you are deregistering the last tower in your network,
+      the subscribers on your network will not be deleted.
+      These subscribers would regain service if a new tower was added to the network.
+    </p>
+    <p>
+      If you later wish to "undo" deregistration, you should re-add the tower
+      via the link on the <a href='/dashboard/towers'>tower list page</a>,
+      and then power cycle the hardware.
+    </p>
+
+    <p>
+      <a href='#' class='btn btn-default' type='button' data-toggle='modal' data-target='#deregister-tower-modal'>
+        {% if tower.nickname %}
+          Deregister "{{ tower.nickname }}"
+        {% else %}
+          Deregister Tower {{ tower.uuid }}
+        {% endif %}
+      </a>
+    </p>
+  </div>
+
+  {% else %}
+  <div class='col-xs-12 col-sm-6 alert alert-warning'>
+    Warning!  This tower is running old software
+    that cannot correctly process a deregistration request.
+    Please contact support if you have questions
+    or would like to upgrade your towers.
+  </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}
+
+
+{% block js %}
+  <script>
+
+    $(function() {
+
+      // Post the deregistration info when the confirm button is clicked.
+      $('#deregister-tower-submit').click(function() {
+        // Show a "working" message.
+        var message = 'Working..';
+        var html = "<div class='alert alert-success'>" + message + "</div>";
+        $('#deregister-tower-messages-container').html(html).show();
+        // Start the POST.
+        $.ajax({
+          url: '/api/v2/towers/{{ tower.uuid }}',
+          type: 'DELETE',
+          beforeSend: function(xhr) {
+            xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+          },
+          success: function(response) {
+            // Show a 'success' message after a small delay.
+            // Then, after some more time has passed, redirect back to /towers.
+            setTimeout(function() {
+              var message = 'Success, redirecting..';
+              var html = '<div class="alert alert-success">' + message + '</div>';
+              $('#deregister-tower-messages-container').html(html).show();
+            }, 1000);
+            setTimeout(function() {
+              window.location.href = '/dashboard/towers';
+            }, 2000);
+          },
+          error: function(response) {
+            // Show the error message after a small delay.
+            setTimeout(function() {
+              var message = 'Error: ' + response.status
+              var html = '<div class="alert alert-danger">' + message + '</div>';
+              $('#deregister-tower-messages-container').html(html).show();
+            }, 800);
+          },
+        });  // /$.ajax POST
+      });  // /deregister-tower-submit click handler
+
+      // Anytime modals are closed, clear any messages.
+      $('#deregister-tower-modal').on('hidden.bs.modal', function() {
+        $('#subscriber-messages-container').html('');
+      });
+
+    }); // /document-ready
+
+
+  </script>
+{% endblock %}

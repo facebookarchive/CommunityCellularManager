@@ -1,0 +1,57 @@
+ MS#1,TLLI=c00d1001,7c642f15 rrmode=PacketTransfer Multislot class: 
+                                                                     Bytes:45986up/76210down Utilization=19%
+         GMM Context: imsi=901550000000544 ptmsi=0xd1001 multislot class=12 tlli=0xc00d1001 state=GmmRegisteredNormal age=1183 idle=1 IPs=192.168.99.1
+         TimingError=(1.10 min=-0.69 max=2.01 avg=0.72 N=7771) RSSI=(-23 min=-39 max=-1 avg=-9.74 N=7771) CV=(22 min=0 max=28 avg=22.94 N=225) ILev=(0) RXQual=(0 min=0 max=7 avg=3.30 N=187) SigVar=(0 min=0 max=63 avg=4.58 N=187) ChCoding=(3)
+         dataER:.7% (8698) recent:.8% (179) low:.8% (66) tbfER:.02% (167)
+         rrbpER:.17% (1105) recent:.3% (28) low:.5% (2) ccchER:.9% (66) recent:0% (0)
+ MS#2,TLLI=c00d1002,7cf707a3 rrmode=PacketTransfer Multislot class: 
+                                                                     Bytes:90625up/146420down Utilization=40%
+         GMM Context: imsi=901550000000186 ptmsi=0xd1002 multislot class=12 tlli=0xc00d1002 state=GmmRegisteredNormal age=1167 idle=1 IPs=192.168.99.2
+         TimingError=(1.50 min=-1.32 max=1.83 avg=0.72 N=9739) RSSI=(-21 min=-37 max=-2 avg=-8.43 N=9739) CV=(19 min=0 max=29 avg=22.13 N=301) ILev=(0) RXQual=(7 min=0 max=7 avg=2.26 N=268) SigVar=(0 min=0 max=63 avg=4.53 N=268) ChCoding=(3)
+         dataER:.6% (13196) recent:.7% (580) low:.8% (28) tbfER:.02% (221)
+         rrbpER:.14% (1329) recent:.13% (61) low:.8% (4) ccchER:.0% (92) recent:.5% (2) low:1.0% (1)
+ MS#3,TLLI=c00d1003,7825a394 rrmode=PacketTransfer Multislot class: 
+                                                                     Bytes:93076up/147420down Utilization=158%
+         GMM Context: imsi=901550000000545 ptmsi=0xd1003 multislot class=12 tlli=0xc00d1003 state=GmmRegisteredNormal age=1137 idle=1 IPs=192.168.99.3
+         TimingError=(0.55 min=-0.96 max=2.02 avg=0.79 N=9703) RSSI=(-13 min=-44 max=-1 avg=-8.19 N=9703) CV=(22 min=0 max=29 avg=23.73 N=318) ILev=(0) RXQual=(0 min=0 max=7 avg=2.40 N=286) SigVar=(0 min=0 max=63 avg=5.73 N=286) ChCoding=(3)
+         dataER:.6% (13479) recent:.5% (988) low:.8% (75) tbfER:.04% (237)
+         rrbpER:.14% (1435) recent:.14% (76) low:.3% (6) ccchER:.0% (152) recent:0% (0)
+ MS#5,TLLI=c00d1004 rrmode=PacketTransfer Multislot class: 
+                                                            Bytes:72831up/139747down Utilization=181%
+         GMM Context: imsi=901550000000542 ptmsi=0xd1004 multislot class=12 tlli=0xc00d1004 state=GmmRegisteredNormal age=95 idle=1 IPs=192.168.99.4
+         TimingError=(0.95 min=-0.88 max=2.16 avg=0.82 N=7708) RSSI=(-11 min=-46 max=-2 avg=-9.15 N=7708) CV=(13 min=8 max=30 avg=21.72 N=279) ILev=(8) RXQual=(5 min=0 max=7 avg=2.20 N=267) SigVar=(4 min=0 max=63 avg=3.67 N=268) ChCoding=(3 min=0 max=3 avg=3.00 N=3510)
+         dataER:.6% (12446) recent:.6% (2160) low:1.0% (28) tbfER:0% (192)
+         rrbpER:.11% (1131) recent:.12% (127) low:.4% (7) ccchER:.5% (2) recent:0% (0)
+ MS#7,TLLI=79a49961 rrmode=PacketTransfer Multislot class: 
+                                                            Bytes:63up/24down Utilization=0%
+         GMM Context: imsi=901550000000542 ptmsi=0xd1004 multislot class=12 tlli=0xc00d1004 state=GmmRegisteredNormal age=95 idle=0 IPs=192.168.99.4
+         TimingError=(0.83 min=-0.16 max=0.86 avg=0.51 N=15) RSSI=(-2 min=-3 max=-2 avg=-2.27 N=15) CV=(26 min=0 max=26 avg=13.00 N=2) ILev=(0) RXQual=(7) SigVar=(0) ChCoding=(3)
+         dataER:.6% (17) recent:0% (0) tbfER:0% (3)
+         rrbpER:.14% (7) recent:0% (0) ccchER:0% (0) recent:0% (0)
+ TBF#853  mtMS= MS#1,TLLI=c00d1001,7c642f15 mtDir=RLCDir::Up
+         channels: down=( 1:0 1:1 1:2 1:3) up=( 1:2,usf=3)
+         mtState==TBFState::DataTransmit mtAttached=1 mtTFI=17 mtTlli=0xc00d1001
+ TBF#840  mtMS= MS#2,TLLI=c00d1002,7cf707a3 mtDir=RLCDir::Up
+         channels: down=( 1:0 1:1 1:2 1:3) up=( 1:2,usf=1)
+         mtState==TBFState::DataTransmit mtAttached=1 mtTFI=3 mtTlli=0xc00d1002
+ TBF#807  mtMS= MS#5,TLLI=c00d1004 mtDir=RLCDir::Up
+         channels: down=( 0:2 0:3 0:4 0:5) up=( 0:4,usf=2)
+         mtState==TBFState::DataTransmit mtAttached=1 mtTFI=1 mtTlli=0xc00d1004
+ TBF#822  mtMS= MS#3,TLLI=c00d1003,7825a394 mtDir=RLCDir::Up
+         channels: down=( 1:0 1:1 1:2 1:3) up=( 1:2,usf=2)
+         mtState==TBFState::DataTransmit mtAttached=1 mtTFI=16 mtTlli=0xc00d1003
+ TBF#841  mtMS= MS#5,TLLI=c00d1004 mtDir=RLCDir::Down
+         channels: down=( 0:2 0:3 0:4 0:5) up=( 0:4,usf=2)
+         mtState==TBFState::DataTransmit mtAttached=1 mtTFI=4 mtTlli=0xc00d1004 size=130
+ TBF#861  mtMS= MS#3,TLLI=c00d1003,7825a394 mtDir=RLCDir::Down
+         channels: down=( 1:0 1:1 1:2 1:3) up=( 1:2,usf=2)
+         mtState==TBFState::DataTransmit mtAttached=1 mtTFI=25 mtTlli=0xc00d1003 size=111
+ PDCH ARFCN=80 TN=2 FER=100%
+ PDCH ARFCN=80 TN=3 FER=100%
+ PDCH ARFCN=80 TN=4 FER=.0%
+ PDCH ARFCN=80 TN=5 FER=100%
+ PDCH ARFCN=80 TN=6 FER=100%
+ PDCH ARFCN=82 TN=0 FER=100%
+ PDCH ARFCN=82 TN=1 FER=100%
+ PDCH ARFCN=82 TN=2 FER=2.5%
+ PDCH ARFCN=82 TN=3 FER=100%

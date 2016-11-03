@@ -1,0 +1,23 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<!-- TESTS FOR LOCAL BTS CALLS -->
+<extension name="local_echo_outgoing">
+  <condition field="destination_number" expression="^1000$">
+    <action application="answer"/>
+    <action application="echo"/>
+  </condition>
+</extension>
+
+<extension name="local_echo_incoming">
+  <condition field="destination_number" expression="^1001$">
+    <action application="set" data="api_hangup_hook=originate sofia/internal/${username}@${sip_received_ip}:${sip_received_port} &echo() xml default ${username}" />
+    <action application="hangup"/>
+  </condition>
+</extension>

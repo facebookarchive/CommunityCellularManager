@@ -1,0 +1,6 @@
+Hey! Listen!
+
+This is for testing the actual deploy script on a vagrant instance. This is
+probably not something you'll do often. However! You need to change the hosts
+directive in ../deploy.yml from 'deploy' to 'default' for this Vagrant file to
+work. There's probably a smarter work around but *shrug* for now.

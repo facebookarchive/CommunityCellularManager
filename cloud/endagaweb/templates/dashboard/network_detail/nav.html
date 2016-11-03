@@ -1,0 +1,42 @@
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+<div class='col-xs-12 col-sm-2'>
+  <ul class='nav nav-pills nav-stacked' id='sub-detail-nav'>
+
+    <li role="presentation" class="{% if active_tab == 'info' %} active {% endif %}">
+      <a href="
+        {% if active_tab == 'info' %} #
+        {% else %} {% url 'network-info' %}
+        {% endif %} ">Info</a>
+    </li>
+    {% comment "2015dec11(shasan): Remove prices page to avoid confusion" %}
+    <li role="presentation" class="{% if active_tab == 'prices' %} active {% endif %}">
+      <a href="
+        {% if active_tab == 'prices' %} #
+        {% else %} {% url 'network-prices' %}
+        {% endif %} ">Prices</a>
+    </li>
+    {% endcomment %}
+
+    <li role="presentation" class="{% if active_tab == 'inactive-subscribers' %} active {% endif %}">
+      <a href="
+        {% if active_tab == 'inactive-subscribers' %} #
+        {% else %} {% url 'network-inactive-subscribers' %}
+        {% endif %} ">Inactive Subscribers</a>
+    </li>
+
+    <li role="presentation" class="{% if active_tab == 'edit' %} active {% endif %}">
+      <a href="
+        {% if active_tab == 'edit' %} #
+        {% else %}{% url 'network-edit' %}
+        {% endif %}">Edit</a>
+    </li>
+
+  </ul>
+</div>

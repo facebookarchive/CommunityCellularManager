@@ -1,0 +1,22 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<!-- register a user in the subscriber registry -->
+<extension name="registration_endaga">
+  <!-- user not already provisioned -->
+  <condition field="${vbts_tp_dest_address}" expression="^101$"/>
+  <condition field='${python(VBTS_Get_Auth_From_IMSI ${from_imsi})}' expression="False">
+    <action application="system" data='curl --data "from_number=${vbts_callerid}&from_name=${from_imsi}&ip=${from_sip_ip}&port=${from_sip_port}&ret_num=${vbts_tp_dest_address}" http://127.0.0.1/endaga_registration'/>
+    <action application="system" data='curl --data "from_number=${vbts_callerid}&from_name=${from_imsi}&service_type=${service_type}&destination=${vbts_tp_dest_address}" http://127.0.0.1/smscdr'/>
+    <!-- if already provisioned -->
+        <anti-action application="python" data='endaga_i18n Already registered with number %(number)s.|{"number": ${vbts_callerid}}'/>
+        <anti-action application="python" data="VBTS_Send_SMS ${vbts_callerid}|${vbts_tp_dest_address}|${_localstr}"/>
+        <anti-action application="system" data='curl --data "from_number=${vbts_callerid}&from_name=${from_imsi}&service_type=${service_type}&destination=${vbts_tp_dest_address}" http://127.0.0.1/smscdr'/>
+  </condition>
+</extension>

@@ -1,0 +1,178 @@
+{% extends "dashboard/layout.html" %}
+
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+{% block pagestyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.14.30/css/bootstrap-datetimepicker.min.css">
+{% endblock %}
+
+{% block title %} {% tmpl_const "SITENAME" %} | Network Activity {% endblock %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-xs-12 page-header">
+    <h3>Network Activity</h3>
+  </div>
+</div>
+
+{% if network_has_activity %}
+<div class="row">
+    <div class="col-xs-12 col-lg-7">
+        <form action="/dashboard/activity" class="form-horizontal" method="post" role="form" onsubmit="setloading()">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="id_keyword" class="control-label col-xs-2">Keyword</label>
+            <div class="col-xs-10">
+                <input class="form-control" id="id_keyword" name="keyword" type="text"
+                       value="{{ eventfilter.keyword|default_if_none:"" }}"/>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="start_date" class="control-label col-xs-2">From</label>
+            <div class="col-xs-4">
+                <input class="form-control" id="start_date" name="start_date" type="text"
+                       {% if eventfilter.start_date %}
+                       value="{{ eventfilter.start_date }}"
+                       {% endif %}
+                />
+            </div>
+            <label for="end_date" class="control-label col-xs-2">Until</label>
+            <div class="col-xs-4">
+                <input class="form-control" id="end_date" name="end_date" type="text"
+                       {% if eventfilter.end_date %}
+                       value="{{ eventfilter.end_date }}"
+                       {% endif %}
+                />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="control-label col-xs-2">Services</label>
+            <div class="col-xs-5">
+                {% for t in service_types %}
+                <label class="checkbox-inline"><input type="checkbox" name="services[]"
+                       value="{{ t.0 | lower }}" {% if t.1 %}checked{% endif %}>{{ t.0 }}</input></label>
+                {% endfor %}
+            </div>
+            <div class="col-xs-5">
+                <button id="submit" type="submit" name="submit" value="Filter"
+                        class="btn btn-primary col-xs-12" data-loading-text="Loading...">Filter</button>
+            </div>
+        </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xs-12">
+    {% if events %}
+    <table class="table table-striped">
+    <thead>
+        <tr>
+          <th class="col-xs-3">Date</th>
+            <th class="col-xs-3">Subscriber</th>
+            <th class="col-xs-5">Activity</th>
+            <th class="col-xs-2">Cost</th>
+            <th class="col-xs-2">Balance</th>
+        </tr>
+        {% for event in events %}
+        <tr>
+            <td>{{ event.date }}</td>
+            {% if event.subscriber %}
+              {% if event.subscriber.name %}
+                <td><a href="{% url 'subscriber-info' imsi=event.subscriber.imsi %}">{{ event.subscriber.name }} ({{ event.subscriber.imsi }})</a></td>
+              {% else %}
+                <td><a href="{% url 'subscriber-info' imsi=event.subscriber.imsi %}">{{ event.subscriber.imsi }}</a></td>
+              {% endif %}
+            {% else %}  {# /event.subscriber check #}
+
+              {# no subscriber attribute -- the sub was likely deactivated #}
+              {% if event.subscriber_imsi %}
+                <td>{{ event.subscriber_imsi }}</td>
+              {% else %}
+                <td><i>deactivated IMSI</i></td>
+              {% endif %}
+            {% endif %}
+            <td>{{ event.reason }}</td>
+            <td>
+              {% comment %}
+                if a sub's balance is negative, we render the event's cost as zero
+              {% endcomment %}
+              {% if event.oldamt < 0 and event.kind != 'add_money' %}
+                {% currency 0 %}
+              {% else %}
+                {% currency event.change %}
+              {% endif %}
+            </td>
+            <td>{% currency event.newamt %}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <h4>No events match these filters!</h4>
+    {% endif %}
+    </div> <!-- /. col (events) -->
+</div> <!-- /.row (events) -->
+
+<div class="row">
+    <div class="col-xs-12">
+        <span class="step-links">
+            {% if events.has_previous %}
+            <a href="?page={{ events.previous_page_number }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+            Page {{ events.number }} of {{ events.paginator.num_pages }}
+            </span>
+
+            {% if events.has_next %}
+            <a href="?page={{ events.next_page_number }}">next</a>
+            {% endif %}
+        </span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xs-12">
+    <p>
+    {% if event_count > 100000 %}
+        Too many results to export, try a shorter date range.
+    {% elif event_count > 0 %}
+        <a href="?page={{ events.number }}&csv=1">Export results as CSV</a>
+    {% endif %}
+    </p>
+    </div>
+</div>
+
+
+{% include 'dashboard/timezone-notice.html' %}
+
+{% else %}
+  {% comment %} This else is the other half of 'if network_has_activity.'
+                We will hide everything if there is no activity.
+  {% endcomment %}
+  <p>There is no network activity to display.</p>
+{% endif %}
+
+{% endblock %}
+
+
+{% block js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.14.30/js/bootstrap-datetimepicker.min.js"></script>
+<script src="/static/js/dashboard/activity.js"></script>
+{% endblock %}

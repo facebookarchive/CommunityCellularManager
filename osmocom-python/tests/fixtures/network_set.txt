@@ -1,0 +1,47 @@
+Welcome to the OpenBSC control interface
+
+Copyright (C) 2008-2012 Harald Welte, Holger Freyther
+Contributions by Daniel Willmann, Jan LÃ¼bbe, Stefan Schmidt
+Dieter Spaar, Andreas Eversberg, Sylvain Munaut
+
+License AGPLv3+: GNU AGPL version 3 or later <http://gnu.org/licenses/agpl-3.0.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+ÿûÿûÿþ"ÿýOpenBSC> 
+OpenBSC> enable
+OpenBSC# configure terminal
+OpenBSC(config)# network
+OpenBSC(config-net)# network country code 901
+OpenBSC(config-net)# write
+Configuration saved to openbsc.conf
+OpenBSC(config-net)# exit
+OpenBSC(config)# exit
+OpenBSC# disable
+OpenBSC> enable
+OpenBSC# configure terminal
+OpenBSC(config)# network
+OpenBSC(config-net)# mobile network code 55
+OpenBSC(config-net)# write
+Configuration saved to openbsc.conf
+OpenBSC(config-net)# exit
+OpenBSC(config)# exit
+OpenBSC# disable
+OpenBSC> enable
+OpenBSC# configure terminal
+OpenBSC(config)# network
+OpenBSC(config-net)# short name Test
+OpenBSC(config-net)# write
+Configuration saved to openbsc.conf
+OpenBSC(config-net)# exit
+OpenBSC(config)# exit
+OpenBSC# disable
+OpenBSC> enable
+OpenBSC# configure terminal
+OpenBSC(config)# network
+OpenBSC(config-net)# long name Test_Network
+OpenBSC(config-net)# write
+Configuration saved to openbsc.conf
+OpenBSC(config-net)# exit
+OpenBSC(config)# exit
+OpenBSC# disable
+OpenBSC> 

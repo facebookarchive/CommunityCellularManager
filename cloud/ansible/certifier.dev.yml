@@ -1,0 +1,69 @@
+---
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- hosts: cert
+  become: yes
+  vars:
+      pki_dir: /home/vagrant/certifier/pki
+  # first build the package and push it to the keyserver
+  tasks:
+  - name: Install pip
+    apt: pkg=python-pip state=present update_cache=yes
+  - name: Install envoy
+    pip: name=envoy
+  - name: Install web
+    pip: name=web.py
+  - name: Install supervisor
+    apt: pkg=supervisor state=present
+  - name: Install prereqs for FPM
+    apt: pkg=ruby-dev state=present
+  - name: Setup FPM so we can build packages
+    shell: gem install fpm
+  - name: Copy over certifier
+    copy: src=../certifier dest=/tmp/
+    become: no
+  - name: Get version
+    command: cat /tmp/certifier/VERSION
+    become: no
+    register: cert_version
+  - name: Build certifier package
+    command: fpm -s dir -t deb -n certifier -v {{cert_version.stdout}} /tmp/certifier=/home/vagrant/
+    ignore_errors: yes
+    become: no
+  # now that the package is deployed, set it up and start running it.
+  - name: Install certifier
+    apt: deb=certifier_{{cert_version.stdout}}_amd64.deb state=installed
+  - name: Remove certifier package
+    command: rm certifier_{{cert_version.stdout}}_amd64.deb
+    become: no
+  - name: Remove certifier directory
+    command: rm -rf /tmp/certifier
+    become: no
+  # add easyrsa
+  - name: Install git
+    apt: pkg=git state=installed
+  - name: add easyrsa repo
+    git: repo=https://github.com/OpenVPN/easy-rsa.git dest=/home/vagrant/easyrsa update=yes
+  - name: copy easyrsa
+    command: cp /home/vagrant/easyrsa/easyrsa3/easyrsa /home/vagrant/certifier/
+  - name: easyrsa permissions
+    command:  chmod 777 /home/vagrant/certifier/easyrsa
+  - name: Make sure that the config directory exists for supervisor
+    file: path=/etc/supervisor state=directory
+  - name: Make sure that the config directory exists for supervisor conf.d
+    file: path=/etc/supervisor/conf.d state=directory
+  - name: Add config files
+    copy: src=files/supervisor/supervisord.conf dest=/etc/supervisor/supervisord.conf
+  - name: Add config files 2
+    copy: src=files/supervisor/conf.d/certifier.conf dest=/etc/supervisor/conf.d/certifier.conf
+  - name: Change directory for supervisor
+    replace: dest=/etc/supervisor/conf.d/certifier.conf regexp='ubuntu' replace='vagrant'
+  - name: Make sure supervisor is running
+    service: name=supervisor state=restarted
+  - name: Make sure certifier is running
+    supervisorctl: name=certifier state=restarted

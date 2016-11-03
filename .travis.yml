@@ -1,0 +1,27 @@
+---
+#
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+language: python
+python:
+  - "2.7"
+  - "3.5"
+
+# command to install dependencies
+install: "pip install -r common/requirements.txt"
+
+# if we don't need sudo we can run in containers
+sudo: false
+
+# test common
+script: nosetests --where common ccm.common
+
+notifications:
+  slack:
+  # this blob is the Slack token encrypted by Travis
+    secure: TIM52fFFALnp1ETlhmG3VAJkCGx7HSKos/xDkH/cpJr8TjK1QuynF8elH+jepnp+a0ja/b+Eop7b9nshO7U1a2QYXBTDzRjM76FW6g1uv8CQ2iw2fFPQpx2AZpZUTYQ1KJ5cc1Ipiqbeu4hjMBZQmJ7EeIpqaSDukwjO8cqPfQnL+00che2Le3Wz7RVDG0DPZdyqooboHwUGpDnNROIraEYJ+mA0eFVevV1rLsw1UECQDKzPNHNZSu/an2X6MeUUf5RInPbBLy6gpRxQkoBBj/zC3JcdulML1iRZ+dzsPPAlOlS6WighBfEFByXD6VGOxMxdOeTGiAofMsHUlpezM6X4xWiATx5gjnanAqse+DzdnILdglyzx/LcQ6u49UCAfbhehwUMcpGHmCRyv72sEST1qDEdZq3RGMphYgUURYB3IFPDo+8Vo6MxrNgTfbU3n0njWA1N2BMsYKBf+atRfb1osp1tl8bD8bgaNmT9OGtdYnRly4vzI5SWamiOo4mr0MOjr434KEbHov6qH6K9wulsGuXQkdGajSiHlT+4zDr5oUatGjRfwcMQF8IMQf5+mDcmCRaUVIB+EckBhdOSUwkothyXrwqFHWaK0hTYOQHWo3dla6Owbb6qkdt4WavPAiEmoeOE7wkVX6CPcR5kyeH3BqESLZBaGD1IBOAnvU0=

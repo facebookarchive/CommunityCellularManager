@@ -1,0 +1,239 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+{% if network.name %}
+{% tmpl_const "SITENAME" %} | "{{ network.name }}"
+{% else %}
+{% tmpl_const "SITENAME" %} | Network
+{% endif %}
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class='modal fade' id='billing-tier-info-modal'>
+  <div class='modal-dialog'>
+    <div class='modal-content'>
+      <div class='modal-header'>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class='modal-title'>
+          Billing Tiers
+        </h4>
+      </div>
+      <div class='modal-body'>
+        <p>
+        Billing tiers are broken down by whether the traffic is entirely within the network
+        or off the network, and whether the subscriber is initiating or receiving the SMS or call.
+        <ul>
+          <li>
+          <strong>On-Network Sending Traffic Prices</strong>:
+          Subscriber A on your network calls Subscriber B, who is also on your network.
+          The prices in this tier are for the sender, Subscriber A.
+          </li>
+          <li>
+          <strong>Off-Network Sending Traffic Prices</strong>:
+          Subscriber A on your network sends a message to someone not on your network.
+          These are the prices for the sender, Subscriber A.
+          These prices are where you as the operator will incur the most fees.
+          Accordingly, the cost four your subscribers should be higher.
+          </li>
+          <li>
+          <strong>On-Network Receiving Traffic Prices</strong>:
+          Subscriber A on your network sends a message to Subscriber B, who is also on your network.
+          The prices in this tier are for the recipient, Subscriber B.
+          </li>
+          <li>
+          <strong>Off-Network Receiving Traffic Prices</strong>:
+          Subscriber A on your network receives a message from someone not on your network.
+          These are the prices for the recipient, Subscriber A.
+          </li>
+        </ul>
+        </p>
+
+        <p>
+        In each billing tier, you will see two prices each for two services.
+        One price is the amount you charge your subscribers
+        per SMS sent or per minute of a call.
+        The cost to your subscribers can be modified by you on this page.
+        The second price you will see is the cost to you, the operator,
+        that {% tmpl_const "SITENAME" %} charges based on activity from your subscribers.
+        Off-network outbound traffic is the most expensive,
+        and the costs will vary greatly based on the country being contacted.
+        </p>
+
+        <p>
+        Here is an example cost scenario for you and a subscriber.
+        If a subscriber on your network makes a call to
+        {{ example.country_name }},
+        the costs will come from {{ example.country_name }}'s
+        billing tier: "{{ example.billing_tier_name }}".
+        That means, based on your current price settings for calls to this tier:
+        <ul>
+          <li>
+            your subscriber will be charged {{ example.cost_to_subscriber_per_min }}
+            {{ subscriber_currency }} per minute of the call
+          </li>
+          <li>
+            {% tmpl_const "SITENAME" %} will charge you ${{ example.cost_to_operator_per_min }}
+            per minute of this call
+          </li>
+        </ul>
+        </p>
+
+        <p class='billing-tier-traffic-enable-or-disable'>
+        If you find it is too expensive to connect a certain tier of countries,
+        you may completely disable outbound service to those countries with the
+        checkboxes below.  Inbound traffic will contine to function as normal
+        even if outbound traffic is disabled.
+        </p>
+
+        <p>
+        Please contact support if you have any questions
+        regarding billing, connectivity or the cost of services for you and your subscribers.
+        </p>
+      </div> <!-- /.modal-body -->
+    </div> <!-- /.modal-content -->
+  </div> <!-- /.modal-dialog -->
+</div> <!-- /.billing-tier-info-modal -->
+
+
+{% include "dashboard/network_detail/header.html" with network=network %}
+
+
+<div class = 'row'>
+  {% include "dashboard/network_detail/nav.html" with active_tab='prices'%}
+
+  {# We create this inner col so the left-nav retains some offset from the content. #}
+  <div class='col-xs-12 col-offset-sm-2 col-sm-10'>
+    <div class='col-xs-12'>
+      {% for message in messages %}
+      <div class='alert alert-danger message'>{{ message }}</div>
+      {% endfor %}
+    </div>
+    <div id='billing-tiers-info-paragraph' class='col-md-10'>
+      <strong>Billing Tiers</strong>
+      <p>
+      This page allows you to set the prices your subscribers will pay
+      as they use voice and SMS services.
+      It also shows the costs you, the operator, will incur as you run the network.
+      </p>
+      <p>
+      Prices are based on whether an SMS or call was made,
+      whether the activity took place entirely within your network,
+      and whether your subscriber sent or received the SMS or call.
+      For calls and SMS that were initiated by your subscriber and leave your network,
+      the cost is dependent on which country is being contacted.
+      The differences in countries are captured in
+      the four "sending out of network" tiers listed below.
+      </p>
+
+      <a href='#' data-toggle='modal' data-target='#billing-tier-info-modal'>
+        (show more)
+      </a>
+    </div>
+
+    {% for billing_tier in billing_tiers %}
+      <div class="col-md-10">
+        <div class="panel panel-default">
+          <div class="panel-heading" id='billing-tier-section-{{ billing_tier.id }}'>
+            <strong>{{ billing_tier.name }} Prices</strong>
+          </div>
+
+          <div class='panel-body'>
+            {% if network_version == None and billing_tier.directionality == 'off_network_send' %}
+            <div class='alert alert-warning'>
+              Warning!  Your towers are running old software
+              that cannot fully process billing tier settings.
+              All out-of-network calls and SMS made by your subscribers
+              will use the Tier A prices below, no matter what country is contacted.
+              Please contact <code>support@endaga.com</code> if you have questions
+              or would like to upgrade your towers.
+            </div>
+            {% endif %}
+
+            <p>{{ billing_tier.note }}</p>
+
+            <span class='col-xs-12 col-lg-offset-2 col-lg-8'>
+              <form action='/dashboard/network/prices' method='post'>
+                <input type='hidden' name='tier_id' value='{{ billing_tier.id }}' />
+                {% csrf_token %}
+                <table class='table table-condensed price-table'>
+                  <tbody>
+                    <tr>
+                      <td></td>
+                      <td class='td-label'>Cost to Subscribers ({{ currency.code }})</td>
+                      <td class='td-label'>Cost to You (USD)</td>
+                    </tr>
+                    <tr>
+                      <td class='td-label'>Cost per minute</td>
+                      <td><input type='text' class='form-control' name='cost_to_subscriber_per_min'
+                                value='{% currency billing_tier.cost_to_subscriber_per_min amount_only=True %}' /></td>
+                      <td><input type='text' class='form-control' value='{% currency billing_tier.cost_to_operator_per_min unit='USD' %}' disabled=true /></td>
+                    </tr>
+                    <tr>
+                      <td class='td-label'>Cost per SMS</td>
+                      <td><input type='text' class='form-control currency' name='cost_to_subscriber_per_sms'
+                        value='{% currency billing_tier.cost_to_subscriber_per_sms amount_only=True %}' /></td>
+                      <td><input type='text' class='form-control' value='{% currency billing_tier.cost_to_operator_per_sms unit='USD' %}' disabled=true /></td>
+                    </tr>
+                    <tr>
+                      <td></td>
+                      <td></td>
+                      <td class='td-button'><button class='btn btn-primary'>Save</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </form>
+            </span>
+
+            <span class='clearfix'></span>
+
+            {% if billing_tier.countries_in_tier %}
+              <div id='countries-in-tier-{{ billing_tier.id }}'>
+                <span class='countries-in-tier-button'>
+                  Countries in this billing tier (click to show / hide)
+                </span>
+                <div class='clear'></div>
+                <span class='countries-in-tier'>
+                  {{ billing_tier.countries_in_tier }}
+                </span>
+              </div>  <!-- /#countries-in-tier -->
+            {% endif %}
+
+          </div>  <!-- /.panel-body -->
+        </div>  <!-- /.panel -->
+      </div>  <!-- /.col-md-10 -->
+    {% endfor %}
+
+  </div>  <!-- /.col-sm-10 -->
+</div>  <!-- /.row -->
+
+
+{% endblock %}
+
+
+{% block js %}
+<script>
+$(function() {
+  // Setup the handler to show/hide countries in billing tiers.
+  $('.countries-in-tier-button').click(function() {
+    $(this).siblings('.countries-in-tier').fadeToggle(300);
+  });
+});
+</script>
+{% endblock %}

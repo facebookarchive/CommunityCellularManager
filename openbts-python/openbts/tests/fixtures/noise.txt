@@ -1,0 +1,4 @@
+noise RSSI is -72 dB wrt full scale
+MS RSSI target is -55 dB wrt full scale
+INFO: the current noise level is acceptable.
+

@@ -1,0 +1,20 @@
+<extension name="setup_destination" continue="true">
+  <!-- need to enforce that it's a number to avoid potential injection through curl -->
+  <!-- seeing if it's an in-endaga call -->
+  <condition field="destination_number" expression="^\d+$">
+    <!-- get the hostname of the callee -->
+    <action application="curl" data='https://api-int.etagecom.io/internal/api/v1/number/?number=${destination_number}&format=json' inline="true"/>
+    <action application="set" data="newhost=${system echo '${curl_response_data}' | jq -r '.hostname' | tr -d '\n'}" inline="true"/>
+    <action application="set" data="curl_response_data=" inline="true"/>
+  </condition>
+</extension>
+
+<extension name="setup_caller_id" continue="true">
+  <!-- need to enforce that it's a number to avoid potential injection through curl -->
+  <condition field="caller_id_name" expression="^\d+$">
+    <!-- get the type of the caller's number -->
+    <action application="curl" data='https://api-int.etagecom.io/internal/api/v1/number/?number=${caller_id_name}&format=json' inline="true"/>
+    <action application="set" data="number_source=${system echo '${curl_response_data}' | jq -r '.source' | tr -d '\n'}" inline="true"/>
+    <action application="set" data="curl_response_data=" inline="true"/>
+  </condition>
+</extension>

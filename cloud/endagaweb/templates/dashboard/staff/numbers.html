@@ -1,0 +1,72 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+
+
+{% block title %}
+{% tmpl_const "SITENAME" %} staff | numbers
+{% endblock %}
+
+
+{% block content %}
+
+<div class="row">
+  <div class="col-xs-12 page-header">
+    <h3>All Numbers!
+      <small>(staff-only)</small>
+    </h3>
+  </div>
+</div> <!-- /.row -->
+
+<div class="row">
+  <div class="col-xs-12 col-md-10">
+    {% render_table number_table %}
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block js %}
+
+<script>
+$(function() {
+  $('.release-number-link').click(function(event) {
+    event.preventDefault();
+    var self = this;
+    var data = {
+      state: 'released',
+      csrfmiddlewaretoken: '{{ csrf_token }}',
+    };
+    var url = '/api/v2/numbers/' + this.id;
+    $.ajax({
+      url: url,
+      type: 'POST',
+      data: data,
+      success: function() {
+        $(self).parent().parent('tr').css({
+          'color': '#B31705',
+          'text-decoration': 'line-through',
+        });
+        $(self).parent().html('release');
+      },
+      error: function(response) {
+        console.log('error releasing number:');
+        console.log(response);
+      },
+    });
+  });
+});
+</script>
+
+{% endblock %}

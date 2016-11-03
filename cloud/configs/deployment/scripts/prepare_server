@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+error_exit() {
+    local message=$1
+
+    echo "[FATAL] $message" 1>&2
+    exit 1
+}
+
+
+# Install the application
+sudo dpkg -i /var/opt/endagaweb_all.deb
+
+if [ $? != 0 ]; then
+    error_exit "Couldn't deploy package."
+fi
+
+# Get the environment this instance is deploying into
+# CodeDeploy may not have applied tags when we get here, so we just figure out what autoscaling group we're part of and get the tags that will eventually be applied.
+ASGROUP=`aws autoscaling describe-auto-scaling-instances --instance-ids $(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id) --region ap-northeast-1 --output=text | cut -f 2`
+DEPLOY_ENV=`aws autoscaling describe-tags --filters Name="auto-scaling-group",Values=$ASGROUP Name=Key,Values=environment --region ap-northeast-1 --output=text | cut -f6`
+
+if [ $? != 0 ]; then
+    error_exit "Couldn't get deployment environment."
+fi
+
+# Copy specified envdir from S3
+sudo aws s3 cp s3://endagaweb-deployment/environments/$DEPLOY_ENV /var/opt/endagaweb-envdir --region ap-northeast-1 --recursive
+
+if [ $? != 0 ]; then
+    error_exit "Couldn't pull settings for environment $DEPLOY_ENV."
+fi
+
+# Copy private keys from S3
+#sudo aws s3 cp s3://endagaweb-deployment/endaga.key /etc/nginx/ssl/ --region ap-northeast-1
+
+#if [ $? != 0 ]; then
+#    error_exit "Couldn't pull SSL key."
+#fi
+

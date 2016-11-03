@@ -1,0 +1,231 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+
+
+{% block title %}
+{% tmpl_const "SITENAME" %} staff | margin analysis
+{% endblock %}
+
+
+{% block pagestyle %}
+<style>
+  .table, .table > thead > tr > th {
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  #price-stats {
+    margin-top: 30px;
+    margin-bottom: 30px;
+  }
+
+  #how-this-works {
+    margin-top: 10px;
+  }
+
+  input {
+    width: 70px;
+    margin-top: -2px;
+    text-align: center;
+  }
+
+  .proposed-cost-lower {
+    background-color: #F2BAAE;
+  }
+  .proposed-cost-higher {
+    background-color: #AEF2BC;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class='modal fade' id='how-this-works-modal'>
+  <div class='modal-dialog'>
+    <div class='modal-content'>
+      <div class='modal-body'>
+        <p>
+        Analyze margins for our operators and for {% tmpl_const "SITENAME" %} itself:
+        <ul>
+          <li>select a network</li>
+          <li>
+            propose some new billing tier costs in the table inputs
+            (the actual costs are shown in parens)
+            -- all costs are in millicents
+          </li>
+          <li>save the new hypothetical prices via the button at the bottom</li>
+          <li>
+            the "margin" column will show the hypothetical margin per SMS or minute of a call
+            based on the proposed costs
+          </li>
+          <li>
+            remember that the operator's margin = subscriber cost - operator cost
+            and endaga's margin = endaga cost - operator cost
+          </li>
+          <li>
+            the "#" column will show the number of each activity type we've had to date
+            (in units of minutes of calls and number of SMS)
+          </li>
+          <li>
+            then those columns are multiplied together to show the total (hypothetical) profit
+            made by the operator and {% tmpl_const "SITENAME" %} to date if the proposed prices were in place
+          </li>
+        </ul>
+        </p>
+      </div> <!-- /.modal-body -->
+    </div> <!-- /.modal-content -->
+  </div> <!-- /.modal-dialog -->
+</div> <!-- /#how-this-works-modal -->
+
+<div class="row">
+  <div class="col-xs-12 page-header">
+    <h3>Margin Analysis!
+      <small>(staff-only)</small>
+    </h3>
+  </div>
+</div> <!-- /.row -->
+
+
+<div class="row">
+  <div class="col-xs-12 col-md-3">
+    {% crispy select_network_form %}
+  </div>
+
+  {% if network %}
+  <div class="col-xs-12 col-md-offset-1 col-md-6">
+    <strong>Basics:</strong>
+    <ul>
+      <li>Network Name: {{ network.name }}</li>
+      <li>Associated Profile: {{ network.user_profile.user.email }}</li>
+      <li>Subscribers: {{ subscriber_count }}</li>
+      <li>Numbers: {{ number_count }}</li>
+      <li>Created: {{ user_profile.date | date:'d M Y' }} ({{ user_profile.date | naturaltime }})</li>
+    </ul>
+  </div>
+  {% endif %}
+</div>  <!-- /.row -->
+
+
+<div class="row">
+  <div class='col-xs-12' id='how-this-works'>
+    <a href='#' data-toggle='modal' data-target='#how-this-works-modal'>
+      (how this works)
+    </a>
+  </div>
+</div>  <!-- /.row -->
+
+
+{% if network %}
+<div class='row' id='price-stats'>
+  <div class='col-xs-10'>
+    <form action='/dashboard/staff/margin-analysis' method='post'>
+      <input type='hidden' name='network' value='{{ network.id }}' />
+      {% csrf_token %}
+      <table class='table table-bordered'>
+        <thead>
+          <tr class='head'>
+            <th rowspan='2'>tier</th>
+            <th rowspan='2'>type</th>
+            <th colspan='3'>proposed costs (actual)</th>
+            <th colspan='2'>margin</th>
+            <th rowspan='2'>min / #</th>
+            <th colspan='2'>total profit ($)</th>
+          </tr>
+          <tr>
+            <th>subscriber</th>
+            <th>operator</th>
+            <th>{% tmpl_const "SITENAME" %}</th>
+            <th>operator</th>
+            <th>{% tmpl_const "SITENAME" %}</th>
+            <th>operator</th>
+            <th>{% tmpl_const "SITENAME" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in prices %}
+          <tr>
+            <td>{{ row.tier }}</td>
+            <td>{{ row.traffic_type }}</td>
+            <td
+              {% if row.proposed_sub_cost > row.actual_sub_cost %}
+              class='proposed-cost-higher'>
+              <input class='proposed-cost-higher'
+              {% elif row.proposed_sub_cost < row.actual_sub_cost %}
+              class='proposed-cost-lower'>
+              <input class='proposed-cost-lower'
+              {% else %}
+              >
+              <input
+              {% endif %}
+              type='text' name='{{ row.traffic_type}}_{{ row.tier|slugify }}_proposed_sub_cost' value='{{ row.proposed_sub_cost }}' />
+              ({{ row.actual_sub_cost }})
+            </td>
+            <td
+              {% if row.proposed_op_cost > row.actual_op_cost %}
+              class = 'proposed-cost-higher'>
+              <input class='proposed-cost-higher'
+              {% elif row.proposed_op_cost < row.actual_op_cost %}
+              class = 'proposed-cost-lower'>
+              <input class='proposed-cost-lower'
+              {% else %}
+              >
+              <input
+              {% endif %}
+              type='text' name='{{ row.traffic_type }}_{{ row.tier|slugify }}_proposed_op_cost' value='{{ row.proposed_op_cost }}' />
+              ({{ row.actual_op_cost }})
+            </td>
+            <td
+              {% if row.proposed_e_cost > row.actual_e_cost %}
+              class = 'proposed-cost-higher'>
+              <input class='proposed-cost-higher'
+              {% elif row.proposed_e_cost < row.actual_e_cost %}
+              class = 'proposed-cost-lower'>
+              <input class='proposed-cost-lower'
+              {% else %}
+              >
+              <input
+              {% endif %}
+              type='text' name='{{ row.traffic_type }}_{{ row.tier|slugify }}_proposed_e_cost' value='{{ row.proposed_e_cost }}' />
+              ({{ row.actual_e_cost }})
+            </td>
+            <td>{{ row.op_margin }}</td>
+            <td>{{ row.e_margin }}</td>
+            <td>{{ row.occurrences }} </td>
+            <td>{{ row.total_op_profit|floatformat:2 }}</td>
+            <td>{{ row.total_e_profit|floatformat:2 }}</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td>grand total</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ grand_total_op_profit|floatformat:2 }}</td>
+            <td>{{ grand_total_e_profit|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <button class='btn btn-primary'>Save Hypothetical Prices</button>
+    </form>
+  </div>  <!-- /.col-xs-12 -->
+</div>  <!-- /.row -->
+{% endif %}
+
+
+{% endblock %}

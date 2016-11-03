@@ -1,0 +1,140 @@
+#!/usr/bin/python
+
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+import json
+import sys
+import select
+
+from ccm.common import logger
+from core.config_database import ConfigDB
+
+# configs
+LOG_FILE = '/var/log/endaga'
+poll_period = 0.75 # the number of seconds between polling for new messages
+max_at_once = 30 # max nbr of messages that are processed within one batch
+
+
+# globals
+logfd = "" # "define" global var that the app code needs
+conf_log_levels = {'logger.global.log_level': 'WARNING'}
+
+def onInit():
+    """ Open our files, and make our connections.
+    """
+    global LOG_FILE
+    global logfd, conf_log_levels
+    logfd = open(LOG_FILE, "a")
+    try:
+        conf = ConfigDB()
+        conf_log_levels.update(conf.substring_search('log_level'))
+    except Exception as e:
+        logger.error('logger failed to get configuration: %s' % e)
+
+def onReceive(lines):
+    """Process incoming log entries from the stdin buffer. We can receive
+       multiple messages at once, but we only report entries whose severity
+       exceeds the reporting level for the program that generated the entry.
+    """
+
+    log_entries = []
+    for line in lines:
+        try:
+            data = json.loads(line.strip())
+        except Exception as e:
+            logger.error('%s: %s' % (e, line))
+
+        entry = {
+            'program_name': data['program_name'].lower(),
+            'severity': int(data['severity']),
+            'msg': data['msg'].strip() \
+                if data['msg'] else data['msg_orig'].strip(),
+            'source_info': data['file'].strip(),
+            'timestamp': data['timestamp']
+        }
+
+        # The reporting policy for this program
+        program_trigger_log_level = conf_log_levels.get(
+                'logger.%s.log_level' % entry['program_name'],
+            conf_log_levels['logger.global.log_level'])
+        program_trigger_severity = \
+                logger.LOG_LEVELS.index(program_trigger_log_level)
+
+        # Will we report it?
+        if entry['severity'] <= program_trigger_severity:
+            log_entries.append(entry)
+
+    # Record reportable entries to file for forwarding
+    write_to_file(log_entries)
+
+def onExit():
+    """ Do everything that is needed to finish processing (e.g.
+        close files, handles, disconnect from systems...). This is
+        being called immediately before exiting.
+    """
+    global logfd
+    logfd.close()
+
+def write_to_file(log_entries):
+    global logfd
+    for entry in log_entries:
+        if entry['source_info']:
+          entry['msg'] = "(%s): %s" % (entry['source_info'], entry['msg'])
+        log_entry = \
+            "%(timestamp)s [%(severity)s] %(program_name)s: %(msg)s\n" % \
+            {
+                 'timestamp': entry['timestamp'],
+                 'severity': logger.LOG_LEVELS[entry['severity']],
+                 'program_name': entry['program_name'],
+                 'msg': entry['msg']
+            }
+        logfd.write(log_entry)
+    logfd.flush()
+
+"""
+-------------------------------------------------------
+This is plumbing that DOES NOT need to be CHANGED
+-------------------------------------------------------
+Implementor's note: Python seems to very agressively
+buffer stdouot. The end result was that rsyslog does not
+receive the script's messages in a timely manner (sometimes
+even never, probably due to races). To prevent this, we
+flush stdout after we have done processing. This is especially
+important once we get to the point where the plugin does
+two-way conversations with rsyslog. Do NOT change this!
+See also: https://github.com/rsyslog/rsyslog/issues/22
+"""
+if __name__ == "__main__":
+    onInit()
+    keepRunning = True
+    while keepRunning:
+        while sys.stdin in select.select([sys.stdin], [], [], poll_period)[0]:
+            msgs = []
+            msgsInBatch = 0
+            while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                line = sys.stdin.readline().strip()
+                if line:
+                    msgs.append(line)
+                    msgsInBatch = msgsInBatch + 1
+                else: # an empty line means stdin has been closed
+                    keepRunning = False
+                if not keepRunning or msgsInBatch >= max_at_once:
+                    break;
+            if len(msgs) > 0:
+                onReceive(msgs)
+                # Python buffers far too much!
+                try:
+                  sys.stdout.flush()
+                except IOError as e:
+                  # this sometimes will fail, known bug in python
+                  # http://bugs.python.org/issue11851
+                  logger.critical("IOError: %s" % e)
+                  raise
+            if not keepRunning:
+                break
+    onExit()

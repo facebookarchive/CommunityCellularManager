@@ -1,0 +1,13 @@
+# use extended glob syntax (https://www.selenic.com/mercurial/hgignore.5.html)
+syntax: glob
+cloud/terraform/aws_keys.tfvars
+cloud/terraform/ssl/STAR.etagecom.io.key.pem
+cloud/terraform/*.tfstate.backup
+client/fbonly/experiment/maitai/buck-out
+client/fbonly/experiment/maitai/.buckd
+fbonly/apps/envelope/client/envelope_client
+fbonly/apps/envelope/client/envelope_send
+fbonly/apps/envelope/server/envelope_server
+fbonly/apps/envelope/**/Makefile
+fbonly/apps/envelope/**/config*
+**ansible/**.retry

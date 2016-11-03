@@ -1,0 +1,8 @@
+== GSM ==
+SDCCH load/available: 2/4
+TCH/F load/available: 1/3
+PCH load: active, total: 3, 7
+AGCH load: active, pending: 5, 9
+== GPRS ==
+current PDCHs: 4
+utilization: 41%

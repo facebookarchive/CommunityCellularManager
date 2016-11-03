@@ -1,0 +1,100 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+
+
+{% block title %}
+{% tmpl_const "SITENAME" %} staff | towers
+{% endblock %}
+
+
+{% block pagestyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+
+<style>
+  #map {
+    height: 400px;
+    margin-bottom: 40px;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="row">
+  <div class="col-xs-12 page-header">
+    <h3>All Towers!
+      <small>(staff-only)</small>
+    </h3>
+  </div>
+</div> <!-- /.row -->
+
+<div class="row">
+  <div class="col-xs-12 col-md-10">
+    {% render_table tower_table %}
+  </div>
+</div>
+
+<div class="row">
+  <div class ='col-xs-12 col-md-6'>
+    <h4>All towers on all networks:</h4>
+    <div id='map'></div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block js %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+  <script>
+    $(function() {
+      {% if towers %}
+      // Show the main map of all towers.
+      var map = L.map('map').setView([51.505, -0.09], 13);
+      L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      L.control.scale().addTo(map);
+      var iconColorStatusMap = {
+        'no-data': 'gray',
+        'inactive': 'red',
+        'active': 'green',
+      }
+      var towerMarkers = [];
+      {% for tower in towers %}
+      var markerIcon = L.AwesomeMarkers.icon({
+        prefix: 'fa',
+        icon: 'signal',
+        markerColor: iconColorStatusMap['{{ tower.status }}'],
+      });
+      var marker = L.marker([{{ tower.latitude }}, {{ tower.longitude }}], {icon: markerIcon}).addTo(map);
+      {# Build the marker popup html. #}
+      var markerPopupHTML = '<b>Tower ID</b>: {{ tower.uuid|slice:"5" }}..';
+      {% if tower.nickname %}
+      markerPopupHTML += '<br /><b>Name</b>: {{ tower.nickname }}';
+      {% endif %}
+      markerPopupHTML += '<br /><b>Profile</b>: {{ tower.user_email }}';
+      markerPopupHTML += '<br /><b>Status</b>: {{ tower.get_status_display }}';
+      marker.bindPopup(markerPopupHTML);
+      towerMarkers.push(marker);
+      {% endfor %}
+      var markerGroup = new L.featureGroup(towerMarkers);
+      map.fitBounds(markerGroup.getBounds());
+      {% endif %} {# /ends "if towers" check #}
+    });
+  </script>
+{% endblock %}

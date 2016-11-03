@@ -1,0 +1,258 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+
+
+{% block title %}
+{% tmpl_const "SITENAME" %} | towers
+{% endblock %}
+
+
+{% block pagestyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+<link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" />
+
+<style>
+  #map, #add-tower-map {
+    height: 400px;
+  }
+
+  #messages-container {
+    margin-top: 20px;
+  }
+
+  .awesome-marker, .awesome-marker-shadow {
+    -webkit-transition: margin 0.2s;
+       -moz-transition: margin 0.2s;
+         -o-transition: margin 0.2s;
+            transition: margin 0.2s;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class='modal fade' id='add-tower-modal'>
+  <div class='modal-dialog'>
+    <div class='modal-content'>
+      <div class='modal-header'>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class='modal-title'>
+          Add a new Tower
+          <i class='fa fa-signal'></i>
+        </h4>
+      </div>
+      <div class='modal-body'>
+        <form id='add-tower-form'>
+          <div class='form-group'>
+            <label for='uuid-input' class='control-label requiredField'>
+              Tower ID
+              <span class='asteriskField'>*</span>
+            </label>
+            <div class='controls'>
+              <input class='textinput textInput form-control' id='uuid-input'
+                     name='uuid' placeholder='ab1cd2ef-a3bc-4def-a5nb-c6de7fa8bc9d'
+                     type='text'>
+            </div>
+          </div><!-- /.form-group -->
+          <div class='form-group'>
+            <label for='nickname-input' class='control-label'>
+              Name
+            </label>
+            <div class='controls'>
+              <input class='textinput textInput form-control' id='nickname-input'
+                     name='nickname' placeholder='{{ suggested_nickname }}'
+                     value='{{ suggested_nickname }}'
+                     type='text'>
+            </div>
+          </div><!-- /.form-group -->
+          <div class='form-group'>
+            <label for='location-input' class='control-label'>
+              Tower location (click and drag the marker)
+            </label>
+            <div class='controls'>
+              <div id='add-tower-map'></div>
+            </div>
+          </div><!-- /.form-group -->
+        </form>
+      </div> <!-- /.modal-body -->
+      <div class='modal-footer'>
+        <button type='button' class='btn btn-default' data-dismiss='modal'>Cancel</button>
+        <button class='btn btn-primary' type='button' id='add-tower-submit'>
+          Add Tower
+        </button>
+        <div id='messages-container'></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row">
+  <div class="col-xs-12 page-header">
+    <h3>Towers
+      <a href='#' data-toggle='modal' data-target='#add-tower-modal'>
+        <small>(add a new tower)</small>
+      </a>
+    </h3>
+  </div>
+</div> <!-- /.row -->
+
+{% if towers %}
+<div class="row">
+  <div class="col-xs-12 col-md-6">
+    {% render_table tower_table %}
+  </div>
+
+  <div class ='col-xs-12 col-md-6'>
+    <div id='map'></div>
+  </div>
+</div>
+{% else %}
+<p>There are currently no base stations associated with this network.</p>
+{% endif %}
+
+{% endblock %}
+
+
+{% block js %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+  <script src="https://homes.cs.washington.edu/~kheimerl/ccm/leaflet-animated-draggable-marker.js"></script>
+  <script>
+    /* Init the addTowerMap here in case the add-tower-modal is opened and closed repeatedly.
+       Grab a reference to the addTowerMarker too so we can get its lat/lon.
+    */
+    var addTowerMap, addTowerMarker;
+
+    $(function() {
+      {% if towers %}
+      // Show the main map of all towers.
+      var map = L.map('map').setView([51.505, -0.09], 13);
+      L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      L.control.scale().addTo(map);
+      var iconColorStatusMap = {
+        'no-data': 'gray',
+        'inactive': 'red',
+        'active': 'green',
+      }
+      var towerMarkers = [];
+      {% for tower in towers %}
+      var markerIcon = L.AwesomeMarkers.icon({
+        prefix: 'fa',
+        icon: 'signal',
+        markerColor: iconColorStatusMap['{{ tower.status }}'],
+      });
+      var marker = L.marker([{{ tower.latitude }}, {{ tower.longitude }}], {icon: markerIcon}).addTo(map);
+      {# Build the marker popup html. #}
+      var towerInfoLink = '/dashboard/towers/{{ tower.uuid }}';
+      var markerPopupHTML = '<b>Tower ID</b>: <a href="' + towerInfoLink + '">{{ tower.uuid|slice:"5" }}..</a>';
+      {% if tower.nickname %}
+      markerPopupHTML += '<br /><b>Name</b>: {{ tower.nickname }}';
+      {% endif %}
+      markerPopupHTML += '<br /><b>Status</b>: {{ tower.get_status_display }}';
+      marker.bindPopup(markerPopupHTML);
+      towerMarkers.push(marker);
+      {% endfor %}
+      var markerGroup = new L.featureGroup(towerMarkers);
+      map.fitBounds(markerGroup.getBounds().pad(0.5));
+      {% endif %} {# /ends "if towers" check #}
+
+      /* When the add-tower modal is clicked, focus on the UUID input
+         and build the map for the tower location input.
+      */
+      $('#add-tower-modal').on('shown.bs.modal', function() {
+        $('#uuid-input').focus();
+        if (addTowerMap == null) {
+          addTowerMap = L.map('add-tower-map').setView([37.872059, -122.257823], 10);
+          L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          }).addTo(addTowerMap);
+          L.control.scale().addTo(addTowerMap);
+          var markerIcon = L.AwesomeMarkers.icon({
+            prefix: 'fa',
+            icon: 'signal',
+            markerColor: 'blue',
+          });
+          var markerOptions = {
+            icon: markerIcon,
+            draggable: true,
+          };
+          addTowerMarker = L.marker([37.872059, -122.257823], markerOptions)
+            .animateDragging()
+            .addTo(addTowerMap);
+        }
+      });
+
+      // Handle clicks on the add-tower submit button.
+      $('#add-tower-submit').click(function() {
+        submitAddTowerData();
+      });
+
+      // Handle <enter> keypress on add-tower inputs.
+      $('input, #add-tower-map').keypress(function(e) {
+        if (e.keyCode == 13) {
+          e.preventDefault();
+          submitAddTowerData();
+        }
+      });
+    });
+
+    // POST the tower data to add a new tower.
+    function submitAddTowerData() {
+      var addTowerMarkerPosition = addTowerMarker.getLatLng();
+      var data = {
+        uuid: $('#uuid-input').val(),
+        nickname: $('#nickname-input').val(),
+        latitude: addTowerMarkerPosition.lat,
+        longitude: addTowerMarkerPosition.lng,
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+      };
+      $.post('/dashboard/towers', data, function(response) {
+        if (response['status'] == 'ok') {
+          // Show that it was successful and then reload the page.
+          // Clear out any old messages and show the div again.
+          $('#messages-container').html();
+          $('#messages-container').css('opacity', 1);
+          var message = 'Tower added successfully.';
+          var html = '<div class="alert alert-success">' + message + '</div>';
+          $('#messages-container').html(html);
+          setTimeout(function() {
+            location.reload();
+          }, 800);
+        } else {
+          // Show the messages that were sent back.
+          // Clear out any old messages and show the div again.
+          $('#messages-container').html();
+          $('#messages-container').css('opacity', 1);
+          var html = '';
+          response['messages'].map(function(message) {
+            html += '<div class="alert alert-danger">' + message + '</div>';
+          });
+          $('#messages-container').html(html);
+          setTimeout(function() {
+            $('#messages-container').fadeTo(500, 0);
+          }, 4000);
+        }
+      });
+    }
+
+  </script>
+{% endblock %}

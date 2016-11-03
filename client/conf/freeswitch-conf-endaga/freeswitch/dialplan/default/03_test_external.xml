@@ -1,0 +1,29 @@
+
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<!-- TESTS FOR EXTERNAL CALLS -->
+<extension name="external_echo_outgoing">
+  <condition field="destination_number" expression="^2000$">
+    <action application="ring_ready"/>
+    <action application="set" data="sip_h_X-Endaga-uuid=${endaga_uuid}"/>
+    <action application="bridge" data="sofia/gateway/freeswitch-2/1000"/>
+  </condition>
+</extension>
+
+
+<extension name="external_echo_incoming">
+  <condition field="destination_number" expression="^2001$">
+    <action application="set" data='effective_caller_id_number=${vbts_callerid}'/>
+    <action application="set" data='effective_caller_id_name=${from_imsi}'/>
+    <action application="ring_ready"/>
+    <action application="set" data="sip_h_X-Endaga-uuid=${endaga_uuid}"/>
+    <action application="bridge" data="sofia/gateway/freeswitch-2/1001"/>
+  </condition>
+</extension>

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+sudo service nginx restart
+sudo service uwsgi start
+
+touch /tmp/endagaweb-reload
+
+# Get the environment this instance is deploying into
+ASGROUP=`aws autoscaling describe-auto-scaling-instances --instance-ids $(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id) --region ap-northeast-1 --output=text | cut -f 2`
+DEPLOY_ENV=`aws autoscaling describe-tags --filters Name="auto-scaling-group",Values=$ASGROUP Name=Key,Values=environment --region ap-northeast-1 --output=text | cut -f6`
+
+if [ $DEPLOY_ENV = "production" ]; then
+    sudo supervisorctl restart celery
+    sudo supervisorctl start celerystick # starts celerybeat for us
+else
+    sudo supervisorctl stop celery
+    sudo supervisorctl stop celerystick
+    sudo supervisorctl stop celerybeat
+fi

@@ -1,0 +1,30 @@
+---
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- name: Set up development pre-reqs on a local machine
+  hosts: default
+  sudo: yes
+  tasks:
+  - include: freeswitch_server.yml
+
+  - name: Add emacs, as we're goddamn adults
+    apt: pkg={{ item }} state=present
+    with_items:
+        - emacs24
+
+  - name: Update dialplan to target the local API instance
+    replace: dest=/etc/freeswitch/dialplan/bts/00_setup.xml regexp="api\.endaga\.com" replace="192.168.33.1"
+
+  - name: Update FS to register on local IP
+    replace: dest=/etc/freeswitch/sip_profiles/bts.xml regexp="172\.31\.34\.170" replace="192.168.33.11"
+
+  - name: Update FS to use the correct domain
+    replace: dest=/etc/freeswitch/directory/default.xml regexp="\$\$\{domain\}" replace="192.168.33.11"
+
+  - name: Ensure FS is running
+    service: name=freeswitch state=restarted

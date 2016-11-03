@@ -1,0 +1,35 @@
+Welcome to the OpenBSC control interface
+
+Copyright (C) 2008-2012 Harald Welte, Holger Freyther
+Contributions by Daniel Willmann, Jan Lübbe, Stefan Schmidt
+Dieter Spaar, Andreas Eversberg, Sylvain Munaut
+
+License AGPLv3+: GNU AGPL version 3 or later <http://gnu.org/licenses/agpl-3.0.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+OpenBSC>
+OpenBSC> enable
+OpenBSC# show bts 0
+BTS 0 is of sysmobts type in band DCS1800, has CI 1 LAC 3, BSIC 61 (NCC=7, BCC=5) and 1 TRX
+Description: (null)
+MS Max power: 12 dBm
+Minimum Rx Level for Access: -110 dBm
+Cell Reselection Hysteresis: 4 dBm
+RACH TX-Integer: 9
+RACH Max transmissions: 7
+Channel Description Attachment: yes
+Channel Description BS-PA-MFRMS: 5
+Channel Description BS-AG_BLKS-RES: 1
+System Information present: 0x00000000, static: 0x00000000
+  Unit ID: 1800/0/0, OML Stream ID 0xff
+  NM State: Oper 'NULL', Admin 'unknown 0x0', Avail 'Power off'
+  Site Mgr NM State: Oper 'NULL', Admin 'unknown 0x0', Avail 'Power off'
+  GPRS NSE: Oper 'NULL', Admin 'unknown 0x0', Avail 'Power off'
+  GPRS CELL: Oper 'NULL', Admin 'unknown 0x0', Avail 'Power off'
+  GPRS NSVC0: Oper 'NULL', Admin 'unknown 0x0', Avail 'Power off'
+  GPRS NSVC1: Oper 'NULL', Admin 'unknown 0x0', Avail 'Power off'
+  Paging: 0 pending requests, 20 free slots
+  OML Link state: disconnected.
+  Current Channel Load:
+OpenBSC# disable
+OpenBSC>

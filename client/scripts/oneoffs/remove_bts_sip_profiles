@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+rm -f /etc/freeswitch/sip_profiles/openbts.xml || true
+rm -f /etc/freeswitch/sip_profiles/osmocom.xml || true

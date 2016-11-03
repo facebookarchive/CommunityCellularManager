@@ -1,0 +1,186 @@
+#!/usr/bin/env python
+
+"""Copies a metapackage deb file (and its deps) from a repo to another dir.
+
+This is intended to be run on repo.endaga by the fab command
+promote_metapackage.  That command will specify a tmp dir into which these debs
+are moved.  Then 'freight add' (run by the fab command) will actually put the
+debs in the new repo.
+
+Usage:
+    copy_metapackage_and_deps <version> <from_repo> <to_dir>
+
+Arguments:
+    <version> the metapackage version we want to copy
+    <from_repo> the repo where the deb is located currently
+    <to_dir> the destination dir, probably something in /tmp
+
+Options:
+    -h, --help
+
+Example:
+    copy_metapackage_and_deps 0.4.2 test /tmp/packages/
+    copy_metapackage_and_deps 0.0.1 beta /tmp/pkgs/
+
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+"""
+
+import glob
+import os
+import shutil
+
+from deb_pkg_tools.deps import AlternativeRelationship
+from deb_pkg_tools import package
+import docopt
+
+
+# Stores package data found in a repo.  The data is a dict of dicts, keyed by
+# the repo name.  Each repo dict has a list of dicts -- each of these dicts
+# having name, version and filepath keys.
+PACKAGE_CACHE = {}
+
+
+def fill_package_cache(repo):
+    """Fills out the PACKAGE_CACHE for a specified repo."""
+    print '\nlearning about packages in %s' % repo
+    PACKAGE_CACHE[repo] = []
+    base_path = '/var/lib/freight/apt/'
+    directory = os.path.join(base_path, repo)
+    debs_filepath = os.path.join(directory, '*.deb')
+    for deb_filename in glob.iglob(debs_filepath):
+        deb_filepath = os.path.join(directory, deb_filename)
+        pkg = package.inspect_package(deb_filepath)[0]
+        # Get version info, if there is any.
+        version = None
+        if 'Version' in pkg:
+            version = pkg['Version']
+        PACKAGE_CACHE[repo].append({
+            'name': pkg['Package'],
+            'version': version,
+            'filepath': deb_filepath,
+        })
+
+
+def find_packages_in_repo(repo, packages):
+    """Finds package info, specifically filepaths, in a repo.
+
+    This will make use of the PACKAGE_CACHE.  It will call fill_package_cache
+    if necessary.
+
+    Args:
+      repo: a specific repo
+      packages: a list of dicts, each dict having a name and version key (these
+                are the packages we want to find):
+        [
+          {
+            'name': 'freeswitch',
+            'version': '0.2.0',
+          }, {
+            'name': 'liba53',
+            'version': None,
+          },
+        ]
+
+    Returns: the 'packages' dict with a new key appended, 'filepath.'  This
+             will be the absolute filepath to the package or None if the
+             package wasn't found.
+    """
+    # First check to see if the repo is in the cached package data.
+    if repo not in PACKAGE_CACHE:
+        fill_package_cache(repo)
+    # Now inspect each cached package to see if it is one of the specified
+    # packages.
+    result = []
+    for cached_package in PACKAGE_CACHE[repo]:
+        for specified_package in packages:
+            # Check the names and versions against one another.
+            if cached_package['name'] != specified_package['name']:
+                continue
+            if cached_package['version'] != specified_package['version']:
+                continue
+            result.append({
+                'name': specified_package['name'],
+                'version': specified_package['version'],
+                'filepath': cached_package['filepath'],
+            })
+    return result
+
+
+if __name__ == "__main__":
+    args = docopt.docopt(__doc__)
+
+    # Validate.
+    valid_repos = ('trusty', 'dev', 'test', 'beta', 'stable')
+    if not args['<from_repo>'] in valid_repos:
+        raise ValueError('invalid repo')
+
+    # Find the metapackage we need to promote.
+    packages = [{
+        'name': 'endaga',
+        'version': args['<version>'],
+    }]
+    found_packages = find_packages_in_repo(args['<from_repo>'], packages)
+    if not found_packages:
+        raise ValueError('metapackage not found')
+    metapackage_path = found_packages[0]['filepath']
+
+    # Starting with the metapackage, recursively find all deps that are in the
+    # "from_repo."
+    dependency_filepaths = []
+    deb_filepaths_to_process = [metapackage_path]
+    while deb_filepaths_to_process:
+        filepath = deb_filepaths_to_process.pop()
+        print '\nprocessing %s' % filepath
+        pkg = package.inspect_package(filepath)[0]
+        # We can move on if this package has no deps at all.
+        if 'Depends' not in pkg:
+            continue
+        # We need to find all the relationships in this deb -- these may be
+        # simple VersionedRelationships or deb_pkg_tools may find an
+        # AlternativeRelationship which needs to be handled differently.
+        relationships_to_process = []
+        for dependency in pkg['Depends'].relationships:
+            if type(dependency) == AlternativeRelationship:
+                for dep in dependency.relationships:
+                    relationships_to_process.append(dep)
+            else:
+                relationships_to_process.append(dependency)
+        # Now we have only VersionedRelationships to analyze.  Look for those
+        # deps in the from_repo.
+        deps = []
+        for dependency in relationships_to_process:
+            print '  listed dep: %s' % dependency.name
+            version = None
+            if 'version' in dir(dependency):
+                version = dependency.version
+            deps.append({
+                'name': dependency.name,
+                'version': version,
+            })
+        found_packages = find_packages_in_repo(args['<from_repo>'], deps)
+        print '  found packages in repo: %s' % ', '.join(
+            [p['name'] for p in found_packages])
+        # Add those to the list of found deps and to the list of packages to
+        # analyze for more deps.
+        for pkg in found_packages:
+            if pkg['filepath'] in dependency_filepaths:
+                print '  (already have %s as a dep)' % pkg['name']
+                continue
+            if pkg['filepath'] in deb_filepaths_to_process:
+                print '  (%s is already queued for analysis)' % pkg['name']
+                continue
+            dependency_filepaths.append(pkg['filepath'])
+            deb_filepaths_to_process.append(pkg['filepath'])
+
+    # Copy the metapackage and all its deps over to the to_dir.
+    base_path = '/var/lib/freight/apt/'
+    print '\n\ncopying %s to %s' % (metapackage_path, args['<to_dir>'])
+    shutil.copy2(metapackage_path, args['<to_dir>'])
+    for filepath in dependency_filepaths:
+        print 'copying dep "%s"' % filepath
+        shutil.copy2(filepath, args['<to_dir>'])

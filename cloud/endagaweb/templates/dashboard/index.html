@@ -1,0 +1,114 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+
+{% load apptags %}
+
+
+{% block title %} {% tmpl_const "SITENAME" %} | Dashboard {% endblock %}
+
+
+{% block pagestyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.13-beta/nv.d3.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.14.30/css/bootstrap-datetimepicker.min.css">
+
+<style>
+  .timezone-notice {
+    display: none;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="row">
+  <div class="col-xs-12 page-header">
+    <h3>Graphs</h3>
+  </div>
+</div>
+
+{% if network_has_activity %}
+  <div id='sms-usage-chart'></div>
+  <div id='call-usage-chart'></div>
+  <div id='data-usage-chart'></div>
+  {% include 'dashboard/timezone-notice.html' %}
+{% else %}
+  <p>There is no network activity to display.</p>
+{% endif %}
+
+{% endblock %}
+
+
+{% block js %}
+{% if network_has_activity %}
+<script>
+  $(function() {
+    setTimeout(function() {
+      $('.timezone-notice').fadeIn(500);
+    }, 800);
+  });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/react.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/JSXTransformer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.1.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.13-beta/nv.d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.14.30/js/bootstrap-datetimepicker.min.js"></script>
+
+<script type="text/jsx" src="/static/js/dashboard/chart-components.js"></script>
+<script type="text/jsx">
+  var currentTimeEpoch = {{ current_time_epoch }};
+  var timezoneOffset = {{ timezone_offset }};
+  React.render(
+    <TimeseriesChartWithButtonsAndDatePickers
+      title='SMS usage'
+      chartID='sms-chart'
+      statTypes='sms,local_sms,local_recv_sms,outside_sms,incoming_sms,free_sms'
+      levelID='{{ network_id }}'
+      aggregation='count'
+      yAxisLabel='number of SMS'
+      currentTimeEpoch={currentTimeEpoch}
+      timezoneOffset={timezoneOffset}
+      tooltipUnits=''
+    />,
+    document.getElementById('sms-usage-chart')
+  );
+  React.render(
+    <TimeseriesChartWithButtonsAndDatePickers
+      title='Call durations'
+      chartID='call-chart'
+      statTypes='call,local_call,local_recv_call,outside_call,incoming_call,free_call'
+      levelID='{{ network_id }}'
+      aggregation='duration'
+      yAxisLabel='seconds of calls'
+      currentTimeEpoch={currentTimeEpoch}
+      timezoneOffset={timezoneOffset}
+      tooltipUnits='s of'
+    />,
+    document.getElementById('call-usage-chart')
+  );
+  React.render(
+    <TimeseriesChartWithButtonsAndDatePickers
+      title='Data usage'
+      chartID='data-chart'
+      statTypes='total_data,uploaded_data,downloaded_data'
+      levelID='{{ network_id }}'
+      aggregation=''
+      yAxisLabel='MB'
+      currentTimeEpoch={currentTimeEpoch}
+      timezoneOffset={timezoneOffset}
+      tooltipUnits='MB of'
+    />,
+    document.getElementById('data-usage-chart')
+  );
+</script>
+{% endif %}
+
+{% endblock %}

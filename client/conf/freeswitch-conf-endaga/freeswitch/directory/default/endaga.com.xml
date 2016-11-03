@@ -1,0 +1,26 @@
+<!--
+    Shell provider account should work with most providers.
+
+-->
+<include>
+  <user id="freeswitch-2">
+    <gateways>
+      <gateway name="freeswitch-2">
+	<param name="username" value="endaga_user"/>
+	<param name="password" value="isfj0309rj"/>
+	<param name="from-user" value="endaga_user"/>
+	<param name="from-domain" value="172.16.36.15:5080"/>
+	<param name="proxy" value="172.16.36.15:5080"/>
+	<param name="expire-seconds" value="600"/>
+	<param name="register" value="false"/>
+	<param name="retry-seconds" value="30"/>
+	<param name="extension" value="5000"/>
+	<!--<param name="contact-params" value="domain_name=$${domain}"/>-->
+	<param name="context" value="public"/>
+      </gateway>
+    </gateways>
+    <params>
+      <param name="password" value="isfj0309rj"/>
+    </params>
+  </user>
+</include>

@@ -1,0 +1,124 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+
+{% block pagestyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.14.30/css/bootstrap-datetimepicker.min.css">
+{% endblock %}
+
+
+{% block title %} {% tmpl_const "SITENAME" %} | {{ subscriber.imsi }} Activity {% endblock %}
+
+
+{% block content %}
+{% include "dashboard/subscriber_detail/header.html" with subscriber=subscriber %}
+
+
+<div class="row">
+  {% include "dashboard/subscriber_detail/nav.html" with active_tab='activity' imsi=subscriber.imsi %}
+
+  <div class="content col-xs-12 col-sm-7">
+
+    {% if total_number_of_events %}
+    <h4>Filter</h4>
+    <form action="{% url 'subscriber-activity' imsi=subscriber.imsi %}"
+          class="form-horizontal" method="post" role="form" onsubmit="setloading()">
+
+      {% csrf_token %}
+
+      <input type="hidden" id="id_subscriber" name="imsi"
+             value="{{ subscriber.imsi }}">
+
+      <div class="form-group">
+        <label for="id_keyword" class="control-label col-xs-2">Keyword</label>
+        <div class="col-xs-10">
+          <input class="form-control" id="id_keyword" name="keyword" type="text"
+                 value="{{ keyword|default_if_none:"" }}"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="id_start_date" class="control-label col-xs-2">From</label>
+        <div class="col-xs-4">
+          <input class="form-control" id="start_date" name="start_date"
+                 type="text"
+                 {% if start_date %}
+                 value="{{ start_date }}"
+                 {% endif %}
+          />
+        </div>
+
+        <label for="id_end_date" class="control-label col-xs-2">Until</label>
+        <div class="col-xs-4">
+          <input class="form-control" id="end_date" name="end_date" type="text"
+                 {% if end_date %}
+                 value="{{ end_date }}"
+                 {% endif %}
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="control-label col-xs-2">Services</label>
+        <div class="col-xs-5">
+          {% for service in all_services %}
+            <label class="checkbox-inline">
+              <input type="checkbox" name="services[]"
+                     value="{{ service | lower }}"
+                     {% if service in checked_services %}checked{% endif %}>
+                {{ service }}
+              </input>
+            </label>
+          {% endfor %}
+        </div>
+
+        <div class="col-xs-5">
+          <button id="submit" type="submit" name="submit" value="Filter"
+                  class="btn btn-primary col-xs-12"
+                  data-loading-text="Loading...">Filter</button>
+        </div>
+      </div>
+
+    </form>
+    {% else %}
+    {% comment %} This else is the other half of 'if total_number_of_events.'
+                  We will hide everything if there is no activity to show.
+    {% endcomment %}
+    <p>This subscriber has not made any calls or sent any SMS.</p>
+    {% endif %}
+  </div>
+</div>
+
+
+{% if total_number_of_events %}
+<div class='row'>
+  <div class='content col-xs-12 col-sm-offset-2 col-sm-10'>
+    {% if number_of_filtered_events == 0 %}
+      <h4>No events matched your search.</h4>
+    {% else %}
+      {% render_table subscriber_activity_table %}
+      {% include 'dashboard/timezone-notice.html' %}
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+
+{% endblock %}
+
+
+{% block js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.14.30/js/bootstrap-datetimepicker.min.js"></script>
+<script src="/static/js/dashboard/activity.js"></script>
+{% endblock %}

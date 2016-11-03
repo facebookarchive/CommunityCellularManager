@@ -1,0 +1,158 @@
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+
+{% load apptags %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="{% tmpl_const "SITENAME" %}">
+
+    <title>
+      {% block title %}
+      {% endblock %}
+    </title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.3/css/bootstrap.min.css" type="text/css"/>
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.0.3/css/font-awesome.min.css">
+
+    <!-- Custom styles for this template -->
+    {% block pagestyle %}
+    {% endblock %}
+
+    {% if user_profile.user.is_staff %}
+    <style>
+      .navbar,
+      .nav-pills > li.active > a,
+      .nav-pills > li.active > a:hover {
+        background-color: purple;
+      }
+      .btn {
+        background-color: purple;
+        border-color: purple;
+      }
+      .btn:hover {
+        background-color: #B340B3;
+        border-color: #B340B3;
+      }
+      a {
+        color: purple;
+      }
+    </style>
+    {% endif %}
+  </head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-static-top" role="navigation">
+      <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/dashboard">{% tmpl_const "SITENAME" %}</a>
+        </div> <!-- / .navbar-header -->
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav side-nav">
+            <!-- TODO set these as active appropriately -->
+            <li><a href="/dashboard"><i class="fa fa-line-chart"></i> Graphs</a></li>
+            <li><a href="/dashboard/activity"><i class="fa fa-list-ul"></i> Activity</a></li>
+            <li><a href="/dashboard/towers"><i class="fa fa-signal"></i> Towers</a></li>
+            <li><a href="/dashboard/subscribers"><i class="fa fa-users"></i> Subscribers</a></li>
+            <li><a href="/dashboard/network"><i class="fa fa-cogs"></i> Network</a></li>
+          </ul>
+
+          <ul class="nav navbar-nav navbar-top-links navbar-right navbar-user">
+            {% comment "2015dec11(shasan): Hide balance to avoid confusion" %}
+            <li class="dropdown">
+              <a>{{ user_profile.pretty_balance }}</a>
+            </li>
+            {% endcomment %}
+            {% comment %}
+            <li class="dropdown alerts-dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-bell"></i> Alerts <span class="badge"> {{ user_profile.alerts | length }} </span>
+              {% if user_profile.alerts %}
+                <b class="caret"></b>
+              </a>
+              <ul class="dropdown-menu">
+                {% for alert in user_profile.alerts %}
+                <li><a href="{{ alert.link }}">{{ alert.title }} <span class="label label-{{ alert.label | lower }}">{{ alert.label }}</span></a></li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              </a>
+              {% endif %}
+            </li>
+            {% endcomment %}
+            {% if networks.count > 1 %}
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-list-ul"></i> {{user_profile.network.name }}</span>
+                <b class="caret"></b>
+              </a>
+              <ul class="dropdown-menu">
+                {% for network in networks.all %}
+                <li><a href="/dashboard/network/select/{{ network.pk }}">{% if network == user_profile.network %}<i class="fa fa-check"></i>&nbsp;{% endif %}{{ network.name }} </a></li>
+                {% endfor %}
+              </ul>
+              </a>
+            </li>
+            {% endif %}
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-user"></i> {{ user_profile.display_name }} <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <li><a href="/dashboard/profile"><i class="fa fa-gear"></i>&nbsp; Settings</a></li>
+                <li><a href="/dashboard/billing"><i class="fa fa-money"></i>&nbsp; Billing</a></li>
+                <li class="divider"></li>
+                {% if user_profile.user.is_staff %}
+                <li><a href="/django-admin"><i class="fa fa-key"></i>&nbsp; Django Admin</a></li>
+                <li><a href="/dashboard/staff/all-numbers"><i class="fa fa-space-shuttle"></i>&nbsp; All Numbers</a></li>
+                <li><a href="/dashboard/staff/all-towers"><i class="fa fa-building-o"></i>&nbsp; All Towers</a></li>
+                <li><a href="/dashboard/staff/margin-analysis"><i class="fa fa-euro"></i>&nbsp; Margin Analysis</a></li>
+                <li><a href="/dashboard/staff/tower-monitoring"><i class="fa fa-paper-plane-o"></i>&nbsp; Tower Monitoring</a></li>
+                <li><a href="/dashboard/staff/network-earnings"><i class="fa fa-credit-card"></i>&nbsp; Network Earnings</a></li>
+                <li class="divider"></li>
+                {% endif %}
+                <li><a href="/logout"><i class="fa fa-sign-out"></i>&nbsp; Log Out</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div> <!-- / .navbar-collapse -->
+      </div> <!-- / . container-fluid -->
+    </nav>
+
+    <div id="page-wrapper" class="container-fluid">
+      {% block content %}
+      {% endblock %}
+    </div><!-- /#page-wrapper -->
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    <script>
+      $(function() {
+        // Fade out all messages after a delay.
+        setTimeout(function() {
+          $('.alert.message').fadeOut(500);
+        }, 4000);
+      });
+    </script>
+    {% block js %}
+    {% endblock %}
+
+  </body>
+</html>

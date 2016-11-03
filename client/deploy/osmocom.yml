@@ -1,0 +1,31 @@
+---
+#
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+    - name: Add FS key
+      apt_key: url=https://files.freeswitch.org/repo/deb/freeswitch-1.6/key.gpg state=present
+    - name: Add FS repo
+      apt_repository: repo='deb http://files.freeswitch.org/repo/deb/freeswitch-1.6/ jessie main' update_cache=no mode=664
+
+    - name: Set the Endaga version preferences
+      copy: src=files/endaga-preferences dest=/etc/apt/preferences.d/endaga-preferences
+
+    - name: Set the Osmocom version preferences
+      copy: src=files/osmocom-preferences dest=/etc/apt/preferences.d/osmocom-preferences
+
+    - name: Add Osmo key
+      apt_key: url=http://download.opensuse.org/repositories/network:/osmocom:/nightly/Debian_8.0/Release.key state=present
+
+    - name: Add osmo Debian 8 repo (for osmo)
+      apt_repository: repo='deb http://download.opensuse.org/repositories/network:/osmocom:/nightly/Debian_8.0 ./' update_cache=no mode=664
+
+    - name: Add all the (third party) packages needed for operation
+      apt: pkg={{ item }} state=present update_cache=yes
+      with_items:
+          - gdebi-core
+          - ruby

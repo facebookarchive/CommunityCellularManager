@@ -1,0 +1,49 @@
+{% extends "home/layout.html" %}
+
+{#
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+#}
+
+
+{% block pagestyle %}
+<style>
+  .error-message {
+    margin-bottom: 30px;
+  }
+</style>
+{% endblock %}
+
+
+{% block headerclass %}
+<body id="server-error">
+<header class="navbar navbar-inverse normal" role="banner">
+{% endblock %}
+
+
+{% block content %}
+<div id="slider">
+  <div class="container">
+    <div class="row header">
+      <div class="col-md-12 error-message">
+        <h3>that's an error :(</h3>
+        <p>
+          Sorry, we made a mistake (500 error).
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row story">
+    <div class="col-md-12">
+      <img class="img-responsive" src="/static/img/papua.jpg" alt="Papua" />
+    </div>
+  </div>
+</div>
+{% endblock %}

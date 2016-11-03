@@ -1,0 +1,67 @@
+---
+#
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- name: Set up development pre-reqs on a local machine
+  hosts: dev
+  become: yes
+
+  tasks:
+    - name: Make sure (empty) local repo structure exists
+      become: no
+      shell: mkdir -p ~/endaga-packages/dists/localdev/main/binary-amd64/
+
+    - name: Make sure (empty) local repo Packages file exists
+      become: no
+      shell: touch ~/endaga-packages/dists/localdev/main/binary-amd64/Packages
+
+    - include: base.yml
+
+    - include: osmocom.yml
+
+    - name: Remove production Etage repo
+      apt_repository: repo='deb http://repo.etagecom.io stable main' state=absent update_cache=no
+
+    - name: Add local repo (for local development)
+      apt_repository: repo='deb file:/home/vagrant/endaga-packages localdev main' state=present update_cache=no
+
+    - name: Set the local development repo to order 30
+      shell: sudo mv /etc/apt/sources.list.d/file_home_vagrant_etagecom_packages.list /etc/apt/sources.list.d/30_file_home_vagrant_etagecom_packages.list || exit 0
+
+    - name: Set the version preferences
+      copy: src=files/endaga-preferences dest=/etc/apt/preferences.d/endaga-preferences
+
+
+    - name: Install prereqs for FPM
+      apt: pkg={{ item }} state=present update_cache=no
+      with_items:
+          - ruby-dev
+          - build-essential
+
+    - name: Setup FPM so we can build packages
+      shell: gem install fpm
+
+    - name: Setup build requirements for python packages
+      apt: pkg={{ item }} state=present update_cache=no
+      with_items:
+          - python-pip
+          - python-pybabel
+          - python-dev
+
+    - name: Setup requirements for building FS from source (needed to generate working python modules)
+      apt: pkg={{ item }} state=present update_cache=no
+      with_items:
+          - libsqlite3-dev
+          - devscripts
+          - libsmpp34-dev
+          - libesl-perl
+          - autoconf
+
+    - name: Setup requirements for building psycopg2 from source
+      apt: pkg=libpq-dev state=present update_cache=no
+

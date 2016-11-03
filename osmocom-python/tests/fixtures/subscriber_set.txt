@@ -1,0 +1,33 @@
+Welcome to the OpenBSC control interface
+
+Copyright (C) 2008-2012 Harald Welte, Holger Freyther
+Contributions by Daniel Willmann, Jan LÃ¼bbe, Stefan Schmidt
+Dieter Spaar, Andreas Eversberg, Sylvain Munaut
+
+License AGPLv3+: GNU AGPL version 3 or later <http://gnu.org/licenses/agpl-3.0.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+ÿûÿûÿþ"ÿýOpenBSC> 
+OpenBSC> enable
+OpenBSC# subscriber imsi 901550000000001 extension 5722543
+OpenBSC# disable
+OpenBSC> enable
+OpenBSC# subscriber imsi 901550000000001 name Omar
+OpenBSC# disable
+OpenBSC> enable
+OpenBSC# subscriber imsi 901550000000001 authorized 1
+OpenBSC# disable
+OpenBSC> show subscriber imsi 901550000000001
+    ID: 9, Authorized: 1
+    Name: 'Omar'
+    Extension: 5722543
+    LAC: 0/0x0
+    IMSI: 901550000000001
+    Expiration Time: Wed, 31 Dec 1969 16:00:00 -0800
+    Paging: not paging Requests: 0
+    Use count: 1
+OpenBSC> enable
+OpenBSC# subscriber imsi 901550000000111 authorized 1
+% No subscriber found for imsi 901550000000111
+OpenBSC# disable
+OpenBSC> 

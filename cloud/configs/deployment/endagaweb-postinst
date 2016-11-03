@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+# postinst for endagaweb. Sets up everything after installing application
+# package.
+
+# Remove any python deps that aren't in the requirements, and then install the requirements.
+pip freeze | grep -v -f requirements.txt - | grep -v '^#' | grep -v '^-e ' | xargs pip uninstall -y
+sudo pip install -r /var/opt/requirements.txt
+
+# We've installed new services, prep them
+sudo initctl reload-configuration
+
+# Prepare uwsgi log directory
+sudo mkdir -p /var/log/uwsgi
+sudo chmod -R g+w /var/log/uwsgi
+sudo chown -R root:www-data /var/log/uwsgi
+
+# Prepare celery log directory
+sudo mkdir -p /var/log/celery
+sudo chmod -R g+w /var/log/celery
+sudo chown -R ubuntu:www-data /var/log/celery
+
+# Remove any default nginx confs
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Set up nginx SSL permissions
+sudo chmod 600 /etc/nginx/ssl
+
+# Restart supervisor
+sudo supervisorctl update

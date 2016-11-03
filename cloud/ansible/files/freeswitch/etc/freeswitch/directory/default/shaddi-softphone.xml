@@ -1,0 +1,10 @@
+<include>
+  <user id="endaga_user">
+    <params>
+      <param name="password" value="isfj0309rj"/>
+      <param name="vm-password" value="5000"/>
+    </params>
+    <variables>
+    </variables>
+  </user>
+</include>

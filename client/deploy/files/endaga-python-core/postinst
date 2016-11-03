@@ -1,0 +1,25 @@
+#!/bin/sh
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+# Make sure snowflake is configured
+snowflake -m
+
+# Add the Endaga postgres user and database. Fine if these already exist
+sudo -u postgres psql -d template1 -c "CREATE DATABASE endaga;" || true
+sudo -u postgres psql -d endaga -c "CREATE USER endaga WITH PASSWORD 'endaga'; GRANT ALL PRIVILEGES ON DATABASE endaga to endaga;" || true
+PGPASSWORD=endaga psql -h localhost -d endaga -U endaga -c "CREATE TABLE IF NOT EXISTS subscribers (id serial PRIMARY KEY, imsi text UNIQUE NOT NULL, balance text DEFAULT '');"
+
+# Set configdb defaults.
+set_configdb_defaults
+
+# Make sure the default SR directory is world writable.
+mkdir -p /var/lib/asterisk/sqlite3dir
+chmod -R 777 /var/lib/asterisk/sqlite3dir
+
+# Reload supervisor for the sake of the registration module.
+supervisorctl reload

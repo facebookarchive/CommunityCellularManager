@@ -1,0 +1,29 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<!-- EXTERNAL CALLS fall through to here -->
+<extension name="outside call">
+  <condition field="${from_imsi}" expression="IMSI\d{15}$" />
+  <!-- free local numbers can't call out -->
+  <condition field='${vbts_callerid}' expression="^\d{5}\d+$">
+    <!-- this will need to be moved to the cloud probably -->
+    <action application="set" data='effective_caller_id_name=${vbts_callerid}'/>
+    <!-- set the max length of the call to the seconds they can pay for, 
+    or two days if the call is free -->
+    <action application="set" data='sec_avail=${python(VBTS_Get_Sec_Avail ${vbts_account_balance}|${service_type}|${canonical_destination_number})}'/>
+    <!-- this is used for limiting total number of outbound calls
+    <action application="limit" data="hash outbound oceanic 1 !USER_BUSY"/>
+    -->
+    <action application="set" data="execute_on_answer=sched_hangup +${sec_avail} alloted_timeout" />
+    <action application="ring_ready" />
+    <action application="set" data="sip_h_X-Endaga-uuid=${endaga_uuid}"/>
+    <action application="set" data="sip_h_X-Endaga-token=${endaga_apikey}"/>
+    <action application="bridge" data="sofia/gateway/freeswitch-2/${canonical_destination_number}"/>
+  </condition>
+</extension>

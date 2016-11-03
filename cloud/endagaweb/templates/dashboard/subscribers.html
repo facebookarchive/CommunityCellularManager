@@ -1,0 +1,61 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+
+{% block title %} {% tmpl_const "SITENAME" %} | Manage Subscribers {% endblock %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-xs-12 page-header">
+    <h3>Subscribers</h3>
+  </div>
+</div>
+
+<div class='row'>
+
+    <div class="col-xs-12 col-md-4 col-xl-2 pull-right">
+    {% if total_number_of_subscribers %}
+      <p>Search subscribers by name, IMSI or number:</p>
+      {% crispy search %}
+      <p>
+        {% if total_number_of_subscribers == 1 %}
+          You have 1 subscriber on your network.
+        {% else %}
+          You have {{ total_number_of_subscribers }} total subscribers on your network.
+        {% endif %}
+        Keep it up!
+      </p>
+    {% endif %}
+    </div>
+
+    <div class="col-xs-12 col-md-8">
+    {% if number_of_filtered_subscribers %}
+    {% render_table subscriber_table %}
+
+    {% elif total_number_of_subscribers > 0 %}
+    <h4>No subscribers matched your search.</h4>
+
+    {% else %}
+    <p>
+      There are currently no subscribers registered on this network.
+      Go find some users!
+    </p>
+
+    {% endif %}
+    </div>
+
+</div> <!-- /.row (subscribers) -->
+
+
+{% endblock %}

@@ -1,0 +1,7 @@
+<extension name="setup" continue="true">
+  <!-- need to enforce that it's a number to avoid potential injection through curl -->
+  <condition field="destination_number" expression="^\d+$">
+    <action application="curl" data='https://api-int.etagecom.io/internal/api/v1/number/?number=${destination_number}&format=json' inline="true"/>
+    <action application="set" data="newhost=${system echo '${curl_response_data}' | jq -r '.hostname' | tr -d '\n'}" inline="true"/>
+  </condition>
+</extension>

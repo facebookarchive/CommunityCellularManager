@@ -1,0 +1,77 @@
+{% extends "home/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+
+
+{% block pagestyle %}
+<style>
+  #login-button {
+    margin-bottom: 30px;
+  }
+</style>
+{% endblock %}
+
+{% block headerclass %}
+<body id="signup">
+<header class="navbar navbar-inverse normal" role="banner">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="row header">
+    <div class="col-md-12">
+      </br>
+      <img class="img-responsive" src="/static/img/papua.jpg" alt="Papua" />
+      </br>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="wrapper clearfix">
+        <div class="formy">
+        <div class="row">
+            <div class="col-md-12">
+                <form action="/auth/" method="POST" role="form"> {% csrf_token %}
+                    <div class="form-group">
+                        <label for="email">Email address</label>
+                        <input type="text" class="form-control" placeholder="Email" autofocus name="email" id="email" value="" />
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" placeholder="Password" autofocus name="password" id="password" value="" />
+                    </div>
+                    <input type="hidden" name="next" value="{{ next }}">
+                    <button type="submit" id='login-button' class="btn btn-lg btn-primary btn-block">Sign in</button>
+                    {% for message in messages %}
+                      <div class='alert alert-danger message'>{{ message }}</div>
+                    {% endfor %}
+                </form>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+</div>
+
+{% endblock %}
+
+{% block pagescripts %}
+<script>
+  $(function() {
+    // Fade out all messages after a delay.
+    setTimeout(function() {
+      $('.alert.message').fadeOut(500);
+    }, 4000);
+  });
+</script>
+{% endblock %}
+
+
+{% block footer %}
+{% endblock %}

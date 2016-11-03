@@ -1,0 +1,28 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<!-- outbound SMS -->
+
+<!-- send everything else to the cloud and let them sort it out -->
+<extension name="forward_outbound">
+  <!-- free local numbers can't dial out -->
+  <condition field="${vbts_callerid}" expression="^\d{5}\d+$" />
+  <condition field="${vbts_canonical_tp_dest_address}" expression="^\+?\d+$">
+    <!-- The chatplan blocks on long-running statements. We use a local web service to do the send and billing in the background. -->
+    <!-- The service_type is already set correctly to either
+         'local_sms' or 'outside_sms' depending upon whether the
+         destination IMSI is known on this network (local) or not
+         (outside) - see 21_set_rates.xml. It MUST NOT be set here,
+         since we don't want the charge to change based upon whether
+         the recipient is locally attached to this particular BTS or
+         not. -->
+    <!-- we handle billing directly in the interconnect service, so don't do it here. -->
+    <action application="system" data='curl -d "from_name=${from_imsi}&service_type=outside_sms&from_number=${vbts_callerid}&to=${vbts_canonical_tp_dest_address}&body=${vbts_text}" http://127.0.0.1/out_endaga_sms'/>
+  </condition>
+</extension>

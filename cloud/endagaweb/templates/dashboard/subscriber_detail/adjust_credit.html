@@ -1,0 +1,72 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %} {% tmpl_const "SITENAME" %} | {{ subscriber.imsi }} Send SMS {% endblock %}
+
+
+{% block content %}
+{% include "dashboard/subscriber_detail/header.html" with subscriber=subscriber %}
+
+<div class='row'>
+  {% include "dashboard/subscriber_detail/nav.html" with imsi=subscriber.imsi active_tab='adjust_credit'%}
+
+  <div class='content col-xs-12 col-md-4'>
+    <div class='row'>
+      <div class='col-xs-12'>
+        {% crispy credit_update_form %}
+        <p class='col-xs-12'>Subscriber's current balance: {% currency subscriber.balance %}</p>
+      </div>
+      <div class='col-xs-12'>
+        {% for message in messages %}
+          <div class='alert alert-danger message'>{{ message }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class='content col-xs-12 col-md-4'>
+    {% if pending_updates %}
+      <strong>Pending credit updates</strong>
+
+      {% if subscriber.bts.status != 'active' %}
+      <p>
+        Warning: this subscriber is not currently on an active BTS,
+        so credit updates will be delayed.
+      </p>
+      {% endif %}
+
+      {% for p in pending_updates %}
+      <p>
+        {{ forloop.counter }}.
+        {% if p.amount < 0 %} Deduct {% else %} Add {% endif %}
+        {% currency p.abs_amount %}
+        ({{ p.date | naturaltime}})
+        <a class='pending-credit-update-cancel-button'
+           onclick="deletePendingUpdate('{{ p.uuid }}')">cancel</a>
+      </p>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+
+{% block js %}
+<script>
+  // Load the endpoint into the global context so that we can use it for
+  // deleting PendingCreditUpdates in subscriber.js.
+  var adjust_credit_url = "{% url 'subscriber-adjust-credit' imsi=subscriber.imsi %}";
+</script>
+<script src="/static/js/dashboard/subscriber.js"></script>
+{% endblock %}

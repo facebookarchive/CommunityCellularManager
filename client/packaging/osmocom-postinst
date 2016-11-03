@@ -1,0 +1,51 @@
+#!/bin/sh
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+endaga_db_set bts.type osmocom
+
+# upgrade any non-int balances to crdt
+migrate_to_crdt_balance
+
+# Figure out the versions of the main packages that were installed,
+# and write those version numbers into the ConfigDB.
+# We'll send that info to the cloud during checkins.
+update_installed_versions
+
+# Removes deprecatd BTS specific profiles
+remove_bts_sip_profiles
+
+# Set new configdb defaults
+set_configdb_defaults
+
+# If the logrotate scripts don't have the correct permissins
+# they simply won't run
+sudo chmod 644 /etc/logrotate.d/endaga
+
+# Lighttpd doesn't start if we try using IPV6
+sudo sed -i '/use-ipv6/d' /etc/lighttpd/lighttpd.conf || true
+
+# Restart lighttpd.
+sudo service lighttpd restart
+
+# Restart freeswitch.
+sudo service freeswitch restart
+
+# Enable external MNCC for osmocom
+sudo sed -i '/DAEMON_ARGS/c\DAEMON_ARGS="-m -P"' /etc/default/osmocom-nitb || true
+
+# If we're missing the .noauto versions of VPN confs, copy them over. Needed
+# since 0.7.3.
+if [ ! -f /etc/openvpn/endaga-vpn-client.conf.noauto ] && [ -f /etc/openvpn/endaga-vpn-client.conf ]
+then
+  sudo mv /etc/openvpn/endaga-vpn-client.conf /etc/openvpn/endaga-vpn-client.conf.noauto
+fi
+
+if [ ! -f /etc/openvpn/endaga-sslconf.conf.noauto ] && [ -f /etc/openvpn/endaga-sslconf.conf ]
+then
+  sudo mv /etc/openvpn/endaga-sslconf.conf /etc/openvpn/endaga-sslconf.conf.noauto
+fi

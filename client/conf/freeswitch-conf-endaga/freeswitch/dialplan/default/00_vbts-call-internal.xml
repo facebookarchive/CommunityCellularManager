@@ -1,0 +1,32 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+<!-- global settings -->
+<extension name="globals" continue="true">
+  <condition>
+    <action inline="true" application="set" data="process_cdr=true"/>
+    <!-- The call is free unless otherwise specified. -->
+    <action inline="true" application="set" data='service_type=free_call'/>
+    <action inline="true" application="export" data='service_type=free_call'/>
+    <action inline="true" application="set" data="from_imsi=${python(VBTS_Get_IMSI_From_Username ${username})}" />
+    <action inline="true" application="set" data='call_tariff=${python(VBTS_Get_Service_Tariff ${service_type}|call|)}'/>
+    <action inline="true" application="set" data='vbts_callerid=${python(VBTS_Get_CallerID ${from_imsi})}'/>
+    <!-- canonicalize the dialed numbers -->
+    <action inline="true" application="set" data='canonical_destination_number=${python(VBTS_Canonicalize_Phone_Number ${destination_number})}'/>
+    <!-- Set the 'vbts_destid' to be the callee's IMSI.
+         Note this is only be possible if the call is local, otherwise this var is empty.
+    -->
+    <action inline="true" application="set" data='vbts_destid=${python(VBTS_Get_IMSI_From_Number ${canonical_destination_number})}'/>
+    <!-- Get the caller's account balance, 'from_imsi' is an IMSI -->
+    <action inline="true" application="set" data='vbts_account_balance=${python(VBTS_Get_Account_Balance ${from_imsi})}'/>
+    <action inline="true" application="set" data='endaga_uuid=${system /usr/local/bin/snowflake}'/>
+    <action inline="true" application="set" data='endaga_uuid=${endaga_uuid:0:36}'/>
+    <action inline="true" application="set" data='endaga_apikey=${python(endaga_config_get endaga_token)}'/>
+    <action inline="true" application="set" data='endaga_islocal=${python(endaga_camped ${canonical_destination_number})}' />
+  </condition>
+</extension>

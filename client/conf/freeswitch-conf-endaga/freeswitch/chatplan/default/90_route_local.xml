@@ -1,0 +1,18 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<!-- reencode for now... though I'll probably write a "forward" script -->
+<!-- TODO: Two years later, famous words. ^^ -->
+<extension name="forward_local">
+  <condition field='${endaga_islocal}' expression="TRUE">
+    <action application="set" data="service_type=local_sms"/>
+    <action application="python" data="VBTS_Send_SMS ${vbts_canonical_tp_dest_address}|${from_imsi}|${vbts_text}"/>
+    <action application="system" data='curl --data "from_number=${vbts_callerid}&from_name=${from_imsi}&service_type=${service_type}&destination=${vbts_canonical_tp_dest_address}" http://127.0.0.1/smscdr'/>
+  </condition>
+</extension>

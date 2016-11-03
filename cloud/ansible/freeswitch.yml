@@ -1,0 +1,41 @@
+---
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- hosts: sip
+  remote_user: ubuntu
+  sudo: yes
+  tasks:
+    - name: Add freeswitch apt source
+      copy: src=files/freeswitch.list dest=/etc/apt/sources.list.d/freeswitch.list
+    - name: Add FS public key
+      apt_key: url=http://files.freeswitch.org/repo/deb/debian/freeswitch_archive_g0.pub state=present
+    - name: Ensure FS is installed
+      apt: pkg=freeswitch-meta-vanilla  state=present update_cache=yes
+    - name: Ensure FS Curl is installed
+      apt: pkg=freeswitch-mod-curl  state=present update_cache=yes
+    - name: Ensure FS mod-xml-cdr is installed
+      apt: pkg=freeswitch-mod-xml-cdr  state=present update_cache=yes
+    - name: Ensure jq is installed
+      apt: pkg=jq  state=present update_cache=yes
+    - name: Delete Conf
+      shell: rm -rf /etc/freeswitch
+    - name: Copy Conf
+      copy: src=files/freeswitch/etc/freeswitch dest=/etc/
+  #todo: figure out how to do sync without having the knownhostfiles throw up
+  #  - name: Move FS conf
+  #    synchronize: src=files/freeswitch_server/freeswitch dest=/etc/ recursive=yes delete=yes
+    - name: Install Monitor
+      copy: src=files/monitors/etage_freeswitch_monitor.py /home/ubuntu/
+    - name: Setup cron
+      cron: name="FS Monitor" job="/home/ubuntu/etage_freeswitch_monitor.py"
+    - name: Warn about credentials
+      debug: msg="REMEMBER ODS CREDENTIALS (TO /etc/environment) IF YOU WANT MONITORING TO WORK"
+    - name: Ensure FS is running
+      service: name=freeswitch state=restarted
+    - name: Reload config (may need to be restarted for some config changes)
+      shell: fs_cli -x "reloadxml"

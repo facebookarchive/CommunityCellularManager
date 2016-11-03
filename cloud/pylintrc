@@ -1,0 +1,31 @@
+# The default pylint settings for the endagaweb django app.
+# Note that the bracketed headings are required.
+# 
+# See these sites for a large example pylintrc that disables certain warnings:
+# docutils.sourceforge.net/sandbox/py-rest-doc/utils/pylintrc
+# github.com/nijel/weblate/blob/master/pylint.rc
+
+
+[MASTER]
+# Use the django plugin.
+load-plugins=pylint_django
+
+
+[REPORTS]
+# Disable the reporting and just show messages.
+reports=no
+
+
+[FORMAT]
+# No more than 79 chars as per PEP8.  The style guide says 80 but 79 works
+# better on github.
+max-line-length = 79
+
+# Four space indents.
+indent-string = '    '
+
+
+[MESSAGES CONTROL]
+# Reference messages by id (in parens) or code:
+# http://pylint-messages.wikidot.com/all-codes
+disable = too-many-locals, too-few-public-methods, star-args

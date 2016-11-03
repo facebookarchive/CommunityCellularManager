@@ -1,0 +1,20 @@
+#!/usr/bin/python
+"""  Resetting the registration data on a box.
+
+This should not be shipped to the customer -- registration should not be reset
+except by support. While not yet implemented, registration should be reset from
+the dashboard, not from the device. This script is useful for development in
+some cases, however.
+
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+"""
+
+from core.registration import reset_registration
+
+
+reset_registration()

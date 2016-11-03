@@ -1,0 +1,90 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+#
+require './working_directory_paths.rb'
+include SyncPaths
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.define "openbts", openbts: true do |openbts|
+    openbts.vm.box = "ubuntu/trusty32"
+    openbts.vm.hostname = "endaga-client-openbts"
+    # Create a private network, which allows host-only access to the machine
+    # using a specific IP.
+    openbts.vm.network "private_network", ip: "192.168.60.100"
+    #default route for when the vpn route causes trouble
+    openbts.vm.provision "shell",
+    run: "always",
+    inline: "route add -host 192.168.40.60 gw 10.0.2.2 || true"
+
+    # Sync folders. Our fabfile relies on certain github repos to be installed.
+    # This is sourced from working_directory_paths.rb.
+    $repos.each do |name, path|
+      if File.directory?(path)
+        openbts.vm.synced_folder path, "/home/vagrant/" + name
+      end
+    end
+
+    openbts.vm.provider "virtualbox" do |vb|
+      vb.name = "openbts_client"
+      vb.customize ['modifyvm', :id, '--usb', 'on']
+      vb.customize ['usbfilter', 'add', '0', '--target', :id, '--name', 'RAD1',
+                    '--vendorid', '0xfffe', '--productid', '0x0002']
+      vb.customize ["modifyvm", :id, "--ioapic", "on"]
+      vb.customize ["modifyvm", :id, "--memory", "1024"]
+      vb.customize ["modifyvm", :id, "--cpus", "2"]
+    end
+
+    openbts.vm.provision "ansible" do |ansible|
+      ansible.host_key_checking = false
+      ansible.playbook = "deploy/openbts.dev.yml"
+      ansible.inventory_path = "deploy/hosts"
+      ansible.raw_arguments = ['--timeout=30']
+      ansible.verbose = 'vvvv'
+    end
+  end
+
+  config.vm.define :osmocom, autostart: false do |osmocom|
+    osmocom.vm.box = "debian/contrib-jessie64"
+    osmocom.vm.hostname = "endaga-client-osmocom"
+    # Create a private network, which allows host-only access to the machine
+    # using a specific IP.
+    osmocom.vm.network "private_network", ip: "192.168.60.120"
+    #default route for when the vpn route causes trouble
+    osmocom.vm.provision "shell",
+    run: "always",
+    inline: "route add -host 192.168.40.60 gw 10.0.2.2 || true"
+
+    # Sync folders. Our fabfile relies on certain github repos to be installed.
+    # This is sourced from working_directory_paths.rb.
+    $repos.each do |name, path|
+      if File.directory?(path)
+        osmocom.vm.synced_folder path, "/home/vagrant/" + name
+      end
+    end
+
+    osmocom.vm.provider "virtualbox" do |vb|
+      vb.name = "osmocom_client"
+      vb.customize ["modifyvm", :id, "--memory", "1024"]
+      vb.customize ["modifyvm", :id, "--cpus", "2"]
+    end
+
+    osmocom.vm.provision "ansible" do |ansible|
+      ansible.host_key_checking = false
+      ansible.playbook = "deploy/osmocom.dev.yml"
+      ansible.inventory_path = "deploy/hosts"
+      ansible.raw_arguments = ['--timeout=30']
+      ansible.verbose = 'vvvv'
+    end
+  end
+
+end

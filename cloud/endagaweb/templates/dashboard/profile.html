@@ -1,0 +1,68 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load crispy_forms_tags %}
+
+{% block title %} {% tmpl_const "SITENAME" %} | Monitor Usage, Pay Bills {% endblock %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-xs-12 page-header">
+    <h3>Hi {{ user_profile.display_name }}!</h3>
+  </div>
+</div>
+
+<div class="row">
+  <div class='col-xs-12 col-sm-6 col-md-4 col-xl-2'>
+    <h4>Background</h4>
+    {% crispy contact_form %}
+
+    {% for message in messages %}
+      {% if 'contact' in message.tags %}
+        <div class="{{ message.tags }} message">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class='col-xs-12 col-sm-6 col-md-4 col-xl-2'>
+    <h4>Change Password</h4>
+    {% crispy change_pass_form %}
+
+    {% for message in messages %}
+      {% if 'password' in message.tags %}
+        <div class="{{ message.tags }} message">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+<div class="row">
+  <div class='col-xs-12 col-sm-6 col-md-4 col-xl-2'>
+    <h4>Notify email(s)</h4>
+    {% crispy update_notify_emails_form %}
+
+    {% for message in messages %}
+      {% if 'notify-emails' in message.tags %}
+         <div class="{{ message.tags }} message">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class='col-xs-12 col-sm-6 col-md-4 col-xl-2'>
+    <h4>Notify number(s)</h4>
+    {% crispy update_notify_numbers_form %}
+
+    {% for message in messages %}
+      {% if 'notify-numbers' in message.tags %}
+         <div class="{{ message.tags }} message">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

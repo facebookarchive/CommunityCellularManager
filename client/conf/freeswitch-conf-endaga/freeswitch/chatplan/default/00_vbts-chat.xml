@@ -1,0 +1,41 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+<extension name="setup" continue="true">
+  <condition>
+    <!-- First, parse the SMS and set some tp and rp vars. -->
+    <!-- <action inline="true" application="info"/> -->
+    <action inline="true" application="python" data="VBTS_Parse_SMS"/>
+
+    <action inline="true" application="python" data="VBTS_Get_IMSI_From_Username ${from_user}" />
+    <action inline="true" application="set" data="from_imsi=${_openbts_ret}" />
+    <action inline="true" application="python" data='VBTS_Get_CallerID ${from_imsi}'/>
+    <action inline="true" application="set" data="vbts_callerid=${_openbts_ret}"/>
+    <!-- canonicalize the dialed numbers -->
+    <action inline="true" application="python" data='VBTS_Canonicalize_Phone_Number ${vbts_tp_dest_address}'/>
+    <action inline="true" application="set" data="vbts_canonical_tp_dest_address=${_openbts_ret}"/>
+    <!-- Lookup the recipient's ext and set it to 'vbts_destid' if possible.
+         This will only work if the chat is local.
+         Result is again in the '_openbts_ret' value.
+    -->
+    <action inline="true" application="python" data='VBTS_Get_IMSI_From_Number ${vbts_canonical_tp_dest_address}'/>
+    <action inline="true" application="set" data="vbts_destid=${_openbts_ret}"/>
+    <!-- Get the caller's account balance. -->
+    <action inline="true" application="python" data='VBTS_Get_Account_Balance ${from_imsi}'/>
+    <action inline="true" application="set" data="vbts_account_balance=${_openbts_ret}"/>
+    <!-- Set the service_type to free_sms by default -->
+    <action inline="true" application="set" data="service_type=free_sms"/>
+    <!-- This is a free_sms so we don't need to pass a destination_number to VBTS_Get_Service_Tariff -->
+    <action inline="true" application="set" data='call_tariff=${python(VBTS_Get_Service_Tariff ${service_type}|sms|)}'/>
+
+    <!-- Determine if the dest number is local -->
+    <action inline="true" application="python" data='endaga_camped ${vbts_canonical_tp_dest_address}'/>
+    <action inline="true" application="set" data="endaga_islocal=${_openbts_ret}"/>
+
+  </condition>
+</extension>

@@ -1,0 +1,42 @@
+Welcome to the OpenBSC control interface
+
+Copyright (C) 2008-2012 Harald Welte, Holger Freyther
+Contributions by Daniel Willmann, Jan Lübbe, Stefan Schmidt
+Dieter Spaar, Andreas Eversberg, Sylvain Munaut
+
+License AGPLv3+: GNU AGPL version 3 or later <http://gnu.org/licenses/agpl-3.0.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+OpenBSC>
+OpenBSC> enable
+OpenBSC# show bts 0
+BTS 0 is of sysmobts type in band GSM850, has CI 1 LAC 1, BSIC 63 (NCC=7, BCC=7) and 1 TRX
+Description: (null)
+MS Max power: 12 dBm
+Minimum Rx Level for Access: -110 dBm
+Cell Reselection Hysteresis: 4 dBm
+RACH TX-Integer: 9
+RACH Max transmissions: 7
+Uplink DTX: not enabled
+Downlink DTX: not enabled
+Channel Description Attachment: yes
+Channel Description BS-PA-MFRMS: 5
+Channel Description BS-AG_BLKS-RES: 1
+System Information present: 0x0024087e, static: 0x00000000
+  Unit ID: 1800/0/0, OML Stream ID 0xff
+  NM State: Oper 'Enabled', Admin 'Unlocked', Avail 'OK'
+  Site Mgr NM State: Oper 'Enabled', Admin 'unknown 0x0', Avail 'OK'
+  GPRS NSE: Oper 'Enabled', Admin 'Unlocked', Avail 'OK'
+  GPRS CELL: Oper 'Enabled', Admin 'Unlocked', Avail 'OK'
+  GPRS NSVC0: Oper 'Enabled', Admin 'Unlocked', Avail 'OK'
+  GPRS NSVC1: Oper 'Disabled', Admin 'unknown 0x0', Avail 'Off line'
+  Paging: 0 pending requests, 20 free slots
+  OML Link state: connected.
+  Current Channel Load:
+             CCCH+SDCCH4:   0% (0/4)
+                   TCH/F:   0% (0/2)
+                   TCH/H:   0% (0/2)
+                  SDCCH8:   0% (0/8)
+              TCH/F_PDCH:   0% (0/1)
+OpenBSC# disable
+OpenBSC>

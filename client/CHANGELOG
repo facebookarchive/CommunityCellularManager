@@ -1,0 +1,182 @@
+endaga NEXT (???)
+-----------------
+Packags affected: freeswitch_conf_endaga
+Changes:
+- Fix charging of intra-network SMS where recipient is not attached to
+   same BTS as sender
+
+endaga-openbts, endaga-osmocom 0.7.7 (2016 Sep 27)
+-----------------
+Diffs: D3890074, D3868683, D3904792, D3898339
+Packages affected: python_endaga_core
+Changes:
+- Adds checkin & checkin delta failure logging (D3890074)
+- Adds gzip compression to Endaga checkin request & response payloads (D3868683)
+- Switch to Content-Encoding HTTP header for checkin request gzip (D3904792)
+- Fixes osmocom is_authed
+
+endaga 0.7.6 (2016 Sep 15)
+-----------------
+Diffs: D3869098, D3868642, D3874196
+Packages affected: endaga_openbts, python_endaga_core
+Changes:
+- Fix a checkin optimization bug
+- Fall back to 'service' for service management if systemctl isn't available
+
+endaga 0.7.5 (2016 Sep 14)
+-----------------
+Diffs: D3831364, D3781419, D3781571, D3781571, D3846101, D3858023,
+D3858225, D3853896, D3858995, D3863261, D3863521, D3866041
+Packages affected: endaga_*, python_endaga_core, python_osmocom
+Changes:
+- Change format of radio information on checkin
+- Adds service manager implementation and autoremediation for endaga-osmocom
+- Adds channel load data for osmocom
+- Adds 'fakebts' bts type
+- Add new top-level module (EndagaD)
+- Fix bug in handling of missing OpenBTS PID file
+- Decompose events module into sub modules (event_store and checkin)
+- Fix bad 'radio' block in checkin when BTS software doesn't respond
+- Fix bad references created by decomposition of main loop
+- Export core package version number directly to Python
+
+endaga 0.7.4 (2016 Sep 8)
+-----------------
+
+Diffs: D3765716, D3773226, D3804762, D3807303, D3814640, D3795871, D3825015, D3829346, D3830372
+Packages affected: endaga_*, python_endaga_core
+Changes:
+- Adds delta protocol optimization interfaces/classes & unit tests for checkin optimization
+- Add a resiliency layer to database connections (ConfigDB only currently)
+- Endaga - delta integration
+- Remove tight coupling of ConfigDB to Postgres/psycopg2
+- Run ConfigDB unit tests using sqlite3 backend
+- Fix for Endaga Checkin subscribers payload creation to avoid sending all
+subscribers when there are no new subscriber events
+- Copy over old vpn confs to new filename (.noauto)
+- Fix for OpenBTS band value during checkin
+- Rename internal test helper methods to prevent nosetests to run them out of
+order
+
+endaga 0.7.3 (2016 Aug 26)
+-----------------
+Diffs: D3724286, D3769318, D3673661
+Packages affected: python_endaga_core
+Changes:
+- Client now sends channel information in checkin
+- Adds extra checkin related client load (latencies & payload sizes) ODS counters
+- Adds dictionary diff & apply delta core functionality to use for checkin optimization
+
+endaga 0.7.2 (2016 Aug 9)
+-----------------
+Diffs: D3673696, D3676805, D3685062, D3693872
+Packages affected: endaga_openbts, python_endaga_core, python-openbts
+Changes:
+- Increases checkin timeout to 30s
+- Fixes endaga_camped script (uses bts.active_subscribers)
+- Changes default auth class for get_camped_subscribers
+- Fixes update_version_numbers to pull the osmo or openbts packages separately
+- Resolves duplicate credit bug in CRDT migration script
+
+endaga 0.7.1 (2016 Aug 3)
+-----------------
+Diffs: D3671503
+Packages affected: endaga_*, python_endaga_core
+Changes:
+- Adds CRDT migration script
+
+endaga 0.7.0 (2016 Aug 3)
+-----------------
+Diffs: D3225459, D2825376, D3053329, D3434058, D3224886, D3355104, D3372803, D3382119, D3458057, D3458538, D3504813, D3523295, D3523542, D3544358, D3574934, D3573835, D3636408, D3642136, D3574077, D3336151, D3348576
+Packages affected: endaga_openbts, endaga_osmocom, python_endaga_core, freeswitch-conf-endaga
+Changes:
+- endaga metapackage split to support osmo
+- endaga_openbts no longer calls set_openbts_defaults
+- Handles subscriber checkin response section
+- Uses camped subscribers to determine local calls
+- Adds 'core.exceptions'
+- Reports IMEI and auth class with camped subs
+- Use CRDT for balances
+- Add subscriber balance CRDT to checkin to perform merges
+- Renames etage_db_get and etage_db_set scripts
+- Keys are no longer stored in main repository
+- Add osmocom support, including scripts.
+- Add AGPL prompt on install
+- Fixes to freeswitch dialplan
+- Fixes to freeswitch python scripts
+- Update headers to everything
+- Default to local operation
+- Fix issues with fabfile
+
+endaga 0.6.4 (2016 Apr 25)
+-----------------
+Diffs: D3066843, D3079177, D3219442
+Packages affected: endaga (meta), python-openbts, python_endaga_core
+Changes:
+- logrotate permissions in postinst
+- Adds locking logic around zmq to handle race condition
+
+endaga 0.6.3 (2016 Mar 9)
+-----------------
+Diffs: D3013258, D3027861, D3034056
+Packages affected: python_endaga_core
+Changes:
+- Adds req_log federer handler. This allows the dashboard to request gzipped snippets of log. The result gets uploaded back to the cloud
+- Cleans rsyslog_processor a bit
+- Fixes endagad crash in set_factory_config
+
+endaga 0.6.2 (2016 Feb 24)
+-----------------
+Diffs: D2974155, D2974536
+Packages affected: python_endaga_core
+Changes:
+- Use one connection per process for ConfigDB
+
+endaga 0.6.1 (2016 Feb 22)
+-----------------
+Diffs: D2961793
+Packages affected: python_endaga_core, python-openbts
+Changes: - adds bss_timeout config key
+- adds envoy timeout in openbts-python
+- configures core to timeout openbts and osmocom calls
+- refactors bss modules. why were we creating an instance over and over?
+
+endaga 0.6.0 (2016 Feb 21)
+-----------------
+Diffs: D2837637, D2959618, D2960072
+Packages affected: python_endaga_core, freeswitch-conf-endaga, python-osmocom, freeswitch-endaga
+Changes:
+- Revamps endaga core adding core.sms, core.subscriber, and core.bts, core.fake_phone to allow support for osmocom and openbts
+- Revamps dialplan and chatplan to allow handling traffic from different stacks
+- Moves subscriber balances out of sipauthserve and into postgres. We need to add the script `migrate_openbts_subscribers` into the post-inst of ONLY this release
+
+endaga 0.5.13 (2016 Feb 16)
+-----------------
+Diffs: D2939784
+Packages affected: python_endaga_core
+Changes:
+- Fixes a bug in restarting OpenBTS when the health check fails
+
+endaga 0.5.12 (2016 Feb 12)
+-----------------
+Diffs: D2934008
+Packages affected: python_endaga_core
+Changes:
+- More robust BTS health check, fixing a hang observed
+
+endaga 0.5.11 (2016 Feb 10)
+-----------------
+Diffs: D2922585
+Packages affected: python_endaga_core
+Changes:
+- Fixes for the three openbts stall issues
+
+endaga 0.5.10 (2016 Jan 8)
+--------------------------
+Diffs: D2809675, D2648441, D2808428, D2817488
+Packages affected: python_endaga_core, python-openbts
+Changes:
+- Fixed race condition where Freeswitch sometimes wouldn't bind to the VPN IP
+- Cleaned up subscriber registration flow, uses new cloud API endpoint
+- Added more robust exception handling to endagad to handle malformed status OpenBTS reports when under load.
+- Ensure endagad restarts automatically when exiting uncleanly.

@@ -1,0 +1,3 @@
+We need to move this stuff to the new Vagrantfile one level up. Also, the dev environment is probably broken under the new devserver setup.
+
+Tracking this in t9217912.

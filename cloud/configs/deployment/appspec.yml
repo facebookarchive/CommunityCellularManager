@@ -1,0 +1,26 @@
+---
+#
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+version: 0.0
+os: linux
+files:
+  - source: endagaweb_all.deb
+    destination: /var/opt
+hooks:
+  BeforeInstall:
+    - location: scripts/install_dependencies
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: scripts/prepare_server
+      timeout: 300
+      runas: root
+    - location: scripts/start_application
+      timeout: 300
+      runas: root

@@ -1,0 +1,29 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<!-- global settings -->
+<extension name="globals" continue="true">
+  <condition field='${python(VBTS_Get_IMSI_From_Number ${destination_number})}' expression="IMSI\d{15}">
+    <action inline="true" application="set" data='destination_imsi=${python(VBTS_Get_IMSI_From_Number ${destination_number})}' />
+    <action inline="true" application="set" data='name=${python(VBTS_Get_Username_From_IMSI ${destination_imsi})}' />
+    <action inline="true" application="set" data='ipaddr=${python(VBTS_Get_IP ${destination_imsi})}' />
+    <action inline="true" application="set" data='port=${python(VBTS_Get_Port ${destination_imsi})}' />
+    <action inline="true" application="set" data='effective_caller_id_number=${caller_id_number}'/>
+    <action inline="true" application="set" data='service_type=incoming_call'/>
+    <action inline="true" application="export" data='service_type=incoming_call'/>
+    <action inline="true" application="set" data='call_tariff=${python(VBTS_Get_Service_Tariff ${service_type}|call|)}'/>
+    <!-- Get the caller's account balance, 'username' is an IMSI -->
+    <action inline="true" application="set" data='vbts_account_balance=${python(VBTS_Get_Account_Balance ${destination_imsi})}'/>
+    <!-- set the max length of the call to the seconds they can pay for,
+    or two days if the call is free -->
+    <action application="set" data='sec_avail=${expr(if(${call_tariff},floor(${vbts_account_balance} / (${call_tariff} / 60)), 60*60*48))}'/>
+    <!-- Always use the GSM codec for incoming calls (force transcoding if coming in some other way) -->
+    <action inline="true" application="export" data='nolocal:absolute_codec_string=GSM'/>
+  </condition>
+</extension>

@@ -1,0 +1,102 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block pagestyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+
+<style>
+  #map {
+    height: 400px;
+  }
+</style>
+{% endblock %}
+
+
+{% block title %}
+{% if tower.nickname %}
+{% tmpl_const "SITENAME" %} | {{ tower.nickname }}
+{% else %}
+{% tmpl_const "SITENAME" %} | tower {{ tower.uuid }}
+{% endif %}
+{% endblock %}
+
+
+{% block content %}
+{% include "dashboard/tower_detail/header.html" with tower=tower %}
+
+<div class = 'row'>
+  {% include "dashboard/tower_detail/nav.html" with uuid=tower.uuid active_tab='info'%}
+
+  <div class='content col-xs-12 col-sm-10 col-md-4'>
+    <p>
+      <strong>Status</strong>:
+      {% if tower.status == 'active' %}
+        <span class='label label-success'>{{ tower.get_status_display }}</span>
+      {% elif tower.status == 'inactive' %}
+        <span class='label label-danger'>{{ tower.get_status_display }}</span>
+      {% else %}
+        <span class='label label-default'>{{ tower.get_status_display }}</span>
+      {% endif %}
+    </p>
+    <p><strong>Last Sync</strong>: {{ tower.last_active|naturaltime }}</p>
+    <p><strong>Uptime</strong>:
+      {% if uptime %}
+      {{ uptime }}
+      {% else %}
+      <i>unknown</i>
+      {% endif %}
+    </p>
+    <p><strong>Lat / Lon</strong>: {{ tower.latitude }}, {{ tower.longitude }}</p>
+    <p><strong>Updates</strong>: {{ tower.max_seqno }}</p>
+    <p><strong>Software Version</strong>:
+      {% if tower_endaga_version %}
+      {{ tower_endaga_version }}
+      {% else %}
+      <i>unknown</i>
+      {% endif %}
+    </p>
+  </div>
+
+  <div class='col-xs-12 col-sm-offset-2 col-sm-10 col-md-offset-0 col-md-6'>
+    <div id='map'></div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block js %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+  <script>
+    $(function() {
+      var map = L.map('map').setView([{{ tower.latitude }}, {{ tower.longitude }}], 13);
+      L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      L.control.scale().addTo(map);
+      var iconColorStatusMap = {
+        'no-data': 'gray',
+        'inactive': 'red',
+        'active': 'green',
+      }
+      var markerIcon = L.AwesomeMarkers.icon({
+        icon: 'signal',
+        prefix: 'fa',
+        markerColor: iconColorStatusMap['{{ tower.status }}'],
+      });
+      var marker = L.marker([{{ tower.latitude }}, {{ tower.longitude }}], {icon: markerIcon}).addTo(map);
+    });
+  </script>
+{% endblock %}

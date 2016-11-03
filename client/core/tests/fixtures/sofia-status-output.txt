@@ -1,0 +1,9 @@
+                     Name          Type                                       Data      State
+=================================================================================================
+                  openbts       profile               sip:mod_sofia@127.0.0.1:5060      RUNNING (0)
+               10.64.0.38         alias                                    openbts      ALIASED
+                 external       profile              sip:mod_sofia@10.64.0.38:5080      RUNNING (0)
+   external::freeswitch-2       gateway         sip:endaga_user@172.31.34.170:5080      NOREG
+=================================================================================================
+2 profiles 1 alias
+

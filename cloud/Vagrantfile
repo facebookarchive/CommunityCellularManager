@@ -1,0 +1,110 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+# 
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+#
+require './working_directory_paths.rb'
+include SyncPaths
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "ubuntu/trusty64"
+
+  config.vm.define :web, primary: true do |web|
+    web.vm.hostname = "endaga-web"
+    web.vm.network "private_network", ip: "192.168.40.10"
+    web.vm.network "forwarded_port", guest: 8000, host: 9000
+    web.vm.network "forwarded_port", guest: 80, host: 9080
+    web.vm.network "forwarded_port", guest: 443, host: 9443
+    web.vm.provision "shell",
+    run: "always",
+    inline: "route add -net 10.64.0.0 netmask 255.255.255.0 gw 192.168.40.60 || true"
+    config.vm.provider "virtualbox" do |v|
+      v.memory = 512
+      v.cpus = 1
+    end
+    $repos.each do |name, path|
+      if File.directory?(path)
+        web.vm.synced_folder path, "/home/vagrant/" + name
+      end
+    end
+  end
+
+  config.vm.define :db do |db|
+    db.vm.hostname = "endaga-db"
+    db.vm.network "private_network", ip: "192.168.40.20"
+    db.vm.provision "ansible" do |ansible|
+        ansible.playbook = "ansible/postgres.dev.yml"
+        ansible.verbose = true
+    end
+    config.vm.provider "virtualbox" do |v|
+      v.memory = 512
+      v.cpus = 1
+    end
+  end
+
+  config.vm.define :rmq do |rmq|
+    rmq.vm.hostname = "endaga-rmq"
+    rmq.vm.network "forwarded_port", guest: 5555, host: 5555
+    rmq.vm.network "private_network", ip: "192.168.40.30"
+    rmq.vm.provision "ansible" do |ansible|
+        ansible.playbook = "ansible/rabbitmq.dev.yml"
+        ansible.verbose = true
+    end
+    rmq.vm.provision "shell",
+    run: "always",
+    inline: "route add -net 10.64.0.0 netmask 255.255.0.0 gw 192.168.40.60 || true"
+    config.vm.provider "virtualbox" do |v|
+      v.memory = 512
+      v.cpus = 1
+    end
+  end
+
+  config.vm.define :cert do |cert|
+    cert.vm.hostname = "endaga-cert"
+    cert.vm.network "private_network", ip: "192.168.40.40"
+    cert.vm.provision "ansible" do |ansible|
+        ansible.playbook = "ansible/certifier.dev.yml"
+        ansible.verbose = true
+    end
+    config.vm.provider "virtualbox" do |v|
+      v.memory = 512
+      v.cpus = 1
+    end
+  end
+
+  config.vm.define :smpp, autostart: false do |smpp|
+    smpp.vm.hostname = "endaga-smpp"
+    smpp.vm.network "private_network", ip: "192.168.40.50"
+    smpp.vm.provision "ansible" do |ansible|
+        ansible.playbook = "ansible/smpp.dev.yml"
+        ansible.verbose = true
+    end
+    config.vm.provider "virtualbox" do |v|
+      v.memory = 512
+      v.cpus = 1
+    end
+  end
+
+  config.vm.define :vpn do |vpn|
+    vpn.vm.hostname = "endaga-vpn"
+    vpn.vm.network "private_network", ip: "192.168.40.60"
+    vpn.vm.provision "ansible" do |ansible|
+        ansible.playbook = "ansible/vpn.dev.yml"
+        ansible.verbose = true
+    end
+    vpn.vm.provision "shell",
+    run: "always",
+    inline: "sysctl -w net.ipv4.ip_forward=1"
+    config.vm.provider "virtualbox" do |v|
+      v.memory = 512
+      v.cpus = 1
+    end
+  end
+end

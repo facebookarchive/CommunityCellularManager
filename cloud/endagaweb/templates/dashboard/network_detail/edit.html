@@ -1,0 +1,102 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+{% if network.name %}
+{% tmpl_const "SITENAME" %} | "{{ network.name }}"
+{% else %}
+{% tmpl_const "SITENAME" %} | Network
+{% endif %}
+{% endblock %}
+
+
+{% block pagestyle %}
+<style>
+  #messages-container .alert {
+    margin-top: 20px;
+  }
+  #div_id_autoupgrade_enabled .controls, #div_id_autoupgrade_in_window .controls {
+    margin-left: 15px;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+
+{% include "dashboard/network_detail/header.html" with network=network %}
+
+
+<div class = 'row'>
+  {% include "dashboard/network_detail/nav.html" with active_tab='edit'%}
+
+  <div class='col-xs-12 col-offset-sm-2 col-sm-10'>
+
+    {% if network.get_lowest_tower_version < '00000.00003.00025' %}
+      <div class='col-sm-10 alert alert-warning'>
+        Warning!  Your towers are running old software
+        that cannot process the tower software upgrade settings below.
+        As such, these settings will not yet have any effect on your network.
+        Please contact support if you have questions
+        or would like to upgrade your towers.
+      </div>
+    {% endif %}
+
+    <div class='clearfix'>
+    </div>
+
+    <div class='col-sm-4'>
+      {% crispy network_settings_form %}
+    </div>
+
+    <div class='clearfix'>
+    </div>
+
+    <div class='col-sm-4'>
+      {% for message in messages %}
+        <div class="{{ message.tags }} message">{{ message }}</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+
+{% block js %}
+<script>
+$(function() {
+  // Show or hide parts of the form when autoupgrade is enabled or disabled.
+  $('input:radio').change(function() {
+    var autoupgrade_enabled = 'True' == $('form input[name=autoupgrade_enabled]:checked').val();
+    if (autoupgrade_enabled) {
+      $('#id_autoupgrade_channel').prop('disabled', false);
+      $('input[name=autoupgrade_in_window]').prop('disabled', false);
+    } else {
+      $('#id_autoupgrade_channel').prop('disabled', true);
+      $('input[name=autoupgrade_in_window]').prop('disabled', true);
+      $('#id_autoupgrade_window_start').prop('disabled', true);
+    }
+    var autoupgrade_in_window = 'True' == $('form input[name=autoupgrade_in_window]:checked').val();
+    if (autoupgrade_enabled && autoupgrade_in_window) {
+      $('#id_autoupgrade_window_start').prop('disabled', false);
+    } else {
+      $('#id_autoupgrade_window_start').prop('disabled', true);
+    }
+  });
+});
+</script>
+{% endblock %}

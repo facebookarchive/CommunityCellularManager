@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+"""A CLI for manipulating subscriber credit.
+
+Usage:
+    credit_cli <imsi_or_number> add <amount> <reason>
+    credit_cli <imsi_or_number> deduct <amount> <reason>
+    credit_cli <imsi_or_number> set <amount> <reason>
+
+Arguments:
+    <imsi_or_number> the subscriber's IMSI or phone number
+    <amount> the amount of currency to add, subtract or set
+    <reason> the reason for this change
+
+Options:
+    -h, --help
+
+Examples:
+    credit_cli IMSI000123 add 200 'paid on Mar 18, 2015'
+    credit_cli 5551234 set 30000 'setting up new user'
+
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+"""
+
+import sys
+
+import docopt
+
+from core import events
+from core.subscriber import subscriber
+from core.subscriber.base import SubscriberNotFound
+from core.freeswitch_strings import humanize_credits, parse_credits
+
+
+if __name__ == "__main__":
+    args = docopt.docopt(__doc__)
+
+    # Get the IMSI of the subscriber-of-interest.
+    try:
+        old_balance = subscriber.get_account_balance(args['<imsi_or_number>'])
+        imsi = args['<imsi_or_number>']
+    except SubscriberNotFound:
+        try:
+            imsi = subscriber.get_imsi_from_number(args['<imsi_or_number>'])
+            old_balance = subscriber.get_account_balance(imsi)
+        except SubscriberNotFound:
+            print ('error: no number or IMSI record for %s' %
+                   args['<imsi_or_number>'])
+            sys.exit(1)
+
+    print '%s currently has %s' % (imsi,
+            humanize_credits(old_balance))
+    print 'adjusting..'
+
+    amount_raw = parse_credits(args['<amount>']).amount_raw
+    if args['add']:
+        subscriber.add_credit(imsi, str(amount_raw))
+        new_balance = int(old_balance) + amount_raw
+        reason = '%s (add_money)' % args['<reason>']
+    elif args['deduct']:
+        subscriber.subtract_credit(imsi, str(amount_raw))
+        new_balance = max(0, int(old_balance) - amount_raw)
+        reason = '%s (deduct_money)' % args['<reason>']
+    elif args['set']:
+        subscriber.set_credit(imsi, str(amount_raw))
+        reason = '%s (set_balance)' % args['<reason>']
+    events.create_add_money_event(imsi, old_balance, amount_raw, reason)
+
+    print '%s now has %s' % (
+        imsi, humanize_credits(subscriber.get_account_balance(imsi)))

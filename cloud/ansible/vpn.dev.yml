@@ -1,0 +1,38 @@
+---
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- hosts: vpn
+  become: yes
+  vars:
+      conf_dir: /etc/openvpn
+  tasks:
+  - name: Install openvpn
+    apt: name=openvpn state=present
+  - name: Copy over our configuration
+    copy: src=files/openvpn/etc dest=/
+  - name: Disable init.d autostart
+    replace: dest=/etc/default/openvpn regexp='#AUTOSTART=\"none\"' replace='AUTOSTART="none"'
+  - name: Turn off init.d vpn
+    command: /etc/init.d/openvpn stop
+    ignore_errors: yes
+  - name: Change the default route to our local one
+    replace: dest=/etc/openvpn/server.conf regexp='172\.16\.0\.0 255\.255\.0\.0' replace='192.168.40.0 255.255.255.0'
+  - name: Install supervisor
+    apt: pkg=supervisor state=present
+  - name: Make sure that the config directory exists for supervisor
+    file: path=/etc/supervisor state=directory
+  - name: Make sure that the config.d directory exists for supervisor
+    file: path=/etc/supervisor/conf.d state=directory
+  - name: Add config files 1
+    copy: src=files/supervisor/supervisord.conf dest=/etc/supervisor/supervisord.conf
+  - name: Add config files 2
+    copy: src=files/supervisor/conf.d/openvpn.conf dest=/etc/supervisor/conf.d/openvpn.conf
+  - name: Make sure supervisor is running
+    service: name=supervisor state=started
+  - name: Make sure openvpn is running
+    supervisorctl: name=openvpn state=restarted

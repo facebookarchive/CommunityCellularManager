@@ -1,0 +1,4 @@
+*.pyc
+ccm_common.egg-info/
+build/
+dist/

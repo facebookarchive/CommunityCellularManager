@@ -1,0 +1,32 @@
+#!/usr/bin/python
+
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+# 
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant 
+# of patent rights can be found in the PATENTS file in the same directory.
+
+import argparse
+import sqlite3
+
+
+# TODO(matt): use openbts-python
+openbts_defaults = {
+    'SIP.Proxy.SMS': '127.0.0.1:5060',
+    'GPRS.MS.Power.Alpha' : '0',
+    'GPRS.MS.Power.Gamma' : '0',
+    'Control.LUR.404RejectCause' : '0x0D',
+    'Control.LUR.UnprovisionedRejectCause' : '0x0D',
+}
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="CLI for resetting OpenBTS config defaults.")
+
+    db = sqlite3.connect("/etc/OpenBTS/OpenBTS.db")
+
+    for k,v in openbts_defaults.items():
+        cmd = "UPDATE CONFIG SET VALUESTRING=? WHERE KEYSTRING=?"
+        db.execute(cmd, (v, k))
+        db.commit()

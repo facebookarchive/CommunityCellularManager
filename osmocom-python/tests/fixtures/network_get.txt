@@ -1,0 +1,28 @@
+Welcome to the OpenBSC control interface
+
+Copyright (C) 2008-2012 Harald Welte, Holger Freyther
+Contributions by Daniel Willmann, Jan LÃ¼bbe, Stefan Schmidt
+Dieter Spaar, Andreas Eversberg, Sylvain Munaut
+
+License AGPLv3+: GNU AGPL version 3 or later <http://gnu.org/licenses/agpl-3.0.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+ÿûÿûÿþ"ÿýOpenBSC> 
+OpenBSC> enable
+OpenBSC# show network
+BSC is on Country Code 901, Network Code 55 and has 1 BTS
+  Long network name: 'Test_Network'
+  Short network name: 'Test'
+  Authentication policy: accept-all
+  Location updating reject cause: 13
+  Encryption: A5/0
+  NECI (TCH/H): 1
+  Use TCH for Paging any: 0
+  RRLP Mode: none
+  MM Info: On
+  Handover: Off
+  Current Channel Load:
+  Last RF Command: 
+  Last RF Lock Command: 
+OpenBSC# disable
+OpenBSC> 

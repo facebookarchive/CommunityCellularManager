@@ -1,0 +1,147 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+
+
+{% block pagestyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.13-beta/nv.d3.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.14.30/css/bootstrap-datetimepicker.min.css">
+<style>
+  .timezone-notice {
+    display: none;
+  }
+</style>
+{% endblock %}
+
+
+{% block title %}
+{% if tower.nickname %}
+{% tmpl_const "SITENAME" %} | monitor {{ tower.nickname }}
+{% else %}
+{% tmpl_const "SITENAME" %} | monitor tower {{ tower.uuid }}
+{% endif %}
+{% endblock %}
+
+
+{% block content %}
+{% include "dashboard/tower_detail/header.html" with tower=tower %}
+
+<div class = 'row'>
+  {% include "dashboard/tower_detail/nav.html" with uuid=tower.uuid active_tab='monitor'%}
+
+  {% if endaga_version >= '00000.00003.00026' %}
+    {% if tower_has_monitoring_stats %}
+      <div class='col-xs-12 col-sm-10'>
+        <div id='channel-load-stats-chart-container'></div>
+        <div id='noise-stats-chart-container'></div>
+        <div id='system-utilization-stats-chart-container'></div>
+        <div id='network-utilization-stats-chart-container'></div>
+        {% include 'dashboard/timezone-notice.html' %}
+      </div>
+    {% else %}
+    <div class='col-xs-12 col-sm-6 alert alert-warning'>
+      There are no monitoring stats available.
+      This tower should send some data over soon.
+    </div>
+    {% endif %} {# /tower_has_monitoring_stats check #}
+  {% else %}
+    <div class='col-xs-12 col-sm-6 alert alert-warning'>
+      Warning!  This tower is running old software
+      that is not sending telemetry data to our main servers.
+      Please contact support if you have questions
+      or would like to upgrade your towers.
+    </div>
+  {% endif %} {# /endaga_version check #}
+
+</div>
+
+{% endblock %}
+
+
+{% block js %}
+<script>
+  $(function() {
+    setTimeout(function() {
+      $('.timezone-notice').fadeIn(500);
+    }, 800);
+  });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/react.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/JSXTransformer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.1.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.13-beta/nv.d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.14.30/js/bootstrap-datetimepicker.min.js"></script>
+
+<script type="text/jsx" src="/static/js/dashboard/chart-components.js"></script>
+<script type="text/jsx">
+  React.render(
+    <TimeseriesChartWithButtonsAndDatePickers
+      title='Channel Load'
+      chartID='channel-load-stats-chart'
+      statTypes='sdcch_load,sdcch_available,tchf_load,tchf_available,pch_active,pch_total,agch_active,agch_pending,gprs_current_pdchs'
+      levelID='{{ tower.id }} '
+      aggregation='average_value'
+      yAxisLabel=''
+      currentTimeEpoch='{{ current_time_epoch }}'
+      timezoneOffset='{{ timezone_offset }}'
+      endpoint='/api/v1/stats/tower'
+      defaultButtonText='day'
+    />,
+    document.getElementById('channel-load-stats-chart-container')
+  );
+  React.render(
+    <TimeseriesChartWithButtonsAndDatePickers
+      title='Noise'
+      chartID='noise-stats-chart'
+      statTypes='noise_rssi_db,noise_ms_rssi_target_db'
+      levelID='{{ tower.id }} '
+      aggregation='average_value'
+      yAxisLabel=''
+      currentTimeEpoch='{{ current_time_epoch }}'
+      timezoneOffset='{{ timezone_offset }}'
+      endpoint='/api/v1/stats/tower'
+      defaultButtonText='day'
+    />,
+    document.getElementById('noise-stats-chart-container')
+  );
+  React.render(
+    <TimeseriesChartWithButtonsAndDatePickers
+      title='System Utilization'
+      chartID='system-utilization-stats-chart'
+      statTypes='cpu_percent,memory_percent,disk_percent,gprs_utilization_percentage'
+      levelID='{{ tower.id }} '
+      aggregation='average_value'
+      yAxisLabel=''
+      currentTimeEpoch='{{ current_time_epoch }}'
+      timezoneOffset='{{ timezone_offset }}'
+      endpoint='/api/v1/stats/tower'
+      defaultButtonText='day'
+    />,
+    document.getElementById('system-utilization-stats-chart-container')
+  );
+  React.render(
+    <TimeseriesChartWithButtonsAndDatePickers
+      title='Network Utilization'
+      chartID='network-utilization-stats-chart'
+      statTypes='bytes_sent_delta,bytes_received_delta'
+      levelID='{{ tower.id }} '
+      aggregation='average_value'
+      yAxisLabel=''
+      currentTimeEpoch='{{ current_time_epoch }}'
+      timezoneOffset='{{ timezone_offset }}'
+      endpoint='/api/v1/stats/tower'
+      defaultButtonText='day'
+    />,
+    document.getElementById('network-utilization-stats-chart-container')
+  );
+</script>
+
+{% endblock %}

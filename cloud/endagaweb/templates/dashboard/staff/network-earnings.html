@@ -1,0 +1,99 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+
+
+{% block title %}
+{% tmpl_const "SITENAME" %} staff | network earnings
+{% endblock %}
+
+
+{% block pagestyle %}
+<style>
+  .table {
+    margin-top: 20px;
+  }
+
+  .table, .table > thead > tr > th {
+    vertical-align: middle;
+    text-align: center;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="row">
+  <div class="col-xs-12 page-header">
+    <h3>Network Earnings!
+      <small>(staff-only)</small>
+    </h3>
+  </div>
+</div> <!-- /.row -->
+
+<div class="row">
+  <div class="col-xs-12 col-md-4">
+    {% crispy select_network_form %}
+  </div>
+</div>
+
+
+{% if network %}
+<div class='row'>
+  <div class='col-xs-12 col-sm-12'>
+    <table class='table table-bordered'>
+      <thead>
+        <tr class='head'>
+            <th>network name</th>
+            <th>operator</th>
+            <th>created</th>
+            <th>days of operation</th>
+            <th>payments from subs</th>
+            <th>payments to {% tmpl_const "SITENAME" %}</th>
+            <th>operator net profit</th>
+            <th>profit / day</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ network.name }}</td>
+          <td>{{ operator.user.email }}</td>
+          <td>{{ network_creation_date | date:"M d, Y" }}</td>
+          <td>{{ days_of_operation }}</td>
+          <td>${{ revenue|floatformat:2 }}</td>
+          <td>${{ costs|floatformat:2 }}</td>
+          <td>${{ profit|floatformat:2 }}</td>
+          {% if profit_per_day %}
+            <td>${{ profit_per_day|floatformat:2 }}/day</td>
+          {% else %}
+            <td>n/a</td>
+          {% endif %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if network_creation_date < start_of_analysis %}
+<div class='row'>
+  <div class='col-xs-12 col-sm-8 alert alert-warning'>
+    Note: we are only analyzing data after {{ start_of_analysis | date:"M d, Y" }}
+    because of an issue with the billing system before that date.
+  </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+
+{% endblock %}

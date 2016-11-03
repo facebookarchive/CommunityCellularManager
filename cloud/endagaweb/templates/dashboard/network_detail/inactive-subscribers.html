@@ -1,0 +1,154 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+
+
+{% block title %}
+{% if network.name %}
+{% tmpl_const "SITENAME" %} | "{{ network.name }}"
+{% else %}
+{% tmpl_const "SITENAME" %} | Network
+{% endif %}
+{% endblock %}
+
+
+{% block pagestyle %}
+<style>
+  #messages-container .alert {
+    margin-top: 20px;
+  }
+  {% if not network.sub_vacuum_enabled %}
+    #subscribers-about-to-be-deactivated {
+      display: none;
+    }
+  {% endif %}
+  /* Hide some of the pagination info. */
+  .table-container .pagination .cardinality {
+    display: none;
+  }
+  /* Give some vertical buffer between the form and the tables on mobile. */
+  @media (max-width: 767px) {
+    #submit-id-submit {
+      margin-bottom: 30px;
+    }
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+
+{% include "dashboard/network_detail/header.html" with network=network %}
+
+
+<div class = 'row'>
+  {% include "dashboard/network_detail/nav.html" with active_tab='inactive-subscribers'%}
+
+  <div class='col-xs-12 col-offset-sm-2 col-sm-4'>
+    <div class='col-sm-12'>
+      {% crispy sub_vacuum_form %}
+    </div>
+
+    <div class='clearfix'>
+    </div>
+
+    <div class='col-sm-12'>
+      {% for message in messages %}
+        <div class="{{ message.tags }} message">{{ message }}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div id='subscribers-about-to-be-deactivated' class='col-xs-12 col-sm-6'>
+    <div class='col-sm-12'>
+      {% if unprotected_subs %}
+        <p>
+          {% if unprotected_subs|length == 1 %}
+            This
+            subscriber{{ unprotected_subs|pluralize }}
+            has
+          {% else %}
+            These
+            <strong>{{ unprotected_subs|length }}</strong>
+            subscriber{{ unprotected_subs|pluralize }}
+            have
+          {% endif %}
+          no outbound activity in the past
+          <strong>{{ network.sub_vacuum_inactive_days }}</strong>
+          day{{ network.sub_vacuum_inactive_days|pluralize }}
+          and will be automatically deactivated at the end of the day:
+        </p>
+
+        {% render_table unprotected_subs_table %}
+
+      {% else %}
+        <p>
+          There are <strong>0</strong> subscribers
+          pending deactivation due to inactivity in the past
+          <strong>{{ network.sub_vacuum_inactive_days }}</strong>
+          day{{ network.sub_vacuum_inactive_days|pluralize }}.
+        </p>
+
+      {% endif %}
+    </div>
+
+    <div class='col-sm-12'>
+      {% if protected_subs %}
+        <p>
+          {% if protected_subs|length == 1 %}
+            This
+            subscriber{{ protected_subs|pluralize }}
+            has
+          {% else %}
+            These
+            <strong>{{ protected_subs|length }}</strong>
+            subscriber{{ protected_subs|pluralize }}
+            have
+          {% endif %}
+          no outbound activity in the past
+          <strong>{{ network.sub_vacuum_inactive_days }}</strong>
+          day{{ network.sub_vacuum_inactive_days|pluralize }}
+          but {{ protected_subs|pluralize:"is,are" }}
+          <strong>protected</strong>
+          and will therefore not be automatically deactivated:
+        </p>
+
+        {% render_table protected_subs_table %}
+
+      {% endif %}
+    </div>
+
+
+  </div>
+
+</div>
+
+
+{% endblock %}
+
+
+{% block js %}
+<script>
+  $(function() {
+    $('input:radio').change(function() {
+      var sub_vacuum_enabled = 'True' == $('form input[name=sub_vacuum_enabled]:checked').val();
+      if (sub_vacuum_enabled) {
+        $('#id_inactive_days').prop('disabled', false);
+      } else {
+        $('#id_inactive_days').prop('disabled', true);
+      }
+    });
+  });
+</script>
+{% endblock %}
+

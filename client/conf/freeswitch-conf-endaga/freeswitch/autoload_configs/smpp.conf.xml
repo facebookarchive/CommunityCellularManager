@@ -1,0 +1,14 @@
+ <configuration name="smpp.conf" description="SMPP client and server Gateway">
+   <gateways>
+     <gateway name="openbsc">
+       <params>
+         <param name="host" value="127.0.0.1"/>
+         <param name="port" value="2775"/>
+         <param name="debug" value="on"/>
+         <param name="system_id" value="OSMPP"/>
+         <param name="password" value="etagecom"/>
+         <param name="system_type" value="openbsc"/>
+       </params>
+     </gateway>
+   </gateways>
+ </configuration>

@@ -1,0 +1,23 @@
+<extension name="echo_test">
+  <condition field="destination_number" expression="^(00)?(1000000)?9196$">
+    <action application="answer"/>
+    <action application="echo"/>
+  </condition>
+</extension>
+
+<extension name="milliwatt">
+  <condition field="destination_number" expression="^(00)?(1000000)?9197$">
+    <action application="answer"/>
+    <action application="playback" data="{loops=-1}tone_stream://%(251,0,1004)"/>
+  </condition>
+</extension>
+
+<!--
+<extension name="all_test">
+  <condition field="destination_number" expression="^\d{6}\d+$">
+    <action application="answer"/>
+    <action application="playback" data="phrase:funny_prompts"/>
+    <action application="hangup"/>
+  </condition>
+</extension>
+-->

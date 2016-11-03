@@ -1,0 +1,48 @@
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+<div class='col-xs-12 col-sm-2'>
+  <ul class='nav nav-pills nav-stacked' id='sub-detail-nav'>
+
+    <li role="presentation" class="{% if active_tab == 'info' %} active {% endif %}">
+      <a href="
+        {% if active_tab == 'info' %} #
+        {% else %} {% url 'subscriber-info' imsi=imsi %}
+        {% endif %} ">Info</a>
+    </li>
+
+    <li role="presentation" class="{% if active_tab == 'activity' %} active {% endif %}">
+      <a href="
+        {% if active_tab == 'activity' %} #
+        {% else %} {% url 'subscriber-activity' imsi=imsi %}
+        {% endif %}">Activity</a>
+    </li>
+
+    <li role="presentation" class="{% if active_tab == 'send_sms' %} active {% endif %}">
+      <a href="
+        {% if active_tab == 'send sms' %} #
+        {% else %} {% url 'subscriber-send-sms' imsi=imsi %}
+        {% endif %}">Send SMS</a>
+    </li>
+
+    <li role="presentation" class="{% if active_tab == 'adjust_credit' %} active {% endif %}">
+      <a href="
+        {% if active_tab == 'adjust credit' %} #
+        {% else %} {% url 'subscriber-adjust-credit' imsi=imsi %}
+        {% endif %}">Adjust Credit</a>
+    </li>
+
+    <li role="presentation" class="{% if active_tab == 'edit' %} active {% endif %}">
+      <a href="
+        {% if active_tab == 'edit' %} #
+        {% else %}{% url 'subscriber-edit' imsi=imsi %}
+        {% endif %}">Edit</a>
+    </li>
+
+  </ul>
+</div>

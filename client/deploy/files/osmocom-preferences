@@ -1,0 +1,7 @@
+Package: *
+Pin: origin files.freeswitch.org
+Pin-Priority: 900
+
+Package: *
+Pin: release l=network:osmocom:nightly
+Pin-Priority: 910

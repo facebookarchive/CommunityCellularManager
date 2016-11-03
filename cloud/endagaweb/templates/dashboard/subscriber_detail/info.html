@@ -1,0 +1,72 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %} {% tmpl_const "SITENAME" %} | {{ subscriber.imsi }} Info {% endblock %}
+
+
+{% block content %}
+{% include "dashboard/subscriber_detail/header.html" with subscriber=subscriber %}
+
+<div class = 'row'>
+  {% include "dashboard/subscriber_detail/nav.html" with imsi=subscriber.imsi active_tab='info'%}
+
+  <div class='content col-xs-12 col-sm-10'>
+      <p>
+        <strong>Status</strong>:
+        {% if subscriber.is_camped %}
+          <span class='label label-success'>camped</span>
+        {% elif subscriber.network.get_lowest_tower_version < "00000.00003.00021" %}
+          <span class='label label-default'>unknown</span>
+        {% else %}
+          <span class='label label-default'>not camped</span>
+        {% endif %}
+      </p>
+      <p>
+        <strong>Number{{ subscriber.numbers_as_list|pluralize }}</strong>:
+        {% if subscriber.numbers %}
+          {{ subscriber.numbers }}
+        {% else %}
+          <i>none</i>
+        {% endif %}
+      </p>
+      <p><strong>Balance</strong>: {% currency subscriber.balance %}</p>
+      {% if subscriber.bts.network.get_lowest_tower_version >= "00000.00003.00021" %}
+        <p>
+          <strong>Last Camped</strong>:
+          {{ subscriber.last_camped | naturaltime }} on
+          <a href="/dashboard/towers/{{ subscriber.bts.uuid }}">
+            {% if subscriber.bts.nickname %}
+              {{ subscriber.bts.nickname }} ({{ subscriber.bts.uuid|slice:"5" }}..)
+            {% else %}
+              {{ subscriber.bts.uuid|slice:"5" }}
+            {% endif %}
+          </a>
+        </p>
+      {% endif %}
+      <p><strong>Last Active</strong>: {{ subscriber.last_active | naturaltime }}</p>
+      <p><strong>Last Outbound Activity</strong>: {{ subscriber.last_outbound_activity | naturaltime }}</p>
+      <p><strong>Registered</strong>: {{ created.date }} ({{ created | naturaltime }})</p>
+      <p>
+        <strong>Activity</strong>:
+        <ul>
+          <li>{{ num_sms }} SMS sent</li>
+          <li>{{ number_of_calls }} calls ({{ voice_sec | duration }} total)</li>
+          <li>{{ up_bytes }} of data uploaded</li>
+          <li>{{ down_bytes }} of data downloaded</li>
+          <li>{{ total_bytes }} of data total</li>
+        </ul>
+      </p>
+  </div>
+</div>
+{% endblock %}

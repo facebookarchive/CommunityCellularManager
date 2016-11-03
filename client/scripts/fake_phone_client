@@ -1,0 +1,96 @@
+#!/usr/bin/python
+"""A tool for simulating a user phone.
+
+Select a user at start then act as them in the network.
+
+Usage:
+    fake_phone_client <user> [--port=<port> | -p <port>] [--self=<ip | -s <ip>] [--other=<ip | -o <ip>]
+    fake_phone_client -h | --help
+
+Arguments:
+    user: a subscriber IMSI
+    port: the port to listen on
+
+Options:
+    -h --help               Show this message
+    -p <port> --port=<port>  The port we use as a client [default: 5065]
+    -s <ip> --self=<ip>      The client IP [default: 127.0.0.1]
+    -o <ip> --other=<ip>     The destination IP [default: 127.0.0.1]
+
+Example:
+    fake_phone_client -h
+    fake_phone_client IMSI101000000000000
+    fake_phone_client IMSI101000000000000 -p 5065
+    fake_phone_client IMSI101000000000000 -p 5065 -s 10.0.0.2 -o 10.0.0.1
+
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant 
+of patent rights can be found in the PATENTS file in the same directory.
+"""
+
+import docopt
+import signal
+import sys
+import time
+
+from core.fake_phone import FakePhone
+
+
+args = docopt.docopt(__doc__)
+port = int(args['--port'])
+
+
+def error():
+    print "Usage: sms DEST CONTENT"
+    print "Usage: call DEST"
+
+
+def call_handler(to, fromm):
+    print ("Incoming Call")
+    print ("to:" + to)
+    print ("from:" + fromm)
+
+
+def sms_handler(to, fromm, content):
+    print ("Incoming SMS")
+    print ("To:" + to)
+    print ("From:" + fromm)
+    print (content)
+
+#IMSIS can be 14 or 15 digits (18 or 19 with the IMSI prepend)
+if(args['<user>'][0:4] != "IMSI" or len(args['<user>']) not in [18,19]):
+    print ("invalid imsi")
+    exit(0)
+
+fp = FakePhone(args['<user>'], port, call_handler, sms_handler,
+               self_ip=args['--self'], other_ip=args['--other'])
+fp.start()
+
+
+def signal_handler(s, frame):
+    global fp
+    fp.stop()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
+
+time.sleep(0.1)
+
+
+while True:
+    sys.stdout.write(str(port) + ":" + "Endaga-Fake-Phone: ")
+    l = sys.stdin.readline().strip()
+    args = l.split(" ", 2)
+    if len(args) < 2:
+        error()
+    else:
+        if args[0] == "sms" and len(args) == 3:
+            fp.sendSMS(args[1], args[2])
+        elif args[0] == "call" and len(args) == 2:
+            fp.makeCall(args[1])
+        else:
+            error()

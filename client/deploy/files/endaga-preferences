@@ -1,0 +1,11 @@
+Package: *
+Pin: release o=Endaga,a=dev,n=dev,l=Endaga,c=main
+Pin-Priority: 700
+
+Package: *
+Pin: release o=Etage,a=dev,n=dev,l=Etage,c=main
+Pin-Priority: 800
+
+Package: *
+Pin: origin ""
+Pin-Priority: 950

@@ -1,0 +1,29 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<!-- INTERNAL CALLS -->
+<extension name="local_call">
+  <condition field='${vbts_callerid}' expression="^\d+$"/>
+  <condition field='${endaga_islocal}' expression="^TRUE$">
+    <!-- Get the sip username corresponding to the IMSI. -->
+    <action application="set" data='name=${python(VBTS_Get_Username_From_IMSI ${vbts_destid})}'/>
+    <action application="set" data='ipaddr=${python(VBTS_Get_IP ${vbts_destid})}' />
+    <action application="set" data='port=${python(VBTS_Get_Port ${vbts_destid})}' />
+    <action application="set" data='effective_caller_id_name=${vbts_callerid}'/>
+    <action application="set" data='effective_caller_id_number=${vbts_callerid}'/>
+    <!-- Schedule a hangup when the subscriber runs out of credit. -->
+    <action application="set" data='credits=${vbts_account_balance}'/>
+    <!-- set the max length of the call to the seconds they can pay for,
+    or two days if the call is free -->
+    <action application="set" data='sec_avail=${python(VBTS_Get_Sec_Avail ${vbts_account_balance}|${service_type}|${canonical_destination_number})}'/>
+    <action application="set" data="execute_on_answer=sched_hangup +${sec_avail} alloted_timeout" />
+    <action application="ring_ready" />
+    <action application="bridge" data="sofia/internal/${name}@${ipaddr}:${port}"/>
+  </condition>
+</extension>

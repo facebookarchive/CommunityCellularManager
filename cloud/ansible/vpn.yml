@@ -1,0 +1,37 @@
+---
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- hosts: bts_vpn_endpoints
+  remote_user: ubuntu
+  sudo: yes
+  vars:
+      conf_dir: /etc/openvpn
+  vars_prompt:
+      - name: server_key_passphrase
+        prompt: "Enter server key passphrase"
+        private: true
+  tasks:
+  - name: Install openvpn
+    apt: name=openvpn state=present
+  - name: Copy over our configuration
+    copy: src=files/openvpn/etc dest=/
+  - name: Decrypt the server key
+    command: openssl rsa -in {{conf_dir}}/server.key.enc -out {{conf_dir}}/server.key -passin pass:{{server_key_passphrase}} creates={{conf_dir}}/server.key
+
+  - name: Install supervisor
+    apt: pkg=supervisor state=present
+  - name: Make sure that the config directory exists for supervisor
+    file: path=/etc/supervisor state=directory
+    file: path=/etc/supervisor/conf.d state=directory
+  - name: Add config files
+    copy: src=files/supervisor/supervisord.conf dest=/etc/supervisor/supervisord.conf
+    copy: src=files/supervisor/conf.d/openvpn.conf dest=/etc/supervisor/conf.d/openvpn.conf
+  - name: Make sure supervisor is running
+    service: name=supervisor state=started
+  - name: Make sure openvpn is running
+    supervisorctl: name=openvpn state=restarted

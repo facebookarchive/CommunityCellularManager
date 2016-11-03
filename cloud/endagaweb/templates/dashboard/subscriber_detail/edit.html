@@ -1,0 +1,247 @@
+{% extends "dashboard/layout.html" %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %} {% tmpl_const "SITENAME" %} | {{ subscriber.imsi }} Edit {% endblock %}
+
+
+{% block pagestyle %}
+<style>
+  #number-messages-container .alert {
+    margin-top: 20px;
+  }
+  #subscriber-messages-container .alert {
+    margin-top: 20px;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class='modal fade' id='deactivate-number-modal'>
+  <div class='modal-dialog'>
+    <div class='modal-content'>
+      <div class='modal-header'>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class='modal-title'>
+          Confirmation
+        </h4>
+      </div>
+      <div class='modal-body'>
+        <p>
+          Are you sure you want to deactivate
+          <strong><span id='modal-number-target'></span></strong>?
+          The subscriber will no longer have service on this number.
+        </p>
+      </div>
+      <div class='modal-footer'>
+        <button type='button' class='btn btn-default' data-dismiss='modal'>Cancel</button>
+        <button class='btn btn-primary' type='button' id='deactivate-number-submit'>Deactivate Number</button>
+        <div id='number-messages-container'></div>
+      </div>
+    </div>
+  </div>
+</div><!-- /.deactivate-number-modal -->
+
+<div class='modal fade' id='deactivate-subscriber-modal'>
+  <div class='modal-dialog'>
+    <div class='modal-content'>
+      <div class='modal-header'>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class='modal-title'>
+          Confirmation
+        </h4>
+      </div>
+      <div class='modal-body'>
+        <p>
+          Are you sure you want to deactivate
+          <strong>{{ subscriber.imsi }}</strong>?
+          The subscriber will no longer have service,
+          but can re-register with the same SIM card by texting 101.
+        </p>
+      </div>
+      <div class='modal-footer'>
+        <button type='button' class='btn btn-default' data-dismiss='modal'>Cancel</button>
+        <button class='btn btn-primary' type='button' id='deactivate-subscriber-submit'>Deactivate Subscriber</button>
+        <div id='subscriber-messages-container'></div>
+      </div>
+    </div>
+  </div>
+</div><!-- /.deactivate-number-modal -->
+
+
+{% include "dashboard/subscriber_detail/header.html" with subscriber=subscriber %}
+
+
+<div class = 'row'>
+  {% include "dashboard/subscriber_detail/nav.html" with imsi=subscriber.imsi active_tab='edit'%}
+
+  <div class='content col-xs-12 col-sm-4'>
+    <div class='col-sm-10'>
+      {% crispy subscriber_info_form %}
+    </div>
+
+    <div class='clearfix'>
+    </div>
+
+    <div class='col-sm-10'>
+      {% for message in messages %}
+        <div class="{{ message.tags }} message">{{ message }}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class='content col-xs-12 col-sm-4'>
+    {% if network_version != None %}
+    <div id='subscriber-number-list' class='col-xs-12'>
+      <strong>Subscriber number{{ subscriber.numbers_as_list|pluralize }}</strong>
+      {% if subscriber.numbers_as_list %}
+      <ul>
+        {% for number in subscriber.numbers_as_list %}
+          <li>
+            {{ number }}
+            <a data-toggle='modal' data-target='#deactivate-number-modal'
+               class='deactivate-number-link' id='{{ number }}' href='#'>(deactivate)</a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      {% else %}
+        <p><i>none</i></p>
+      {% endif %}
+    </div>
+    {% endif %}  {# /network_version check #}
+
+    {% if network_version > '00000.00003.00019' %}
+    <div class='col-xs-12'>
+      <a data-toggle='modal' data-target='#deactivate-subscriber-modal'
+        class='btn btn-default deactivate-subscriber-link'
+        href='#'>Deactivate Subscriber</a>
+    </div>
+    {% endif %}  {# /network_version check #}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+  /* Number Deactivation
+    1) click a deactivation link
+    2) the link has an ID which is equal to the target number
+    3) that number is injected into #modal-number-target
+    4) click confirm and we will read back #modal-target-number for the jquery-mediated
+       AJAX POST to /api/v2/numbers
+  */
+
+  /* Subscriber Deactivation
+    1) click a deactivation link
+    2) click the confirm button in the modal
+    3) show working / confirmed message in the modal
+    4) redirect back to /subscribers
+  */
+
+  // Declare the message dialog clear timeout in the higher scope so, if another
+  // message appears, we can reset the fadeout timer.
+  var messageClearTimeout;
+  $(function() {
+    $('.deactivate-number-link').click(function(event) {
+      event.preventDefault();
+      $('#modal-number-target').html(this.id);
+    });
+
+    $('.deactivate-subscriber-link').click(function(event) {
+      event.preventDefault();
+    });
+
+    $('#deactivate-number-submit').click(function(event) {
+      // Show a 'working' message.
+      var message = 'Working..';
+      var html = "<div class='alert alert-success'>" + message + "</div>";
+      $('#number-messages-container').html(html).show();
+      // Get the target number and start the POST request.
+      var targetNumber = $('#modal-number-target').html();
+      $.ajax({
+        url: '/api/v2/numbers/' + targetNumber,
+        type: 'POST',
+        data: {
+          state: 'available',
+          csrfmiddlewaretoken: '{{ csrf_token }}',
+        },
+        success: function(response) {
+          // Show a success message after a small delay and remove the number from the list.
+          // Then, after some more time has passed, close the modal and clear the messages.
+          setTimeout(function() {
+            var message = 'Number deactivated successfully.';
+            var html = "<div class='alert alert-success'>" + message + "</div>";
+            $('#number-messages-container').html(html).show();
+            $('#' + targetNumber).parent().fadeOut(500);
+          }, 1000);
+          clearTimeout(messageClearTimeout);
+          setTimeout(function() {
+            $('#deactivate-number-modal').modal('hide');
+          }, 3000);
+        },
+        error: function(response) {
+          // Show an error message after a small delay.
+          setTimeout(function() {
+            var message = response.responseJSON;
+            var html = "<div class='alert alert-danger'>" + message + "</div>";
+            $('#number-messages-container').html(html).show();
+          }, 800);
+        },
+      });
+    });
+
+    $('#deactivate-subscriber-submit').click(function(event) {
+      // Show a 'working' message.
+      var message = 'Working..';
+      var html = "<div class='alert alert-success'>" + message + "</div>";
+      $('#subscriber-messages-container').html(html).show();
+      // Post to the endagaweb API.
+      $.ajax({
+        url: '/api/v2/subscribers/' + '{{ subscriber.imsi }}',
+        type: 'DELETE',
+        beforeSend: function(xhr) {
+          xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+        },
+        success: function(response) {
+          // Show a success message after a small delay.
+          // Then, after some more time has passed, redirect back to /subscribers.
+          setTimeout(function() {
+            var message = 'Subscriber deactivated successfully, redirecting..';
+            var html = "<div class='alert alert-success'>" + message + "</div>";
+            $('#subscriber-messages-container').html(html).show();
+          }, 1000);
+          clearTimeout(messageClearTimeout);
+          setTimeout(function() {
+            window.location.href = '/dashboard/subscribers';
+          }, 2000);
+        },
+        error: function(response) {
+          // Show an error message after a small delay.
+          setTimeout(function() {
+            var message = 'Error: ' + response.status;
+            var html = "<div class='alert alert-danger'>" + message + "</div>";
+            $('#subscriber-messages-container').html(html).show();
+          }, 800);
+        },
+      });
+    });
+
+    // Anytime the modals are closed, clear any messages.
+    $('#deactivate-number-modal').on('hidden.bs.modal', function() {
+      $('#number-messages-container').html('');
+    });
+    $('#deactivate-subscriber-modal').on('hidden.bs.modal', function() {
+      $('#subscriber-messages-container').html('');
+    });
+  });
+</script>
+{% endblock %}

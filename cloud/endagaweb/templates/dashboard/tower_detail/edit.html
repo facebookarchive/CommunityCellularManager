@@ -1,0 +1,173 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+{% if tower_nickname %}
+{% tmpl_const "SITENAME" %} | editing {{ tower_nickname }}
+{% else %}
+{% tmpl_const "SITENAME" %} | editing tower {{ tower.uuid }}
+{% endif %}
+{% endblock %}
+
+
+{% block pagestyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+
+<style>
+  #edit-tower-map {
+    height: 400px;
+  }
+
+  #messages-container {
+    margin-top: 20px;
+  }
+
+  .awesome-marker, .awesome-marker-shadow {
+    -webkit-transition: margin 0.2s;
+       -moz-transition: margin 0.2s;
+         -o-transition: margin 0.2s;
+            transition: margin 0.2s;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+{% include "dashboard/tower_detail/header.html" with tower=tower %}
+
+<div class = 'row'>
+  {% include "dashboard/tower_detail/nav.html" with uuid=tower.uuid active_tab='edit'%}
+
+  <div class='content col-xs-12 col-sm-10'>
+    <form id='edit-tower-form'>
+      <div class='form-group col-sm-6'>
+        <label for='nickname-input' class='control-label'>
+          Tower name
+        </label>
+        <div class='controls'>
+          <input class='textinput textInput form-control' id='nickname-input'
+                 name='nickname' placeholder='{{ suggested_nickname }}' type='text'
+                 value='{{ tower_nickname }}'>
+        </div>
+      </div><!-- /.form-group -->
+      <div class='form-group col-sm-8'>
+        <label for='location-input' class='control-label'>
+          Tower location (click and drag the marker)
+        </label>
+        <div class='controls'>
+          <div id='edit-tower-map'></div>
+        </div>
+      </div><!-- /.form-group -->
+      <div class='col-xs-12'>
+        <button class='btn btn-primary' type='button' id='edit-tower-save'>
+          Save
+        </button>
+      </div>
+      <div id='messages-container' class='col-xs-12 col-sm-8'></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block js %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+  <script src="https://homes.cs.washington.edu/~kheimerl/ccm/leaflet-animated-draggable-marker.js"></script>
+  <script>
+
+    // Init the map so we can move it later and
+    // the editTowerMarker so we can later get its lat/lon.
+    var editTowerMap, editTowerMarker;
+
+    $(function() {
+      // Focus on the name input.
+      $('#nickname-input').select();
+
+      // Build the edit-tower map.
+      editTowerMap = L.map('edit-tower-map').setView([{{ tower.latitude }}, {{ tower.longitude }}], 13);
+      L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(editTowerMap);
+      L.control.scale().addTo(editTowerMap);
+      var iconColorStatusMap = {
+        'no-data': 'gray',
+        'inactive': 'red',
+        'active': 'green',
+      }
+      var markerIcon = L.AwesomeMarkers.icon({
+        prefix: 'fa',
+        icon: 'signal',
+        markerColor: iconColorStatusMap['{{ tower.status }}'],
+      });
+      var markerOptions = {
+        icon: markerIcon,
+        draggable: true,
+      };
+      editTowerMarker = L.marker([{{ tower.latitude }}, {{ tower.longitude }}], markerOptions)
+        .animateDragging()
+        .addTo(editTowerMap);
+
+      // Handle clicks on the edit-tower save button.
+      $('#edit-tower-save').click(function() {
+        submitEditTowerData();
+      });
+
+      // Handle <enter> keypress on edit-tower inputs.
+      $('input, #edit-tower-map').keypress(function(e) {
+        if (e.keyCode == 13) {
+          e.preventDefault();
+          submitEditTowerData();
+        }
+      });
+    });
+
+    // POST the edited tower data.
+    function submitEditTowerData() {
+      var editTowerMarkerPosition = editTowerMarker.getLatLng();
+      var data = {
+        nickname: $('#nickname-input').val(),
+        latitude: editTowerMarkerPosition.lat,
+        longitude: editTowerMarkerPosition.lng,
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+      };
+      $.post('/dashboard/towers/{{ tower.uuid }}/edit', data, function(response) {
+        if (response['status'] == 'ok') {
+          // Show a 'success' message.
+          var message = 'Tower info updated successfully.';
+          var html = '<div class="alert alert-success">' + message + '</div>';
+          $('#messages-container').html(html).show();
+          // Shift the map view and re-select the name input.
+          editTowerMap.setView([editTowerMarkerPosition.lat, editTowerMarkerPosition.lng], 13);
+          $('#nickname-input').select();
+          // Hacky adjustment of the tower name in the header..react, save us!
+          $('.page-title #nickname').html('"' + data['nickname'] + '"');
+        } else {
+          // Show the error message that was returned.
+          var html = '';
+          response['messages'].map(function(message) {
+            html += '<div class="alert alert-danger">' + message + '</div>';
+          });
+          $('#messages-container').html(html).show();
+        }
+        // Fade out all messages after some time.
+        setTimeout(function() {
+          $('#messages-container').fadeOut(500);
+        }, 4000);
+      });
+    }
+
+  </script>
+{% endblock %}

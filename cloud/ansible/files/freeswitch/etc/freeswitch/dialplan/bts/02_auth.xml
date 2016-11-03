@@ -1,0 +1,32 @@
+<!-- ensure that the number is under the account given by the auth token -->
+<extension name="get_owner_auth" continue="true">
+	<!-- validate user arguments to prevent command injection attacks to system -->
+	<condition field="${sip_h_X-Endaga-uuid}" expression="^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$|^$" />
+	<condition field="caller_id_name" expression="^\d+$" />
+ 	<condition field="${sip_h_X-Endaga-token}" expression="^\w+$" >
+		<action application="set" data="auth_header=Authorization: Token ${sip_h_X-Endaga-token}" inline="true" />
+ 	</condition>
+</extension>
+
+<extension name="check_auth" continue="true">
+	<!-- validate user arguments to prevent command injection attacks to system -->
+	<condition field="${sip_h_X-Endaga-uuid}" expression="^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$|^$" />
+	<condition field="caller_id_name" expression="^\d+$" />
+ 	<condition field="${sip_h_X-Endaga-token}" expression="^\w+$|^$" >
+		<!-- send over the number and the auth token and timeout after 5 seconds -->
+		<action application="set" data="auth_code=${system curl --max-time 5 --header '${auth_header}' --write-out '%{http_code}' 'https://api-int.etagecom.io/internal/api/v1/auth/?number=${caller_id_name}&format=json' --silent -o /dev/null | tr -d '\n'}" inline="true"/>
+	</condition>
+</extension>
+
+<extension name="accept_or_reject" continue="true">
+	<!-- make sure we got an OK from the auth endpoint before connecting -->
+    <condition field="${auth_code}" expression="^200$">
+        <!-- if the call succeeds, strip auth info. -->
+        <action application="unset" data="sip_h_X-Endaga-token" />
+        <action application="unset" data="sip_h_X-Endaga-uuid" />
+
+        <!-- otherwise, send reject. Leave auth headers intact for debug purposes. -->
+	    <anti-action application="log" data="ALERT Call rejected due to failed AUTH: '${auth_code}'"/>
+        <anti-action application="respond" data="407"/>
+    </condition>
+</extension>

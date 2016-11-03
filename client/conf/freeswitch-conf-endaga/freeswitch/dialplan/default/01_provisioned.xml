@@ -1,0 +1,17 @@
+<!--
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+-->
+
+<extension name="unprovisioned">
+  <condition field='${python(VBTS_Get_Auth_From_IMSI ${from_imsi})}' expression="False">
+    <action application="set" data='service_type=error_call'/>
+    <action application="export" data='service_type=error_call'/>
+    <action application="python" data='endaga_i18n Your phone is not provisioned.'/>
+    <action application="set" data='res=${python(VBTS_Send_SMS_Direct ${from_imsi}|${sip_received_ip}|${sip_received_port}|101|${_localstr})}'/>
+  </condition>
+</extension>

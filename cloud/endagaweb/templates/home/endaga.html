@@ -1,0 +1,41 @@
+{% extends "home/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+
+{% load apptags %}
+
+{% block pagestyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.0.3/css/font-awesome.min.css">
+<style type="text/css" media="screen">
+.masthead{
+    text-align: center;
+}
+</style>
+
+{% endblock %}
+
+{% block headerclass %}
+<body id="home">
+  <header class="navbar navbar-inverse normal" id="top" role="banner"/>
+{% endblock %}
+
+{% block content %}
+<div id="hero">
+  <div class="container">
+    <h1>
+      Welcome to {% tmpl_const "SITENAME" %}
+    </h1>
+    <div class="col-md-12">
+      </br>
+      <img class="img-responsive" src="/static/img/homebkg.jpg" alt="Home" />
+      </br>
+    </div>
+  </div>
+</div>
+{% endblock %}

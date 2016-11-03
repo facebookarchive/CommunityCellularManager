@@ -1,0 +1,84 @@
+{% load apptags %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>
+      {% block title %}
+      {% tmpl_const "SITENAME" %} | Community Cellular Networks
+      {% endblock %}
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Simple rural cellular networks.">
+    <meta name="author" content="{% tmpl_const "SITENAME" %}">
+
+    <!-- stylesheets -->
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.3/css/bootstrap.min.css">
+    <!-- Custom styles for this template -->
+    {% block pagestyle %} {% endblock %}
+
+  </head>
+
+
+  {% block headerclass %}
+  <body id="home">
+    <header class="navbar navbar-inverse hero" role="banner">
+      {% endblock %} <!-- /block headerclass -->
+
+      {% block header %}
+      <div class="container">
+        <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a href="/" class="navbar-brand">{% tmpl_const "SITENAME" %}</a>
+        </div> <!-- /.navbar-header -->
+
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="/">Home</a></li>
+            {% if user_profile.user.is_authenticated %}
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/logout">Logout</a></li>
+            {% else %}
+            <li><a href="/login">Login</a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div> <!-- /.container -->
+    </header>
+    {% endblock %} <!-- /block header -->
+
+    {% block content %}
+    {% endblock %}
+
+    {% block footer %}
+    <div id="footer-white">
+      <div class="container">
+        <div class="row credits">
+          <div class="col-md-12">
+            Copyright © 2015.
+          </div>
+        </div> <!-- /.row -->
+      </div> <!-- /.container -->
+    </div> <!-- /#footer-white -->
+    {% endblock %}
+
+    <!-- javascript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    <!-- Custom scripts for this template -->
+    {% block pagescripts %}
+    {% endblock %}
+  </body>
+</html>

@@ -1,0 +1,83 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+{% if network.name %}
+{% tmpl_const "SITENAME" %} | "{{ network.name }}"
+{% else %}
+{% tmpl_const "SITENAME" %} | Network
+{% endif %}
+{% endblock %}
+
+
+{% block content %}
+{% include "dashboard/network_detail/header.html" with network=network %}
+
+<div class = 'row'>
+  {% include "dashboard/network_detail/nav.html" with active_tab='info'%}
+
+  <div class='content col-xs-12 col-sm-10 col-md-4'>
+    <p><strong>Name</strong>: {{ network.name }}</p>
+    <p><strong>Subscriber Currency</strong>: {{ currency.name }}</p>
+    <p><strong>Number Country</strong>: {{ number_country }}</p>
+    <p>
+      <strong>Tower Software</strong>:
+      <ul>
+        <li>current version: {{ current_version }}</li>
+        <li>latest stable version: {{ latest_stable_version }}</li>
+        <li>latest beta version: {{ latest_beta_version }}</li>
+        <li>
+          automatic upgrades:
+          {% if network.autoupgrade_enabled %}
+            enabled to use the {{ network.autoupgrade_channel }} release
+          {% else %}
+            disabled
+          {% endif %}
+        </li>
+      </ul>
+    </p>
+
+    <p>
+      <strong>Network Size</strong>:
+      <ul>
+        <li>{{ towers_on_network }} tower{{ towers_on_network|pluralize }}</li>
+        <li>{{ subscribers_on_network }} subscriber{{ subscribers_on_network|pluralize }}</li>
+        <li>{{ numbers_on_network }} phone number{{ numbers_on_network|pluralize }}</li>
+      </ul>
+    </p>
+
+    <p>
+      <strong>Subscriber Stats</strong>:
+      <ul>
+        <li>active in the last month: {{ thirty_day_actives }}</li>
+        <li>active in the last week: {{ seven_day_actives }}</li>
+        <li>active in the last day: {{ one_day_actives }}</li>
+        <li>camped right now: {{ camped_right_now }}</li>
+      </ul>
+    </p>
+
+    {% if network.guru_settings %}
+    <p>
+      <strong>Advanced Settings:</strong>
+      <ul>
+        {% for setting in network.guru_settings %}
+          <li>{{ setting.key }}: {{ setting.value }}</li>
+        {% endfor %}
+      </ul>
+    </p>
+    {% endif %}
+
+  </div> <!-- /.col-md-4 -->
+</div>
+{% endblock %}

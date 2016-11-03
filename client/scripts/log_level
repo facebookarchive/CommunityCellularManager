@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+"""A utility to control the system logger reporting level.
+
+The logging value specied will allow all log entries of the specified or
+higher priority to be reported. By default, the global logging level is used,
+unless an app specific level is provided.
+
+Usage:
+    log_level set <app> <level>
+    log_level unset <app>
+    log_level list
+    log_level -h | --help
+
+Arguments:
+    level: a syslog priority level, number 0-7 or text (EMERGENCY, ALERT,
+    CRITICAL, ERROR, WARNING, NOTICE, INFO, DEBUG)
+    app: the application for which the log level will be set. Values are the
+    program name as reported to the system logger. To set the global logging
+    level, pass global
+
+Example:
+    log_level set global WARNING
+    log_level set openbts 7
+    log_level unset openbts
+
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+"""
+
+import docopt
+import envoy
+import sys
+
+from ccm.common import logger
+from core.config_database import ConfigDB
+
+if __name__ == "__main__":
+    args = docopt.docopt(__doc__)
+    conf = ConfigDB()
+
+    if args['set']:
+        log_level = args['<level>'].upper()
+
+        if log_level.isdigit() and 0 <= int(log_level) <= 7:
+            log_level = logger.LOG_LEVELS[int(log_level)]
+        if not log_level in logger.LOG_LEVELS:
+            print 'Invalid log priority level. ' \
+                  'Log level valid range is 0-7 or %s' % \
+                    ', '.join(logger.LOG_LEVELS)
+            sys.exit(1)
+
+        try:
+            program_name = args['<app>']
+        except KeyError:
+            program_name = 'global'
+
+        conf_key = 'logger.%s.log_level' % program_name
+        try:
+            old_log_level = conf[conf_key]
+        except KeyError:
+            old_log_level = '<unset>'
+
+        conf[conf_key] = log_level
+        print 'Log level for %s set from %s to %s' % \
+                (program_name, old_log_level, log_level)
+        envoy.run('sudo service rsyslog restart')
+        sys.exit(0)
+    elif args['unset']:
+        program_name = args['<app>']
+        conf_name = 'logger.%s.log_level' % program_name
+        if program_name != 'global' and conf_name in conf:
+            del conf[conf_name]
+            envoy.run('sudo service rsyslog restart')
+            sys.exit(0)
+        else:
+            print 'Entry does not exist to be unset'
+            sys.exit(1)
+    elif args['list']:
+        for k,v in conf.substring_search('log_level').items():
+            print '%s=%s' % (k, v)
+        sys.exit(0)

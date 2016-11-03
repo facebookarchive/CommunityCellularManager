@@ -1,0 +1,25 @@
+#!/usr/bin/python
+
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+import sys
+import traceback
+
+from ccm.common import logger
+from core.endagad import EndagaD
+
+logger.notice('starting endagad')
+
+try:
+    EndagaD().run()
+except Exception as e:
+    logger.critical('caught unhandled exception: %s, %s' %
+                    (e, traceback.format_exc()))
+    sys.exit(1)
+
+logger.notice('stopping endagad')

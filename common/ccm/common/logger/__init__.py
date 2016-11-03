@@ -1,0 +1,158 @@
+"""Endaga/CCM global loggers.
+
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+"""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+import errno
+import logging
+from logging.handlers import SysLogHandler
+from os import environ
+from sys import stderr
+from syslog import LOG_LOCAL0
+import traceback
+
+
+class DefaultLogger(object):
+    """ Capture state of default logging config. """
+    _log = logging.getLogger(__name__)
+    _log_formatter = logging.Formatter(
+        "endaga: %(filename)s:%(lineno)d:%(funcName)s: %(message)s")
+    _log_verbose = logging.Formatter(
+        "[%(levelname)s] %(filename)s:%(lineno)d:%(funcName)s: %(message)s")
+    _log_handler = None
+
+    @classmethod
+    def log(cls, level, message, tb_offset=2, tb_limit=0):
+        """ Add file/function/lineno info to log message. Optionally add a
+        stack trace if the caller requests it, for use, say, in tracking down
+        calls to deprecated code; tb_limit specifies how many additional stack
+        frames the caller wishes to append to the message.
+
+        The default tb_offset of 2 is appropriate for direct calls to this
+        function: caller's stack frame is second on the stack (this function
+        is first). When called from a module-level function the tb_offset of 4
+        is necessary to skip over the two additional stack frames incurred by
+        the top-level module function, e.g., debug(), and _handle_log_event().
+        """
+        assert tb_limit >= 0 and tb_offset >= 2
+        # Logger.handle() method doesn't check log levels, so we have to do so
+        # explicitly. That also saves us creating stack traces we don't need.
+        if not cls._log.isEnabledFor(level):
+            return
+
+        tb = traceback.extract_stack(limit=(tb_offset + tb_limit))
+        # discard the stack frames we don't care about (following offset)
+        tb = tb[:-tb_offset + 1]
+        if tb_limit:
+            message = '\n'.join(
+                [message, 'Traceback:'] +
+                # Python 3 barfs on f without the funky '[:]' operator
+                [("  %s:%d:%s: %s" % f[:]) for f in tb])
+        (pathname, lineno, function, _) = tb[-1]
+
+        # by using standard LogRecord fields we are compatible with direct
+        # calls to the standard logging infrastructure (bypassing this module)
+        rec = cls._log.makeRecord(__name__, level, pathname, lineno,
+                                  message, args=None, exc_info=None,
+                                  func=function)
+        cls._log.handle(rec)
+
+    @classmethod
+    def update_handler(cls, handler=None, level=None, verbose=False):
+        root = logging.getLogger()
+        if level is not None:
+            cls._log.setLevel(level)
+        if handler or verbose:
+            if handler:
+                if cls._log_handler:
+                    root.removeHandler(cls._log_handler)
+                cls._log_handler = handler
+                root.addHandler(handler)
+            cls._log_handler.setFormatter(
+                cls._log_verbose if verbose else cls._log_formatter)
+            cls.log(logging.INFO,
+                    "set default log handler to %s" % (handler, ))
+        if level is not None:
+            cls.log(logging.INFO,
+                    "set log level to %d" % (cls._log.getEffectiveLevel(), ))
+
+
+# set the default logger (can be overridden for testing)
+try:
+    # in some environments /dev/log is not the syslog socket
+    sock = environ.get('CCM_SYSLOG_SOCKET', '/dev/log')
+    DefaultLogger.update_handler(
+        SysLogHandler(address=sock, facility=LOG_LOCAL0),
+        logging.INFO)
+except IOError as ex:
+    if ex.errno == errno.ENOENT:
+        # ignoring this error is good for testing, but...
+        print("unable to connect to syslog at %s: %s" % (sock, ex),
+              file=stderr)
+    else:
+        raise
+
+
+LOG_LEVELS = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE',
+              'INFO', 'DEBUG']
+
+
+def emergency(message, **kwargs):
+    """Level 0"""
+    _handle_log_event(logging.CRITICAL, message, **kwargs)
+
+def alert(message, **kwargs):
+    """Level 1"""
+    _handle_log_event(logging.CRITICAL, message, **kwargs)
+
+def critical(message, **kwargs):
+    """Level 2"""
+    _handle_log_event(logging.CRITICAL, message, **kwargs)
+
+def error(message, **kwargs):
+    """Level 3"""
+    _handle_log_event(logging.ERROR, message, **kwargs)
+
+def warning(message, **kwargs):
+    """Level 4"""
+    _handle_log_event(logging.WARNING, message, **kwargs)
+
+def notice(message, **kwargs):
+    """Level 5"""
+    _handle_log_event(logging.INFO, message, **kwargs)
+
+def info(message, **kwargs):
+    """Level 6"""
+    _handle_log_event(logging.INFO, message, **kwargs)
+
+def debug(message, **kwargs):
+    """Level 7"""
+    _handle_log_event(logging.DEBUG, message, **kwargs)
+
+def _handle_log_event(priority, message, **kwargs):
+    tb_limit = kwargs.pop('tb_limit', 0)
+    # from log() the original caller will be the 4th stack frame back, but
+    # we also allow the caller to add an extra offset, e.g., in case of
+    # wrapper functions.
+    tb_offset = kwargs.pop('tb_offset', 0) + 4
+    if len(kwargs):
+        message = " ".join([message] +
+                           [('%s=%s' % (k, v)) for (k, v) in
+                            sorted(kwargs.items(), key=lambda i: i[0])])
+    DefaultLogger.log(priority, message, tb_offset, tb_limit)
+
+
+def with_trace(log_fn, message, **kwargs):
+    """ Add a traceback to a logger message. """
+    kwargs.setdefault('tb_limit', 3)  # 3 additional stack frames by default
+    log_fn(message, **kwargs)
