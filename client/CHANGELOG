@@ -1,9 +1,14 @@
 endaga NEXT (???)
 -----------------
-Packags affected: freeswitch_conf_endaga
+Packags affected:
+
+endaga-openbts, endaga-osmocom 0.7.8 (2016 Nov 3)
+-----------------
+Packags affected: python_endaga_core, freeswitch_conf_endaga
 Changes:
 - Fix charging of intra-network SMS where recipient is not attached to
    same BTS as sender
+- Simplifies freeswitch configs to use VPN interface names rather than IPs
 
 endaga-openbts, endaga-osmocom 0.7.7 (2016 Sep 27)
 -----------------
