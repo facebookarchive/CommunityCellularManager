@@ -1,4 +1,12 @@
-"""BTS registration and checkin control.
+"""
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+
+BTS registration and checkin control.
 
 Make sure we're connected to the VPN and can reach internal API server. If so,
 continue launching everything else.
@@ -6,13 +14,6 @@ continue launching everything else.
 1) Send UUID, see if registration is needed.
     - Response:
         - need_to_register: True/False. If false, no further
-
-Copyright (c) 2016-present, Facebook, Inc.
-All rights reserved.
-
-This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant
-of patent rights can be found in the PATENTS file in the same directory.
 """
 
 import json
@@ -263,8 +264,14 @@ def clear_old_pid(pname="OpenBTS", path="/var/run/OpenBTS.pid"):
     if pid not in pids:
         os.remove(path)
 
-def reset_registration():
+def reset_registration(registry=None):
     """Removes existing registration but does not erase the snowflake UUID."""
+    if registry:
+        if not ((registry.startswith('http://') or
+                 registry.startswith('https://')) and
+                registry.endswith('/api/v1')):
+            raise ValueError("invalid registry URL: %s" % (registry, ))
+        conf['registry'] = registry
     # Remove the relevant endaga config keys.
     del conf['bts_registered']  # registration status
     del conf['bts_secret']  # the temporary key for authing requests
@@ -284,9 +291,9 @@ def reset_registration():
     Service.SupervisorService("endagad").restart()
 
 def system_healthcheck(checkin_data):
-    # A generic "health check" on the system. Currently, we just see if there are
-    # zero active users camped to the system.  Returns True if system is fine, False
-    # otherwise.
+    # A generic "health check" on the system. Currently, we just see if
+    # there are zero active users camped to the system.  Returns True if
+    # system is fine, False otherwise.
     status = checkin_data['status']
     try:
         if len(status['camped_subscribers']) == 0:

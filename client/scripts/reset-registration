@@ -1,20 +1,48 @@
-#!/usr/bin/python
-"""  Resetting the registration data on a box.
+#!/usr/bin/env python2
+"""
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+
+Resetting the registration data on a box.
 
 This should not be shipped to the customer -- registration should not be reset
 except by support. While not yet implemented, registration should be reset from
 the dashboard, not from the device. This script is useful for development in
 some cases, however.
-
-Copyright (c) 2016-present, Facebook, Inc.
-All rights reserved.
-
-This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
-of patent rights can be found in the PATENTS file in the same directory.
 """
+
+from __future__ import print_function
+
+import sys
 
 from core.registration import reset_registration
 
 
-reset_registration()
+USAGE = """
+Usage:
+    reset-registration [api-url]
+
+Optional argument specifies a URL to be used as the cloud endpoint for
+BTS registration, e.g., https://staging.etagecom.io/api/v1, or
+http://192.168.40.10:8000/api/v1.
+""".strip()
+
+
+def main(args):
+    if len(args) == 1 and (sys.argv[1] == '-h' or
+                           sys.argv[1] == '--help'):
+        print(USAGE, file=sys.stderr)
+        return
+    try:
+        # just pass all other args through, let callee figure out what's valid
+        reset_registration(*args)
+    except Exception as ex:
+        print("Invalid argument(s): %s\n\n%s" % (ex, USAGE), file=sys.stderr)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
