@@ -93,7 +93,7 @@ class EndagaD(object):
             self._reset_bts_config()
 
             # Update the inbound_url if the VPN is up.
-            if system_utilities.get_vpn_status() == "up":
+            if system_utilities.get_vpn_ip() is not None:
                 logger.notice("Performing register_update")
                 registration.register_update(eapi)
                 logger.notice("Performing ensure_fs_external_bound")
