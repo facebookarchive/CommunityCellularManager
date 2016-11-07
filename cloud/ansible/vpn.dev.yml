@@ -15,6 +15,11 @@
     apt: name=openvpn state=present
   - name: Copy over our configuration
     copy: src=files/openvpn/etc dest=/
+  - include: key-check.yml
+    vars:
+      cafile: '/etc/openvpn/etage-bundle.crt'
+      cert: '/etc/openvpn/server.crt'
+      key: '/etc/openvpn/server.key'
   - name: Disable init.d autostart
     replace: dest=/etc/default/openvpn regexp='#AUTOSTART=\"none\"' replace='AUTOSTART="none"'
   - name: Turn off init.d vpn

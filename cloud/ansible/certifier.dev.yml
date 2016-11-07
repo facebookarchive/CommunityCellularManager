@@ -27,6 +27,11 @@
   - name: Copy over certifier
     copy: src=../certifier dest=/tmp/
     become: no
+  - include: key-check.yml
+    vars:
+      cafile: '/tmp/certifier/etage-bundle.crt'
+      cert: '/tmp/certifier/pki/ca.crt'
+      key: '/tmp/certifier/pki/private/ca.key'
   - name: Get version
     command: cat /tmp/certifier/VERSION
     become: no
@@ -52,14 +57,12 @@
   - name: copy easyrsa
     command: cp /home/vagrant/easyrsa/easyrsa3/easyrsa /home/vagrant/certifier/
   - name: easyrsa permissions
-    command:  chmod 777 /home/vagrant/certifier/easyrsa
+    command: chmod 777 /home/vagrant/certifier/easyrsa
   - name: Make sure that the config directory exists for supervisor
-    file: path=/etc/supervisor state=directory
-  - name: Make sure that the config directory exists for supervisor conf.d
     file: path=/etc/supervisor/conf.d state=directory
-  - name: Add config files
+  - name: Add supervisor config files
     copy: src=files/supervisor/supervisord.conf dest=/etc/supervisor/supervisord.conf
-  - name: Add config files 2
+  - name: Add certifier config files
     copy: src=files/supervisor/conf.d/certifier.conf dest=/etc/supervisor/conf.d/certifier.conf
   - name: Change directory for supervisor
     replace: dest=/etc/supervisor/conf.d/certifier.conf regexp='ubuntu' replace='vagrant'
