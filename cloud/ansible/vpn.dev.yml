@@ -15,6 +15,11 @@
     apt: name=openvpn state=present
   - name: Copy over our configuration
     copy: src=files/openvpn/etc dest=/
+  - name: Enable logging of messages to file
+    replace:
+      dest: /etc/openvpn/server.conf
+      regexp: '^#log-append (.*)'
+      replace: 'log-append \1'
   - include: key-check.yml
     vars:
       cafile: '/etc/openvpn/etage-bundle.crt'
