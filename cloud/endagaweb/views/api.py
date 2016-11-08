@@ -618,7 +618,8 @@ class SSLConfig(APIView):
         try:
             bts = models.BTS.objects.get(uuid=bts_uuid)
         except models.BTS.DoesNotExist:
-            return Response("", status=status.HTTP_400_BAD_REQUEST)
+            return Response("Unknown BTS",
+                            status=status.HTTP_404_NOT_FOUND)
 
         # if the BTS is added but not registered, return OpenSSL configuration
         # data and api key.
@@ -634,7 +635,8 @@ class SSLConfig(APIView):
             resp['sslconf'] = self.get_openssl_conf(bts)
             return Response(resp, status=status.HTTP_200_OK)
         else:
-            return Response("", status=status.HTTP_400_BAD_REQUEST)
+            return Response("Registered already",
+                            status=status.HTTP_403_FORBIDDEN)
 
     def get_openssl_conf(self, bts):
         """
