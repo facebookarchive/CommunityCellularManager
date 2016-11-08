@@ -21,15 +21,21 @@ class FakeSubscriberDB(BaseSubscriber):
     def __init__(self):
         super(FakeSubscriberDB, self).__init__()
         self._hlr = {}
+        # initialise list of known subscribers
+        for imsi, data in self.get_subscriber_states().items():
+            self._add_sub(imsi, data['numbers'])
 
-    def add_subscriber_to_hlr(self, imsi, number, ip, port):
-        """Adds a subscriber to the system."""
+    def _add_sub(self, imsi, numbers, ip=None, port=None):
         self._hlr[imsi] = {
             'name': imsi,
             'ip': ip,
-            'numbers': [number],
+            'numbers': numbers,
             'port': port,
         }
+
+    def add_subscriber_to_hlr(self, imsi, number, ip, port):
+        """Adds a subscriber to the system."""
+        self._add_sub(imsi, [number], ip, port)
 
     def delete_subscriber_from_hlr(self, imsi):
         """Removes a subscriber from the system."""
