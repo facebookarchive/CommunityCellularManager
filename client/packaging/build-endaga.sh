@@ -16,7 +16,7 @@
 
 set -e
 BUILD_DATE=`date -u +"%Y%m%d%H%M%S"`
-ENDAGA_VERSION="0.7.8"
+ENDAGA_VERSION="0.7.9"
 
 # The resulting package is placed in $OUTPUT_DIR
 # or in the cwd.
@@ -138,7 +138,7 @@ fpm \
     --depends "libpq-dev" \
     --depends "lighttpd" \
     --depends "openvpn" \
-    --deb-pre-depends "python-endaga-core (= 0.5.8)" \
+    --deb-pre-depends "python-endaga-core (= 0.5.9)" \
     --depends "python-psycopg2" \
     --depends "python-snowflake (= 0.0.2)" \
     --depends "postgresql" \

@@ -2,6 +2,15 @@ endaga NEXT (???)
 -----------------
 Packags affected:
 
+-----------------
+Packages affected:
+Changes:
+
+endaga-openbts, endaga-osmocom 0.7.9 (2016 Nov 7)
+-----------------
+Packags affected: python_endaga_core
+- Endagad vpn status crash
+
 endaga-openbts, endaga-osmocom 0.7.8 (2016 Nov 3)
 -----------------
 Packags affected: python_endaga_core, freeswitch_conf_endaga
