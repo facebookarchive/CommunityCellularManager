@@ -58,7 +58,7 @@ class FakeSubscriberDB(BaseSubscriber):
         """
         try:
             sub = self._hlr[imsi]
-            sub.update('numbers', sub['numbers'] + [number])
+            sub['numbers'] = sub['numbers'] + [number]
         except KeyError:
             raise SubscriberNotFound(imsi)
 

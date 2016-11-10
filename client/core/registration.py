@@ -23,8 +23,8 @@ import time
 
 import envoy
 import requests
-import requests.exceptions
-import snowflake
+from requests.exceptions import RequestException
+from snowflake import snowflake
 
 from ccm.common import logger
 from core import system_utilities
@@ -34,11 +34,72 @@ from core.config_database import ConfigDB
 from core.servicecontrol import ServiceState
 from core.service import Service
 
+
 conf = ConfigDB()
 # Dependent supervisor service names for start/stop.
 SERVICES = bts.SERVICES + [Service.SupervisorService('openvpn'),
                            Service.SystemService('freeswitch'),
                            Service.SupervisorService('endagad')]
+
+
+class RegistrationError(Exception):
+    def __init__(self, prefix, msg):
+        super(RegistrationError, self).__init__(
+            '%s: %s' % (prefix, msg) if prefix else msg)
+
+
+class RegistrationClientError(RegistrationError):
+    """ Exception was raised by client (could be socket, requests, etc.) """
+    def __init__(self, msg, ex, prefix=None):
+        super(RegistrationClientError, self).__init__(
+            prefix, msg + (': %s' % (ex, )))
+        self.exception = ex
+
+
+class RegistrationServerError(RegistrationError):
+    """ Error was returned by server """
+    def __init__(self, resp, prefix=None):
+        msg = ('server returned status %d (%s)' %
+               (resp.status_code,
+                (resp.text if len(resp.text) < 100 else
+                 '%s <%d bytes truncated>' %
+                 (resp.text[:100], len(resp.text))
+                )
+               )
+              )
+        super(RegistrationServerError, self).__init__(prefix, msg)
+        self.status_code = resp.status_code
+        self.text = resp.text
+
+
+def _send_cloud_req(req_method, req_path, err_prefix, **kwargs):
+    url = conf['registry'] + req_path
+    err = None
+    try:
+        r = req_method(url, **kwargs)
+    except socket.error as ex:
+        err = RegistrationClientError(('socket error connecting to %s' %
+                                       (url, )),
+                                      ex, err_prefix)
+    except RequestException as ex:
+        err = RegistrationClientError('request to %s failed' % (url, ),
+                                      ex, err_prefix)
+    if r.status_code == 200:
+        return json.loads(r.text)
+    else:
+        err = RegistrationServerError(r, err_prefix)
+    raise err
+
+
+def _get_snowflake():
+    """ Read UUID from /etc/snowflake. If it doesn't exist, die. """
+    bts_uuid = snowflake()
+    if bts_uuid:
+        return bts_uuid
+
+    SNOWFLAKE_MISSING = '/etc/snowflake missing'
+    logger.critical(SNOWFLAKE_MISSING)
+    raise SystemExit(SNOWFLAKE_MISSING)
 
 
 def get_registration_conf():
@@ -48,70 +109,94 @@ def get_registration_conf():
       the config data
 
     Raises:
-      ValueError if the request does not return 200
+      RegistrationError if the request does not return 200
     """
+    bts_uuid = _get_snowflake()
     params = {
-        'bts_uuid': snowflake.snowflake()
+        'bts_uuid': bts_uuid
     }
-    r = requests.get(conf['registry'] + "/bts/sslconf", params=params)
-    if r.status_code == 200:
-        return json.loads(r.text)
-    else:
-        raise ValueError("Getting reg conf failed with status %d" %
-                         r.status_code)
+    try:
+        return _send_cloud_req(
+            requests.get,
+            '/bts/sslconf',
+            'get cert config',
+            params=params)
+    except RegistrationServerError as ex:
+        if ex.status_code == 403:
+            msg = 'BTS already registered - manually generate new snowflake'
+            # unrecoverable error - exit
+            logger.critical(msg)
+            raise SystemExit(msg)
+        if ex.status_code == 404:
+            logger.warning('*** ensure BTS UUID (%s) is registered' %
+                           (bts_uuid, ))
+        raise
 
 
 def get_vpn_conf(eapi, csr):
     data = {
-        'bts_uuid': snowflake.snowflake(),
+        'bts_uuid': _get_snowflake(),
         'csr': csr
     }
     registration = conf['registry'] + '/bts/register'
     try:
-        r = requests.post(registration, data=data, headers=eapi.auth_header)
-        if r.status_code == 200:
-            return json.loads(r.text)
-        else:
-            err = ("VPN conf/cert signing failed with status %d (%s)" %
-                   (r.status_code, r.text))
-    except socket.error as ex:
-        err = ("socket error connecting to %s: %s" % (registration, ex))
-    except requests.exceptions.RequestException as ex:
-        err = ("request to %s failed: %s" % (registration, ex))
-    logger.error(err)
-    raise ValueError(err)
+        return _send_cloud_req(
+            requests.post,
+            '/bts/register',
+            'get VPN config',
+            data=data, headers=eapi.auth_header)
+    except RegistrationServerError as ex:
+        if ex.status_code == 400 and ex.text == '"status: 500"':
+            logger.warning('*** internal certifier error, reset snowflake?')
+        raise
 
 
 def register_update(eapi):
     """Ensures the inbound URL for the BTS is up to date."""
     vpn_ip = system_utilities.get_vpn_ip()
-    vpn_status = "up" if vpn_ip else "down"
+    vpn_status = 'up' if vpn_ip else 'down'
 
     # This could fail when offline! Must handle connection exceptions.
+    params = {
+        'bts_uuid': _get_snowflake(),
+        'vpn_status': vpn_status,
+        'vpn_ip': vpn_ip,
+        'federer_port': '80',
+    }
     try:
-        params = {
-            'bts_uuid': snowflake.snowflake(),
-            'vpn_status': vpn_status,
-            'vpn_ip': vpn_ip,
-            # federer always runs on port 80, but didn't in old versions
-            'federer_port': "80",
-        }
-        r = requests.get(conf['registry'] + "/bts/register", params=params,
-                         headers=eapi.auth_header, timeout=11)
-        if r.status_code == 200:
-            try:
-                d = json.loads(r.text)
-                if 'bts_secret' in d:
-                    conf['bts_secret'] = d['bts_secret']
-            except ValueError:
-                pass
-            return r.text
-        else:
-            raise ValueError("BTS registration update failed with status"
-                             " %d (%s)" % (r.status_code, r.text))
-    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-        logger.error("register_update failed due to connection error or"
-                      " timeout.")
+        d = _send_cloud_req(
+            requests.get,
+            '/bts/register',
+            'BTS registration',
+            params=params,
+            headers=eapi.auth_header,
+            timeout=11)
+        if 'bts_secret' in d:
+            conf['bts_secret'] = d['bts_secret']
+    except RegistrationError as ex:
+        logger.error(str(ex))
+
+
+def _retry_req(req, err_prefix):
+    # retry request until request succeeds
+    backoff_count = 0
+    while True:
+        try:
+            return req()
+        except RegistrationError as ex:
+            delay = min(2**backoff_count, 300)
+            logger.with_trace(
+                logger.error,
+                ('%s failed - %s - sleeping %d seconds' %
+                 (err_prefix, ex, delay)),
+                tb_limit=0,
+                tb_offset=2)
+            time.sleep(delay)
+            backoff_count += 1
+
+
+def _reset_endaga_token():
+    conf['endaga_token'] = None
 
 
 def generate_keys():
@@ -119,23 +204,21 @@ def generate_keys():
     # Exit if we're already registered.
     if 'bts_registered' in conf and conf['bts_registered']:
         return
-    backoff_count = 0
-    while not ('endaga_token' in conf and conf['endaga_token']):
-        try:
-            reg = get_registration_conf()
-            conf['endaga_token'] = reg['token']
-            conf['sslconf'] = reg['sslconf']
-        except ValueError:
-            time.sleep(min(2**backoff_count, 300))
-            backoff_count += 1
-            continue
-        # generate keys and csr
-        with open("/etc/openvpn/endaga-sslconf.conf.noauto", "w") as f:
-            f.write(conf['sslconf'])
-        envoy.run("openssl req -new -newkey rsa:2048"
-                  " -config /etc/openvpn/endaga-sslconf.conf.noauto"
-                  " -keyout /etc/openvpn/endaga-client.key"
-                  " -out /etc/openvpn/endaga-client.req -nodes")
+
+    # not registered - discard old token before getting a new one
+    _reset_endaga_token()
+
+    reg = _retry_req(get_registration_conf, 'generate keys')
+    conf['endaga_token'] = reg['token']
+    sslconf = reg['sslconf']
+
+    # generate keys and csr
+    with open('/etc/openvpn/endaga-sslconf.conf.noauto', 'w') as f:
+        f.write(sslconf)
+    envoy.run('openssl req -new -newkey rsa:2048'
+              ' -config /etc/openvpn/endaga-sslconf.conf.noauto'
+              ' -keyout /etc/openvpn/endaga-client.key'
+              ' -out /etc/openvpn/endaga-client.req -nodes')
 
 
 def register(eapi):
@@ -157,27 +240,25 @@ def register(eapi):
 
     if not ('bts_registered' in conf and conf['bts_registered']):
         # We're not registered yet, so do the initial registration procedure.
-        # Send on the CSR and keep trying to register.
-        backoff_count = 0
-        with open("/etc/openvpn/endaga-client.req") as f:
+        # Send the CSR and keep trying to register.
+        VPN_CONF = '/etc/openvpn/endaga-'
+        with open(VPN_CONF + 'client.req') as f:
             csr = f.read()
-        while not ('bts_registered' in conf and conf['bts_registered']):
-            try:
-                vpn = get_vpn_conf(eapi, csr)
-                cert = vpn['certificate']
-                vpnconf = vpn['vpnconf']
-                assert len(vpnconf) > 0 and len(cert) > 0,'Empty VPN Response'
-                with open('/etc/openvpn/endaga-client.crt', 'w') as f:
-                    f.write(cert)
-                with open('/etc/openvpn/endaga-vpn-client.conf.noauto', 'w') as f:
-                    f.write(vpnconf)
-                conf['bts_registered'] = True
-            except ValueError:
-                delay = min(2**backoff_count, 300)
-                logger.info("registration failed, sleeping %d seconds" %
-                            (delay, ))
-                time.sleep(delay)
-                backoff_count += 1
+
+        vpn = _retry_req(lambda: get_vpn_conf(eapi, csr), 'BTS registration')
+        cert = vpn['certificate']
+        vpnconf = vpn['vpnconf']
+        assert len(vpnconf) > 0 and len(cert) > 0, 'Invalid VPN parameters'
+        logger.info('got VPN configuration')
+        # write the client cert (before verification, for troubleshooting)
+        with open(VPN_CONF + 'client.crt', 'w') as f:
+            f.write(cert)
+        system_utilities.verify_cert(
+            cert, os.path.dirname(VPN_CONF) + '/etage-bundle.crt')
+        # write the VPN config
+        with open(VPN_CONF + 'vpn-client.conf.noauto', 'w') as f:
+            f.write(vpnconf)
+        conf['bts_registered'] = True
 
 
 def update_vpn():
@@ -193,10 +274,10 @@ def update_vpn():
     so outgoing calls can work.
     """
     if not ('bts_registered' in conf and conf['bts_registered']):
-        logger.error("BTS is not yet registered, skipping VPN setup, killing"
-                      " all services.")
+        logger.error('BTS is not yet registered, skipping VPN setup, killing'
+                      ' all services.')
         for s in SERVICES:
-            if s.name == "endagad":
+            if s.name == 'endagad':
                 continue
             s.stop()
         return
@@ -207,19 +288,23 @@ def update_vpn():
         for _ in range(0, max_attempts):
             # Sometimes the vpn service is started, but the VPN is still down.
             # If this is the case, stop the vpn service first.
-            openvpn_service = Service.SupervisorService("openvpn")
+            openvpn_service = Service.SupervisorService('openvpn')
             if openvpn_service.status() == ServiceState.Running:
                 openvpn_service.stop()
-            if (openvpn_service.start()
-                and system_utilities.get_vpn_ip()):
-                logger.notice("VPN up restarting services")
-                Service.SystemService("freeswitch").restart()
+            if openvpn_service.start():
+                logger.notice('VPN service started')
+                if system_utilities.get_vpn_ip():
+                    logger.notice('VPN up - restarting freeswitch')
+                    Service.SystemService('freeswitch').restart()
+                else:
+                    logger.error('VPN interface (%s) is down' %
+                                 conf.get('external_interface'))
             else:
-                logger.error("VPN didn't come up after registration,"
-                              " retrying.")
+                logger.error(
+                    'VPN failed to start after registration, retrying.')
                 time.sleep(3)
         if not system_utilities.get_vpn_ip():
-            logger.error("Failed to set up VPN after %d attempts!" %
+            logger.error('Failed to set up VPN after %d attempts!' %
                           max_attempts)
     # Start all the other services.  This is safe to run if services are
     # already started.
@@ -234,17 +319,17 @@ def ensure_fs_external_bound_to_vpn():
         return
     external_profile_ip = system_utilities.get_fs_profile_ip('external')
     if external_profile_ip != vpn_ip: # TODO: treat these as netaddr, not string
-        logger.warning("external profile should be bound to VPN IP and isn't, "
-                       "restarting FS.")
-        Service.SystemService("freeswitch").restart()
+        logger.warning('external profile should be bound to VPN IP and isn\'t,'
+                       ' restarting FS.')
+        Service.SystemService('freeswitch').restart()
 
-def clear_old_pid(pname="OpenBTS", path="/var/run/OpenBTS.pid"):
+def clear_old_pid(pname='OpenBTS', path='/var/run/OpenBTS.pid'):
     # If the pid file specified doesn't match a running instance of the
     # process, remove the PID file. This is a workaround for a recurring
     # OpenBTS issue we see. Note, caller must have permissions to remove file.
 
     # Determine PIDs associated with pname
-    output = envoy.run("ps -A | grep OpenBTS")
+    output = envoy.run('ps -A | grep OpenBTS')
     pids = []
     for line in output.std_out.split('\n'):
         try:
@@ -255,7 +340,7 @@ def clear_old_pid(pname="OpenBTS", path="/var/run/OpenBTS.pid"):
             continue # malformed, ignore
 
     try:
-        with open(path, "r") as f:
+        with open(path, 'r') as f:
             pid = int(f.read().strip())
     except IOError:
         # File does not exist, probably.
@@ -270,25 +355,24 @@ def reset_registration(registry=None):
         if not ((registry.startswith('http://') or
                  registry.startswith('https://')) and
                 registry.endswith('/api/v1')):
-            raise ValueError("invalid registry URL: %s" % (registry, ))
+            raise ValueError('invalid registry URL: %s' % (registry, ))
         conf['registry'] = registry
     # Remove the relevant endaga config keys.
     del conf['bts_registered']  # registration status
     del conf['bts_secret']  # the temporary key for authing requests
-    del conf['sslconf']  # ssl configuration
-    conf['endaga_token'] = None  # the account owner's API token
+    _reset_endaga_token()  # the account owner's API token
     # Remove the vpn configuration and keys.
-    for f in ["endaga-client.key", "endaga-client.crt", "endaga-client.req",
-              "endaga-sslconf.conf.noauto", "endaga-vpn-client.conf.noauto"]:
-        fpath = "/etc/openvpn/%s" % f
+    for f in ['endaga-client.key', 'endaga-client.crt', 'endaga-client.req',
+              'endaga-sslconf.conf.noauto', 'endaga-vpn-client.conf.noauto']:
+        fpath = '/etc/openvpn/%s' % f
         if os.path.exists(fpath):
             os.remove(fpath)
     # Stop all other services and restart endagad.
     for s in SERVICES:
-        if s.name == "endagad":
+        if s.name == 'endagad':
             continue
         s.stop()
-    Service.SupervisorService("endagad").restart()
+    Service.SupervisorService('endagad').restart()
 
 def system_healthcheck(checkin_data):
     # A generic "health check" on the system. Currently, we just see if

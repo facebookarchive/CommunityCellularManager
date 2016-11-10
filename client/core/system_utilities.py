@@ -93,9 +93,11 @@ def get_vpn_ip():
         # reason.
         # pylint: disable=no-member
         conf = ConfigDB()
-        ifname = conf['external_interface']
+        ifname = conf.get('external_interface')  # vpn_interface?
+        assert ifname is not None, \
+            "VPN interface ('external_interface') not configured"
         return netifaces.ifaddresses(ifname)[netifaces.AF_INET][0]['addr']
-    except:
+    except Exception:
         return None
 
 
@@ -240,3 +242,21 @@ def sortable_version(version):
     # Version must be a string to split it.
     version = str(version)
     return '.'.join(bit.zfill(5) for bit in version.split('.'))
+
+
+def verify_cert(_, ca_file):
+    """ Validate that cert has been signed by the Etage CA. """
+    r = envoy.run("openssl verify -CAfile %s %s/endaga-client.crt" %
+                  (ca_file, os.path.dirname(ca_file)))
+    if r.status_code != 0:
+        """
+        Any error requires manual intervention, i.e., updating the CA
+        cert, and hence cannot be resolved by retrying
+        registration. Therefore we just raise an exception that
+        terminates the agent.
+        """
+        msg = ("Unable to verify client cert against CA bundle:\n%s" %
+               (r.std_out))
+        logger.critical(msg)
+        raise SystemExit(msg)
+    logger.info("Verified client cert against CA %s" % (ca_file, ))
