@@ -30,7 +30,7 @@ setup(
     url=github_url,
     download_url=download_url,
     author='Facebook',
-    author_email='CommunityCellularManager@fb.com
+    author_email='CommunityCellularManager@fb.com',
     license='BSD',
     packages=['sms_utilities'],
     install_requires=required_libs,
