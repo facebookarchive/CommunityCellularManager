@@ -23,6 +23,6 @@ of patent rights can be found in the PATENTS file in the same directory.
          the recipient is locally attached to this particular BTS or
          not. -->
     <!-- we handle billing directly in the interconnect service, so don't do it here. -->
-    <action application="system" data='curl -d "from_name=${from_imsi}&service_type=outside_sms&from_number=${vbts_callerid}&to=${vbts_canonical_tp_dest_address}&body=${vbts_text}" http://127.0.0.1/out_endaga_sms'/>
+    <action application="system" data='curl -d "from_name=${from_imsi}&service_type=${service_type}&from_number=${vbts_callerid}&to=${vbts_canonical_tp_dest_address}&body=${vbts_text}" http://127.0.0.1/out_endaga_sms'/>
   </condition>
 </extension>
