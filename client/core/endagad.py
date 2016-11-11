@@ -33,6 +33,12 @@ class EndagaD(object):
     """
     def __init__(self):
         self._conf = ConfigDB()
+        # initialise logging level from DB (if set - otherwise 'warning')
+        # NB - this is the ONLY time changes to the log level are actually
+        # passed to the logging framework
+        log_level = self._conf.get("logger.global.log_level", "warning")
+        logger.DefaultLogger.update_handler(level=log_level)
+        logger.notice("EndagaD started")
 
     def _reset_bts_config(self):
         logger.notice("Performing set_factory")

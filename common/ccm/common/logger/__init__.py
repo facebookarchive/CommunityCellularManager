@@ -18,8 +18,13 @@ import logging
 from logging.handlers import SysLogHandler
 from os import environ
 from sys import stderr
-from syslog import LOG_LOCAL0
+from syslog import LOG_DEBUG, LOG_LOCAL0
 import traceback
+
+
+# add a 'notice' level, between WARNING (30)  and INFO (20)
+_NOTICE = 25
+logging.addLevelName("NOTICE", 25)
 
 
 class DefaultLogger(object):
@@ -67,11 +72,45 @@ class DefaultLogger(object):
                                   func=function)
         cls._log.handle(rec)
 
+    @staticmethod
+    def _get_logging_level(level):
+        """ Map a syslog level to a logging level. The logging module
+        levels start from 10 (DEBUG) and increase by 10 for every level of
+        of severity (INFO, WARNING, ERROR, CRITICAL). syslog starts at 0
+        for the most severe messages (EMERGENCY) and increases by 1 for
+        each lower level of messages (ALERT, CRITICAL, etc.). Mapping is
+        mostly straightforward. """
+        assert level >= 0
+        if level >= logging.DEBUG:
+            # level is already a logging-compatible value
+            return level
+        if level > LOG_DEBUG:
+            return logging.DEBUG
+        return [
+            logging.CRITICAL,  # syslog.LOG_EMERG
+            logging.CRITICAL,  # syslog.LOG_ALERT,
+            logging.CRITICAL,  # syslog.LOG_CRIT,
+            logging.ERROR,     # syslog.LOG_ERR,
+            logging.WARNING,   # syslog.LOG_WARNING,
+            _NOTICE,           # syslog.LOG_NOTICE,
+            logging.INFO,      # syslog.LOG_INFO,
+            logging.DEBUG,     # syslog.LOG_DEBUG
+        ][level]
+
     @classmethod
     def update_handler(cls, handler=None, level=None, verbose=False):
         root = logging.getLogger()
         if level is not None:
-            cls._log.setLevel(level)
+            if not isinstance(level, int):
+                try:
+                    level = LOG_LEVELS.index(level)
+                except ValueError:
+                    # log level name not found
+                    cls.log(logging.WARNING,
+                            "invalid log level: '%s'" % (level, ))
+                    level = None
+            if level is not None:
+                cls._log.setLevel(cls._get_logging_level(level))
         if handler or verbose:
             if handler:
                 if cls._log_handler:
@@ -80,11 +119,13 @@ class DefaultLogger(object):
                 root.addHandler(handler)
             cls._log_handler.setFormatter(
                 cls._log_verbose if verbose else cls._log_formatter)
-            cls.log(logging.INFO,
+            cls.log(logging.DEBUG,
                     "set default log handler to %s" % (handler, ))
         if level is not None:
-            cls.log(logging.INFO,
-                    "set log level to %d" % (cls._log.getEffectiveLevel(), ))
+            cls.log(_NOTICE,
+                    "set log level to %d" % (cls._log.getEffectiveLevel(), ),
+                    # use tb_offset=3 to omit this stack frame in output
+                    tb_offset=3, tb_limit=2)
 
 
 # set the default logger (can be overridden for testing)
@@ -93,7 +134,7 @@ try:
     sock = environ.get('CCM_SYSLOG_SOCKET', '/dev/log')
     DefaultLogger.update_handler(
         SysLogHandler(address=sock, facility=LOG_LOCAL0),
-        logging.INFO)
+        logging.WARNING)
 except IOError as ex:
     if ex.errno == errno.ENOENT:
         # ignoring this error is good for testing, but...
@@ -103,6 +144,7 @@ except IOError as ex:
         raise
 
 
+# these are syslog log levels
 LOG_LEVELS = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE',
               'INFO', 'DEBUG']
 
@@ -129,7 +171,7 @@ def warning(message, **kwargs):
 
 def notice(message, **kwargs):
     """Level 5"""
-    _handle_log_event(logging.INFO, message, **kwargs)
+    _handle_log_event(_NOTICE, message, **kwargs)
 
 def info(message, **kwargs):
     """Level 6"""
