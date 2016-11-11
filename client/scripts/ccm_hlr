@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+"""A utility to view the local HLR contents.
+
+Usage: ccm_hlr list
+       ccm_hlr delete <imsi>
+
+"""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+import sys
+
+import docopt
+
+from ccm.common.crdt.base import PNCounter
+from core.config_database import ConfigDB
+from core.subscriber import subscriber
+
+
+if __name__ == "__main__":
+    args = docopt.docopt(__doc__)
+
+    if args["list"]:
+        for imsi, data in subscriber.get_subscriber_states().items():
+            bal = PNCounter.from_json(data["balance"]).value()
+            sub_info = subscriber.get_subscribers(imsi)[0]
+            print("%s: balance: %d numbers: %s" %
+                  (imsi,
+                   bal,
+                   sub_info["numbers"]))
+
+    elif args["delete"]:
+        subscriber.delete_subscriber(args["<imsi>"])
