@@ -17,6 +17,9 @@ from core.bts.base import BaseBTS, BSSError
 
 class FakeBTS(BaseBTS):
 
+    # don't run any services
+    SERVICES = []
+
     def __init__(self):
         self.conf = ConfigDB()
         self.defaults = {
