@@ -306,8 +306,10 @@
   <X-PRE-PROCESS cmd="set" data="external_ssl_enable=false"/>
   <X-PRE-PROCESS cmd="set" data="external_ssl_dir=$${base_dir}/conf/ssl"/>
 
+  <!-- ENDAGA -->
   <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
   <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
+  <X-PRE-PROCESS cmd="set" data="smqueue_profile=internal"/>
 
   <!-- disables the app_log section in the xml_cdr
        freeswitch appends to every system call a carriage return
