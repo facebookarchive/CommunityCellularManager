@@ -8,7 +8,7 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
     - name: Add Etage key
-      apt_key: url=http://repo.etagecom.io/pubkey.gpg state=present
+      apt_key: url=http://repo.etagecom.io/pubkey.gpg state=present id=673FFA94
     - name: Add Etage dev repo
       apt_repository: repo='deb http://repo.etagecom.io {{ item }} main' update_cache=no mode=664
       with_items:
@@ -18,7 +18,7 @@
           - stable
 
     - name: Add Endaga key
-      apt_key: url=http://repo.endaga.com/pubkey.gpg state=present
+      apt_key: url=http://repo.endaga.com/pubkey.gpg state=present id=664644E6
     - name: Add Endaga repo
       apt_repository: repo='deb http://repo.endaga.com dev main' update_cache=no mode=664
 

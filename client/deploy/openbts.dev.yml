@@ -10,7 +10,12 @@
 - name: Set up development pre-reqs on a local machine
   hosts: dev
   become: yes
-  tasks:
+  roles:
+    - setup_fpm
+    - setup_openvpn
+
+  # post_tasks run after roles
+  post_tasks:
     - include: base.yml
 
     - include: openbts.yml
@@ -34,12 +39,6 @@
 
     - name: Set the version preferences
       copy: src=files/endaga-preferences dest=/etc/apt/preferences.d/endaga-preferences
-
-    - name: Install prereqs for FPM
-      apt: pkg=ruby-dev state=present update_cache=yes
-
-    - name: Setup FPM so we can build packages
-      shell: gem install fpm
 
     - name: Setup build requirements for OpenBTS and FS packages
       apt: pkg={{ item }} state=present update_cache=no
@@ -75,11 +74,3 @@
 
     - name: Setup requirements for building psycopg2 from source
       apt: pkg=libpq-dev state=present update_cache=no
-
-    #openvpn is usually installed as a dependency, but we need to disable autostart
-    - name: Install openvpn
-      apt: pkg=openvpn state=present update_cache=no
-    - name: Disable init.d autostart
-      replace: dest=/etc/default/openvpn regexp='#AUTOSTART=\"none\"' replace='AUTOSTART="none"'
-    - name: Turn off init.d vpn
-      command: /etc/init.d/openvpn stop
