@@ -5,5 +5,5 @@
 192.168.1.25   ansible_ssh_user=endaga    ansible_ssh_port=22
 
 [dev]
-openbts ansible_ssh_host=192.168.60.100 ansible_ssh_port=22
-osmocom ansible_ssh_host=192.168.60.120 ansible_ssh_port=22
+openbts ansible_ssh_host=192.168.40.100 ansible_ssh_port=22
+osmocom ansible_ssh_host=192.168.40.120 ansible_ssh_port=22
