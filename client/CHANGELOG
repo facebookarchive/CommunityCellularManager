@@ -2,9 +2,13 @@ endaga NEXT (???)
 -----------------
 Packags affected:
 
+endaga-openbts, endaga-osmocom 0.7.10 (2016 Nov 14)
 -----------------
-Packages affected:
+Packages affected: python-endaga-core, python-ccm-common, freeswitch_conf_endaga
 Changes:
+- Initialise log level from ConfigDB
+- Don't force SMS sent outside BTS to be charged at 'outside_sms' rates
+- Add logging for various registration errors
 
 endaga-openbts, endaga-osmocom 0.7.9 (2016 Nov 7)
 -----------------

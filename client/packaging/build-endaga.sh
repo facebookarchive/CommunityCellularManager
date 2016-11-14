@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2016-present, Facebook, Inc.
 # All rights reserved.
-# 
+#
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
@@ -127,18 +127,18 @@ fpm \
     --conflicts 'endaga' \
     --replaces 'endaga' \
     --package ${BUILD_PATH} \
-    --description 'Endaga client software' \
+    --description 'Community Cellular Manager client software' \
     --version ${ENDAGA_VERSION} \
     --after-install ${POSTINST} \
     --before-install ${PREINST} \
     --license "BSD" \
-    --maintainer "Kurtis Heimerl <kheimerl@fb.com>" \
+    --maintainer "CommunityCellularManager@fb.com" \
     --depends "endaga-lang (= 0.2.3)" \
-    --depends "freeswitch-conf-endaga (= 0.3.2)" \
+    --depends "freeswitch-conf-endaga (= 0.3.3)" \
     --depends "libpq-dev" \
     --depends "lighttpd" \
     --depends "openvpn" \
-    --deb-pre-depends "python-endaga-core (= 0.5.9)" \
+    --deb-pre-depends "python-endaga-core (= 0.5.10)" \
     --depends "python-psycopg2" \
     --depends "python-snowflake (= 0.0.2)" \
     --depends "postgresql" \
