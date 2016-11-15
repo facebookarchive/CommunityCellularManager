@@ -12,7 +12,7 @@
   become: yes
   roles:
     - setup_fpm
-    - setup_openvpn
+    - { role: setup_openvpn, state: 'stopped' }
 
   # post_tasks run after roles
   post_tasks:
