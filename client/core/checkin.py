@@ -84,7 +84,7 @@ class CheckinHandler(object):
             elif section == "openbts":
                 bts.process_bts_settings(config_dict[section])
             elif section == "prices":
-                process_prices(self.conf, config_dict['prices'])
+                process_prices(config_dict['prices'], self.conf)
             elif section == "autoupgrade":
                 self.process_autoupgrade(config_dict['autoupgrade'])
 
