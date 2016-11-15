@@ -66,6 +66,9 @@ def render_status(value):
 
 def render_name_and_imsi_link(record):
     """Show the subscriber name and IMSI together as a link."""
+    if not record.imsi:
+        # sometimes empty IMSIs get uploaded to the cloud
+        return "<empty IMSI>"
     kwargs = {
         'imsi': record.imsi
     }
