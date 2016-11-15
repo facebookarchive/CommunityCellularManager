@@ -77,6 +77,10 @@ def _send_cloud_req(req_method, req_path, err_prefix, **kwargs):
     err = None
     try:
         r = req_method(url, **kwargs)
+        if r.status_code == 200:
+            return json.loads(r.text)
+        else:
+            err = RegistrationServerError(r, err_prefix)
     except socket.error as ex:
         err = RegistrationClientError(('socket error connecting to %s' %
                                        (url, )),
@@ -84,10 +88,6 @@ def _send_cloud_req(req_method, req_path, err_prefix, **kwargs):
     except RequestException as ex:
         err = RegistrationClientError('request to %s failed' % (url, ),
                                       ex, err_prefix)
-    if r.status_code == 200:
-        return json.loads(r.text)
-    else:
-        err = RegistrationServerError(r, err_prefix)
     raise err
 
 
