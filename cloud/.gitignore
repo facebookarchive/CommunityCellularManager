@@ -38,9 +38,6 @@ nosetests.xml
 .project
 .pydevproject
 
-# settings.py -- this should never be tracked
-settings.py
-
 # ignore vim stuff
 *.swp
 
