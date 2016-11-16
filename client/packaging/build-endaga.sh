@@ -16,7 +16,7 @@
 
 set -e
 BUILD_DATE=`date -u +"%Y%m%d%H%M%S"`
-ENDAGA_VERSION="0.7.9"
+ENDAGA_VERSION="0.7.10"
 
 # The resulting package is placed in $OUTPUT_DIR
 # or in the cwd.
