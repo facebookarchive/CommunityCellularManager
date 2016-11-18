@@ -169,8 +169,10 @@ class CheckinResponder(object):
             try:
                 sub = Subscriber.objects.get(imsi=entry['imsi'])
             except Subscriber.DoesNotExist:
-                logging.info('Subscriber with IMSI %s does not exist. BTS: %s',
-                             entry['imsi'], self.bts.uuid)
+                logging.info(
+                    '[camped_subscribers] subscriber %s does not exist. '
+                    'BTS: %s',
+                    entry['imsi'], self.bts.uuid)
                 continue
 
             # The last seen timestamp is a little erred since its computed
@@ -470,7 +472,7 @@ def handle_event(bts, event, destinations=None):
     try:
         sub = Subscriber.objects.get(imsi=event['imsi'])
     except Subscriber.DoesNotExist:
-        logging.warn('Subscriber with IMSI "%s" does not exist.  BTS: %s' %
+        logging.warn('[handle_event] subscriber %s does not exist.  BTS: %s' %
                      (event['imsi'], bts.uuid))
         return bts.max_seqno
     date = datetime.datetime.strptime(event['date'], '%Y-%m-%d %H:%M:%S')
