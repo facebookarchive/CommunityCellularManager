@@ -29,9 +29,19 @@ from endagaweb.util.parse_destination import parse_destination
 
 
 class CheckinResponder(object):
+
+    # optimizers is a class level object that is used to retain optimizer
+    # state for each BTS across multiple instances of this class (which are
+    # newly created on each BTS checkin).
     optimizers = delta.DeltaProtocolOptimizerFactory()
 
     def __init__(self, bts):
+        """
+        Instance of this class is newly created each time a BTS sends a
+        checkin request to the server. At the end of handling that request
+        this instance is discarded, but the optimizer state is retained in
+        the class-level optimizers object (see above).
+        """
         self.bts = bts
         self._bts_ctx_sections = {}
         # these are handlers for individual fields sent by the BTS on checkin
@@ -52,8 +62,9 @@ class CheckinResponder(object):
     # Delta optimization CTX handler
     def delta_handler(self, delta_ctx):
         """
-        Verifies client's provided CTX and saves it in the class instance for
-        use by _optimize
+        Verifies client's provided CTX and saves it in this instance for
+        subsequent use by _optimize.
+
         Args:
             delta_ctx: Client CTX sent with delta.DeltaProtocol.CTX_KEY key
         """
@@ -63,7 +74,11 @@ class CheckinResponder(object):
                 delta.DeltaProtocolOptimizer.SECTIONS_CTX_KEY
             )
             if sections and isinstance(sections, dict):
-                self._bts_ctx_sections = sections
+                for section, data in sections.items():
+                    logging.info(
+                        "got delta section '%s' from BTS %s: %s" %
+                        (section, self.bts.uuid, data))
+                    self._bts_ctx_sections[section] = data
             else:
                 logging.info(
                     'Missing Delta CTX sections. BTS: %s' % self.bts.uuid)
@@ -84,25 +99,46 @@ class CheckinResponder(object):
         Returns: either optimized delta or original data
 
         """
-        if self.bts.uuid:
-            bts_sect_id = self.bts.uuid + '&' + section_name
-            dict_ctx = self._bts_ctx_sections.get(section_name)
-            if dict_ctx:
-                optimizer = CheckinResponder.optimizers.get(bts_sect_id)
-                client_ctx = delta.DeltaProtocolCtx.create_from_dict(dict_ctx)
+        if not self.bts.uuid:
+            # when is this not true?
+            logging.error("No UUID for BTS")
+            return section_data
 
+        dict_ctx = self._bts_ctx_sections.get(section_name)
+        # if BTS sent us a delta context for this section:
+        if dict_ctx:
+            # extract the delta protocol data from the received context
+            client_ctx = delta.DeltaProtocolCtx.create_from_dict(dict_ctx)
+
+            # get the existing optimizer state for this BTS-section
+            bts_sect_id = self.bts.uuid + '&' + section_name
+            optimizer = CheckinResponder.optimizers.get(bts_sect_id)
+
+            # there may be no delta context for this BTS, if either the
+            # server was restarted or its a new BTS. If the server was
+            # restarted but the contents of a section don't change, the
+            # context sent by the client should still match section_data
+            # and the server can send an empty delta.
+            if not optimizer.ctx:
+                logging.info("No server context for '%s', BTS %s" %
+                             (section_name, self.bts.uuid))
+            else:
                 if not client_ctx.compare(optimizer.ctx):
                     logging.warn(
-                        "Signatures mismatch: %s != %s. "
-                        "Section '%s', BTS: %s" %
+                        "Signatures mismatch: expected %s, got %s. "
+                        "(Section '%s', BTS: %s)" %
                         (optimizer.ctx.sig, client_ctx.sig,
                          section_name, self.bts.uuid))
-                # Always return result of optimizer.prepare if client sent CTX
-                # (client supports delta protocol), prepare will add server CTX
-                # for next round even if it cannot create delta for current one
-                return optimizer.prepare(client_ctx, section_data)
 
-            # Log missing CTX, it may indicate BTS running old software
+            # Always return result of optimizer.prepare if client sent CTX
+            # (client supports delta protocol), prepare will add server CTX
+            # for next round even if it cannot create delta for current one
+            section_data = optimizer.prepare(client_ctx, section_data)
+        else:
+            # Log missing CTX, most likely because BTS restarted and has no
+            # CTX to send (but possibly BTS is running old software). Note
+            # that in this case we don't automatically create server-side
+            # optimizer(s) in case the client doesn't support optimization.
             logging.warn('Missing Delta CTX for section: %s, BTS: %s' %
                          (section_name, self.bts.uuid))
         return section_data
