@@ -34,11 +34,10 @@ if __name__ == "__main__":
     if args["list"]:
         for imsi, data in subscriber.get_subscriber_states().items():
             bal = PNCounter.from_json(data["balance"]).value()
-            sub_info = subscriber.get_subscribers(imsi)[0]
-            print("%s: balance: %d numbers: %s" %
-                  (imsi,
-                   bal,
-                   sub_info["numbers"]))
+            sub_info = subscriber.get_subscribers(imsi)
+            numbers = sub_info[0]["numbers"] if sub_info else "<none>"
+            print("%s: balance = %d, numbers: %s" %
+                  (imsi, bal, numbers))
 
     elif args["delete"]:
         subscriber.delete_subscriber(args["<imsi>"])
