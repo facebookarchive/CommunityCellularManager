@@ -4,7 +4,7 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
@@ -26,7 +26,7 @@ class RegisterTest(test.TestCase):
                              inbound_url="http://localhost/inbound-test",
                              network=cls.user_profile.network)
         cls.bts.save()
-        cls.subscriber_imsi = 'IMSI000987'
+        cls.subscriber_imsi = 'IMSI000987123456789'
         cls.subscriber = models.Subscriber.objects.create(
             balance=1000, name='cam-test-name', imsi=cls.subscriber_imsi,
             network=cls.bts.network)
@@ -93,7 +93,7 @@ class RegisterTest(test.TestCase):
 
     def test_register_new_imsi_get(self):
         """Registering a number with a new IMSI sets up a new subscriber."""
-        new_imsi = 'IMSI000555'
+        new_imsi = 'IMSI000555123456789'
         endpoint = self.endpoint + '%s/%s/?imsi=%s' % (
             self.bts.uuid, self.available_number.number, new_imsi)
         token = self.user_profile.network.api_token
@@ -116,7 +116,7 @@ class RegisterTest(test.TestCase):
     def test_register_new_imsi_onestep(self):
         """ Registering a number with a new IMSI sets up a new subscriber,
         using the POST endpoint. """
-        new_imsi = 'IMSI000555'
+        new_imsi = 'IMSI000555123456789'
         token = self.user_profile.network.api_token
         header = {
             'HTTP_AUTHORIZATION': 'Token %s' % token

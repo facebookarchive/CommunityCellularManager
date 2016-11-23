@@ -122,6 +122,8 @@ class Register(APIView):
 
         bts_uuid = str(request.POST['bts_uuid'])
         imsi = str(request.POST['imsi'])
+        if not re.match('^IMSI\d{14,15}$', imsi):
+            return Response("Invalid IMSI", status=status.HTTP_400_BAD_REQUEST)
 
         network = get_network_from_user(request.user)
         try:
