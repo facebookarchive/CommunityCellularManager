@@ -1,6 +1,9 @@
 endaga NEXT (???)
 -----------------
-Packags affected:
+Packages affected: python-endaga-core
+Changes:
+- Make fake HLR more functional for testing purposes
+- Add ccm_hlr option to delete all subs from local subscriber DB/HLR
 
 endaga-openbts, endaga-osmocom 0.7.10 (2016 Nov 14)
 -----------------

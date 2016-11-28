@@ -14,6 +14,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from core import number_utilities
 from core.subscriber.base import BaseSubscriber, SubscriberNotFound
 
 
@@ -27,10 +28,10 @@ class FakeSubscriberDB(BaseSubscriber):
 
     def _add_sub(self, imsi, numbers, ip=None, port=None):
         self._hlr[imsi] = {
-            'name': imsi,
-            'ip': ip,
-            'numbers': numbers,
-            'port': port,
+            "name": imsi,
+            "ip": ip,
+            "numbers": numbers,
+            "port": port,
         }
 
     def add_subscriber_to_hlr(self, imsi, number, ip, port):
@@ -45,9 +46,24 @@ class FakeSubscriberDB(BaseSubscriber):
             raise SubscriberNotFound(imsi)
 
     def get_subscribers(self, imsi=None):
-        """Get subscribers, filter by IMSI if it's specified."""
+        """Gets subscribers, optionally filtering by IMSI.
+
+        Args:
+        imsi: the IMSI to search by
+
+        Returns:
+        an empty array if no subscribers match the query, or an array of
+        subscriber dicts, themselves of the form: {
+            'name': 'IMSI000123',
+            'ip': '127.0.0.1',
+            'port': '8888',
+            'numbers': ['5551234', '5556789'],
+        }
+        """
         if imsi:
-            return [(imsi, self._hlr[imsi])]
+            # per docstring, return empty list if IMSI not found
+            sub = self._hlr.get(imsi)
+            return [sub] if sub else []
         return self._hlr.values()
 
     def add_number(self, imsi, number):
@@ -91,3 +107,20 @@ class FakeSubscriberDB(BaseSubscriber):
             return self._hlr[imsi]['numbers'][0]
         except KeyError:
             raise SubscriberNotFound(imsi)
+
+    def get_imsi_from_number(self, number, canonicalize=True):
+        """Gets the IMSI associated with a number."""
+        if canonicalize:
+            number = number_utilities.canonicalize(number)
+        for imsi, data in self._hlr.items():
+            if number in data['numbers']:
+                return imsi
+        return None
+
+    def get_imsi_from_username(self, username):
+        """
+        Get the IMSI from the SIP name.
+
+        FakeBTS uses IMSI as username, so this is trivial.
+        """
+        return username
