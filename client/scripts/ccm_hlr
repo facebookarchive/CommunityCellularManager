@@ -10,8 +10,11 @@
 """A utility to view the local HLR contents.
 
 Usage: ccm_hlr list
-       ccm_hlr delete <imsi>
+       ccm_hlr delete (<imsi> | --delete-all-subs)
 
+Options:
+       --delete-all-subs  Delete all subscribers from both DB and HLR (use
+                          with caution, no confirmation required)
 """
 
 from __future__ import absolute_import
@@ -40,4 +43,8 @@ if __name__ == "__main__":
                   (imsi, bal, numbers))
 
     elif args["delete"]:
-        subscriber.delete_subscriber(args["<imsi>"])
+        if "--delete-all-subs" in args:
+            for imsi in subscriber.get_subscriber_states():
+                subscriber.delete_subscriber(imsi)
+        else:
+            subscriber.delete_subscriber(args["<imsi>"])
