@@ -99,3 +99,6 @@ tramp
 
 ### locally generated certificate ###
 conf/registration/etage-bundle.crt
+
+### Ansible retry files
+*.retry
