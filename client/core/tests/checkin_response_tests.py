@@ -319,6 +319,24 @@ class ConfigBTSTest(unittest.TestCase):
             CheckinHandler(checkin_response)
             set_arfcn.assert_called_once_with(55)
 
+
+    def test_band_parameter(self):
+        """ A recognised parameter results in the associated method call. """
+        checkin_response = json.dumps({
+            'response': {
+                'config': {
+                    'openbts': {
+                        'GSM.Radio.Band': 'GSM850',
+                    },
+                },
+            }
+        })
+
+        with mock.patch.object(bts, 'set_band') as set_band:
+            # Send the checkin response data for processing.
+            CheckinHandler(checkin_response)
+            set_band.assert_called_once_with('GSM850')
+
     def test_invalid_parameter(self):
         """ Unhandled configuration parameter logs an error. """
         checkin_response = json.dumps({

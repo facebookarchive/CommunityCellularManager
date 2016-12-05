@@ -297,6 +297,9 @@ class BaseBTS(object):
             'GSM.Radio.C0':
                 {'get': self.get_arfcn_c0,
                  'set': self.set_arfcn_c0},
+            'GSM.Radio.Band':
+                {'get': self.get_band,
+                 'set': self.set_band},
             'GSM.Timer.T3212':
                 {'get': lambda: self.get_timer('3212'),
                  'set': lambda minutes: self.set_timer('3212', minutes)},

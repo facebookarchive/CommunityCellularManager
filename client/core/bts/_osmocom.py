@@ -56,11 +56,7 @@ class OsmocomBTS(BaseBTS):
             timeout=self.conf['bss_timeout'])
 
     def set_factory_config(self):
-        bands = self.get_available_bands()
-        self.set_band(bands[0])
-
-        arfcns = self.get_available_arfcns()
-        self.set_arfcn_c0(arfcns[0])
+        pass
 
     def get_camped_subscribers(self, access_period=0, auth=1):
         try:
