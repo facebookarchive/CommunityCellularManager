@@ -12,7 +12,7 @@ of patent rights can be found in the PATENTS file in the same directory.
 <extension name="forward_local">
   <condition field='${endaga_islocal}' expression="TRUE">
     <action application="set" data="service_type=local_sms"/>
-    <action application="python" data="VBTS_Send_SMS ${vbts_canonical_tp_dest_address}|${from_imsi}|${vbts_text}"/>
+    <action application="python" data="VBTS_Send_SMS ${vbts_canonical_tp_dest_address}|${vbts_callerid}|${vbts_text}"/>
     <action application="system" data='curl --data "from_number=${vbts_callerid}&from_name=${from_imsi}&service_type=${service_type}&destination=${vbts_canonical_tp_dest_address}" http://127.0.0.1/smscdr'/>
   </condition>
 </extension>
