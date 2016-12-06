@@ -3,7 +3,7 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 import osmocom.network
@@ -74,6 +74,32 @@ class NetworkSetTestCase(MockSocketTestCase):
             'disable\r\n')
 
 
+class NetworkSetBadTestCase(MockSocketTestCase):
+    fixture_file = get_fixture_path('network_set_invalid.txt')
+
+    @classmethod
+    def setUpClass(cls):
+        super(NetworkSetBadTestCase, cls).setUpClass()
+        cls.n = osmocom.network.Network()
+        cls.n.open()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(NetworkSetBadTestCase, cls).tearDownClass()
+        cls.n.close()
+
+    def test_set_short_name_space(self):
+        """Test writing invalid network short name with space."""
+        with self.assertRaises(ValueError):
+            self.n.set_short_name('Invalid Space')
+        self.assertEqual(self.sendall_buffer, 'enable\r\n' +
+            'configure terminal\r\n' +
+            'network\r\n' +
+            'short name Invalid Space\r\n' +
+            'exit\r\n' +
+            'exit\r\n' +
+            'disable\r\n')
+
 class NetworkGetTestCase(MockSocketTestCase):
     fixture_file = get_fixture_path('network_get.txt')
 
@@ -94,4 +120,3 @@ class NetworkGetTestCase(MockSocketTestCase):
             self.assertEqual(network_data['lur_reject_cause'], '13')
             self.assertEqual(network_data['bts_count'], '1')
             self.assertEqual(network_data['tch_paging'], '0')
-

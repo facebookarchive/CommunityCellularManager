@@ -93,14 +93,15 @@ class BaseVTY(object):
             if self.EOM not in self._buf:
                 raise VTYException("Connection stopped responding or timed out")
 
-        if 'Unknown command' in self._buf:
-            raise ValueError('Unknown command: %s' % command)
-
         # Find the the response by seeking past the command to the next line and reading until the first EOM.
         resp_start = self._buf.find(command) + len(command + self.EOL)
         resp_end = resp_start + self._buf[resp_start:].find(self.EOM)
         ret = self._buf[resp_start:resp_end].strip()
         self._buf = self._buf[resp_end:].lstrip()
+
+        if 'Unknown command' in ret:
+            raise ValueError('Invalid command: %s' % command)
+
         return ret.encode('utf-8', 'ignore')
 
     def running_config(self):
