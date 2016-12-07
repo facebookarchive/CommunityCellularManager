@@ -8,7 +8,7 @@ of patent rights can be found in the PATENTS file in the same directory.
 -->
 <extension name="credit-transfer">
   <condition field="${vbts_tp_dest_address}" expression="^${credit_transfer_number}$">
-    <action application="python" data='VBTS_Transfer_Credit ${from_user}|${vbts_text}'/>
+    <action application="python" data='VBTS_Transfer_Credit ${from_imsi}|${vbts_text}'/>
     <action application="system" data='curl --data "from_number=${vbts_callerid}&from_name=${from_user}&service_type=${service_type}&destination=${vbts_tp_dest_address}" http://127.0.0.1/smscdr'/>
   </condition>
 </extension>

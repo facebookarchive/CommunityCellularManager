@@ -16,7 +16,7 @@
 
 set -e
 BUILD_DATE=`date -u +"%Y%m%d%H%M%S"`
-ENDAGA_VERSION="0.7.10"
+ENDAGA_VERSION="0.7.11"
 
 # The resulting package is placed in $OUTPUT_DIR
 # or in the cwd.
@@ -134,11 +134,11 @@ fpm \
     --license "BSD" \
     --maintainer "CommunityCellularManager@fb.com" \
     --depends "endaga-lang (= 0.2.3)" \
-    --depends "freeswitch-conf-endaga (= 0.3.3)" \
+    --depends "freeswitch-conf-endaga (= 0.3.4)" \
     --depends "libpq-dev" \
     --depends "lighttpd" \
     --depends "openvpn" \
-    --deb-pre-depends "python-endaga-core (= 0.5.10)" \
+    --deb-pre-depends "python-endaga-core (= 0.5.11)" \
     --depends "python-psycopg2" \
     --depends "python-snowflake (= 0.0.2)" \
     --depends "postgresql" \

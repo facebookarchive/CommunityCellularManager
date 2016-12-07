@@ -15,7 +15,7 @@ from setuptools import setup
 with open('README.md') as f:
   README = f.read()
 
-VERSION = '0.0.3'
+VERSION = '0.0.4'
 
 
 setup(
@@ -23,8 +23,8 @@ setup(
   version=VERSION,
   description='Osmocom VTY client',
   long_description=README,
-  author='Omar Ramadan',
-  author_email='oramadan@fb.com',
+  author='Facebook',
+  author_email='CommunityCellularManager@fb.com',
   packages=['osmocom'],
   install_requires=[
   ],

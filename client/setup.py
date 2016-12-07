@@ -69,6 +69,8 @@ setup(
         "enum34==1.0.4"
     ],
     scripts=[
+        'scripts/ccm_hlr',
+        'scripts/reset-registration',
         'scripts/set_configdb_defaults',
         'scripts/credit_cli',
         'scripts/endaga_db_get',
@@ -107,9 +109,6 @@ setup(
             'scripts/freeswitch/VBTS_Get_Auth_From_IMSI.py',
             'scripts/freeswitch/VBTS_Get_Username_From_IMSI.py',
             'scripts/freeswitch/VBTS_Get_IMSI_From_Username.py',
-        ]),
-        ('/etc/freeswitch/chatplan/default/', [
-            'conf/11_credit_transfer.xml',
         ]),
         ('/etc/openvpn/', [
             'conf/registration/etage-bundle.crt',

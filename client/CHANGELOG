@@ -1,9 +1,12 @@
-endaga NEXT (???)
+endaga-openbts, endaga-osmocom 0.7.11 (2016 Dec 6)
 -----------------
-Packages affected: python-endaga-core
+Packages affected: python-endaga-core, python-osmocom, freeswitch-conf-endaga
 Changes:
 - Make fake HLR more functional for testing purposes
 - Add ccm_hlr option to delete all subs from local subscriber DB/HLR
+- Various Freeswitch fixes for Osmocom
+- Set Osmcom BTS/NIB parameters from cloud config
+- Osmocom Python buffer clearing bug
 
 endaga-openbts, endaga-osmocom 0.7.10 (2016 Nov 14)
 -----------------
