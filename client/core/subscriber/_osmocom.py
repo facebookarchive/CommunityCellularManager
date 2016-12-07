@@ -110,21 +110,37 @@ class OsmocomSubscriber(BaseSubscriber):
         """
         raise NotImplementedError('cannot delete the only number associated with this account')
 
+    def _hlr_query(self, worker, on_value_error):
+        """ Run a query against the Osmocom embedded HLR.
+
+        Arguments:
+          worker - the query to run given a connection to the HLR
+          on_value_error - error handler if subscriber record not found.
+            If error handler returns an exception, raise it, otherwise
+            pass error handler's return value back to caller.
+        """
+        try:
+            with self.subscribers as s:
+                return worker(s)
+        except ValueError:
+            err = on_value_error()
+            if isinstance(err, Exception):
+                raise err
+            return err
+        except Exception:
+            exc_type, exc_value, exc_trace = sys.exc_info()
+            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+
     def get_caller_id(self, imsi):
         """Get a subscriber's caller_id.
 
            Raises:
               SubscriberNotFound if imsi is not found
         """
-        try:
-            with self.subscribers as s:
-                try:
-                    return s.show('imsi', imsi)['extension']
-                except ValueError as e:
-                    raise SubscriberNotFound(imsi)
-        except Exception as e:
-            exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+        return self._hlr_query(
+            lambda s: s.show('imsi', imsi)['extension'],
+            lambda: SubscriberNotFound(imsi)
+        )
 
     def get_ip(self, imsi):
         """Get a subscriber's IP address.
@@ -142,49 +158,34 @@ class OsmocomSubscriber(BaseSubscriber):
            Raises:
               SubscriberNotFound if imsi is not found
         """
-        try:
-            with self.subscribers as s:
-                try:
-                    return s.delete(imsi)
-                except ValueError as e:
-                    raise SubscriberNotFound(imsi)
-        except Exception as e:
-            exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+        return self._hlr_query(
+            lambda s: s.delete(imsi),
+            lambda: SubscriberNotFound(imsi)
+        )
 
     def get_numbers_from_imsi(self, imsi):
         """Gets numbers associated with a subscriber.
 
+        Osmocom only supports a single number per IMSI, so this is equivalent
+        to get_caller_id(imsi), but with list return type.
+
            Raises:
               SubscriberNotFound if imsi is not found
         """
-        try:
-            with self.subscribers as s:
-                try:
-                    return [s.show('imsi', imsi)['extension']]
-                except ValueError as e:
-                    raise SubscriberNotFound(imsi)
-        except Exception as e:
-            exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+        return [self.get_caller_id(imsi)]
 
     def get_imsi_from_number(self, number, canonicalize=True):
         """Gets the IMSI associated with a number.
 
            Raises:
-              SubscriberNotFound if imsi is not found
+              SubscriberNotFound if IMSI is not found
         """
         if canonicalize:
             number = number_utilities.canonicalize(number)
-        try:
-            with self.subscribers as s:
-                try:
-                    return 'IMSI' + s.show('extension', number)['imsi']
-                except ValueError as e:
-                    raise SubscriberNotFound('MSISDN %s' % number)
-        except Exception as e:
-            exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+        return self._hlr_query(
+            lambda s: 'IMSI' + s.show('extension', number)['imsi'],
+            lambda: SubscriberNotFound('MSISDN %s' % (number, ))
+        )
 
     def get_username_from_imsi(self, imsi):
         """Gets the SIP name of the subscriber
@@ -216,15 +217,10 @@ class OsmocomSubscriber(BaseSubscriber):
         if not provisioned:
             return False
 
-        try:
-            with self.subscribers as s:
-                try:
-                    return s.show('imsi', imsi)['authorized'] == '1'
-                except ValueError:
-                    return False
-        except Exception as e:
-            exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+        return self._hlr_query(
+            lambda s: s.show('imsi', imsi)['authorized'] == '1',
+            lambda: False
+        )
 
     def get_gprs_usage(self, target_imsi=None):
         """Get all available GPRS data, or that of a specific IMSI (experimental).
