@@ -8,7 +8,7 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 {% endcomment %}
 
-
+{% load account socialaccount %}
 {% block pagestyle %}
 <style>
   #login-button {
@@ -53,7 +53,21 @@ of patent rights can be found in the PATENTS file in the same directory.
                     {% endfor %}
                 </form>
             </div>
-        </div>
+            {% if enable_social_login %}
+              <div class="col-md-12">
+                <li class="list-unstyled" style="text-align:center">
+                  <a title="Facebook" class="socialaccount_provider facebook" href="/accounts/facebook/login/?process=login">Login using Facebook</a>
+                </li>
+                <form class="login" method="POST" action="{% url 'account_login' %}">
+                  {% csrf_token %}
+                  {{ form.as_p }}
+                  {% if redirect_field_value %}
+                  <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                  {% endif %}
+                </form>
+              </div>
+            {% endif %}
+          </div>
         </div>
     </div>
 </div>

@@ -92,12 +92,17 @@ AUTHENTICATION_BACKENDS = (
 
 # Where to redirect for required logins.
 LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard'
+SOCIALACCOUNT_ADAPTER = 'endagaweb.views.user.WhitelistedSocialAccountAdapter'
+STAFF_EMAIL_DOMAIN_WHITELIST = ['fb.com']
+SOCIALACCOUNT_QUERY_EMAIL = True
+ENABLE_SOCIAL_LOGIN = os.environ.get('ENABLE_SOCIAL_LOGIN', False)
 
 INSTALLED_APPS = [
     # 'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    # 'allauth.socialaccount.providers.facebook',
+    'allauth.socialaccount.providers.facebook',
     'crispy_forms',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -114,6 +119,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
 ]
 
+SITE_ID = 1
 # A sample logging configuration. The only tangible logging performed by this
 # configuration is to send an email to the site admins on every HTTP 500 error
 # when DEBUG=False.  See http://docs.djangoproject.com/en/dev/topics/logging
@@ -124,20 +130,35 @@ LOGGING = {
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
-        }
+        },
+    },
+    'formatters': {
+        'standard': {
+            'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
     },
     'handlers': {
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
-        }
+        },
+        'console':{
+            'level':'INFO',
+            'class':'logging.StreamHandler',
+            'formatter': 'standard'
+        },
     },
     'loggers': {
         'django.request': {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
             'propagate': True,
+        },
+        'endagaweb': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
         },
     }
 }

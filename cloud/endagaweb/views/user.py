@@ -4,7 +4,7 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
@@ -26,6 +26,10 @@ from django.template.loader import get_template
 from django.utils.translation import ugettext_lazy as _
 
 from endagaweb.models import UserProfile
+import logging
+
+logger = logging.getLogger('endagaweb')
+
 
 def validate_phone(value):
     if (value.startswith('+')):
@@ -45,17 +49,21 @@ def loginview(request):
     """
     context = {
         'next': request.GET.get('next', ''),
+        'enable_social_login': settings.ENABLE_SOCIAL_LOGIN
     }
     context.update(csrf(request))
     template = get_template("home/login.html")
     html = template.render(context, request)
     return HttpResponse(html)
 
-
 class WhitelistedSocialAccountAdapter(DefaultSocialAccountAdapter):
     """Custom social account login handler."""
 
-    def pre_social_login(self, _, sociallogin):
+    def raiseException(self):
+        login_url = urlresolvers.reverse('endagaweb-login')
+        raise ImmediateHttpResponse(redirect(login_url))
+
+    def pre_social_login(self, request, sociallogin):
         """Invoked after a user successfully auths with a provider, but before
         the login is actually processed on our side and before the
         pre_social_login signal is emitted.
@@ -72,12 +80,16 @@ class WhitelistedSocialAccountAdapter(DefaultSocialAccountAdapter):
           ImmediateHttpResponse if user's email domain is not in the whitelist
         """
         social_login_email = user_email(sociallogin.user)
-        domain = social_login_email.split('@')[1]
-        if domain not in settings.STAFF_EMAIL_DOMAIN_WHITELIST:
-            # TODO(matt): log this
-            login_url = urlresolvers.reverse('endagaweb.views.user.loginview')
-            raise ImmediateHttpResponse(redirect(login_url))
+        try:
+            domain = social_login_email.split('@')[1]
+        except:
+            logger.warning("User %s, social login failed", social_login_email)
+            self.raiseException()
 
+        if domain not in settings.STAFF_EMAIL_DOMAIN_WHITELIST:
+            logger.warning("User %s not in approved domain",
+                social_login_email)
+            self.raiseException()
 
 def staff_login_view(request):
     """Show the staff login page."""

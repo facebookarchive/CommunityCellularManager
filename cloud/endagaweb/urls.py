@@ -74,7 +74,7 @@ urlpatterns = [
     url(r'^account/notify_numbers/update', endagaweb.views.user.update_notify_numbers),
 
     # Auth.
-    url(r'^login/$', endagaweb.views.user.loginview),
+    url(r'^login/$', endagaweb.views.user.loginview, name='endagaweb-login'),
     url(r'^auth/', endagaweb.views.user.auth_and_login),
     url(r'^account/password/change', endagaweb.views.user.change_password),
     url(r'^account/update', endagaweb.views.user.update_contact),
