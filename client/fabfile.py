@@ -45,8 +45,12 @@ def dev():
     env.hosts = ['vagrant@%s:%s' % (host,port)]
     identity_file = local('vagrant ssh-config %s | grep IdentityFile' %
                           (env.gsmeng,), capture=True)
+    # add Vagrant identity file to any values passed on command line
+    if env.key_filename is None:
+        env.key_filename = []
     # some installations seem to have quotes around the file location
-    env.key_filename = identity_file.split()[1].strip('"')
+    env.key_filename.append(identity_file.split()[1].strip('"'))
+    print env.key_filename
 
 def lab():
     """ Host config for real hardware, lab version (i.e., default login). """
