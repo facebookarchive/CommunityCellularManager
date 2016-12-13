@@ -3,7 +3,7 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 -->
 <extension name="setup" continue="true">
@@ -37,5 +37,9 @@ of patent rights can be found in the PATENTS file in the same directory.
     <action inline="true" application="python" data='endaga_camped ${vbts_canonical_tp_dest_address}'/>
     <action inline="true" application="set" data="endaga_islocal=${_openbts_ret}"/>
 
+    <!-- Indicate that default ('global') message forwarding should be
+         ignored, i.e., message only gets delivered by whatever
+         actions are taken in the chatplan. -->
+    <action application="set" data="final_delivery=true"/>
   </condition>
 </extension>
