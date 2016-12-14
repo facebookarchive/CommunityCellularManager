@@ -1,7 +1,0 @@
-To enable facebook social login for any webApp there are 2 pre-requisites.
-1. A facebook application for the app to authenticate with. The app is created
-by logging into facebook with a developer account and creating an application.
-This provides 2 key pieces of information: APPID and SECRET_KEY.
-2. Create an entry in the site DB to enable social login. Use APPID and
-SECRET_KEY obtained in (1) to fill the corresponding fields. It is easier to
-execute this step by logging in as admin and create a social app login.
