@@ -240,24 +240,43 @@ def register(eapi):
 
     if not ('bts_registered' in conf and conf['bts_registered']):
         # We're not registered yet, so do the initial registration procedure.
-        # Send the CSR and keep trying to register.
-        VPN_CONF = '/etc/openvpn/endaga-'
-        with open(VPN_CONF + 'client.req') as f:
-            csr = f.read()
+        OPENVPN_DIR = '/etc/openvpn/endaga-'
+        CLIENT_CERT = OPENVPN_DIR + 'client.crt'
+        VPN_CONF = OPENVPN_DIR + 'vpn-client.conf.noauto'
 
-        vpn = _retry_req(lambda: get_vpn_conf(eapi, csr), 'BTS registration')
-        cert = vpn['certificate']
-        vpnconf = vpn['vpnconf']
-        assert len(vpnconf) > 0 and len(cert) > 0, 'Invalid VPN parameters'
-        logger.info('got VPN configuration')
-        # write the client cert (before verification, for troubleshooting)
-        with open(VPN_CONF + 'client.crt', 'w') as f:
-            f.write(cert)
+        # If we don't have a client certificate (signed by the certifier)
+        # and VPN config file then attempt to get them by registering.
+        if not (os.path.exists(CLIENT_CERT) and os.path.exists(VPN_CONF)):
+            # Send the CSR and keep trying to register.
+            with open(OPENVPN_DIR + 'client.req') as f:
+                csr = f.read()
+
+            vpn = _retry_req(lambda: get_vpn_conf(eapi, csr),
+                             'BTS registration')
+            cert = vpn['certificate']
+            vpnconf = vpn['vpnconf']
+            assert len(vpnconf) > 0 and len(cert) > 0, 'Invalid VPN parameters'
+            logger.info('got VPN configuration')
+            # write the client cert (before verification, for troubleshooting)
+            with open(CLIENT_CERT, 'w') as f:
+                f.write(cert)
+            # write the VPN config (don't discard if cert verification fails)
+            with open(VPN_CONF, 'w') as f:
+                f.write(vpnconf)
+        else:
+            # We already have a cert and VPN conf from a previous
+            # attempt to register, but the cert could not be validated
+            # against the CA bundle and that attempt aborted. The
+            # user should be able to replace the CA bundle
+            # (etage-bundle.crt) with the one that corresponds to the
+            # cloud installation, after which registration should
+            # succeed.
+            with open(CLIENT_CERT, 'r') as f:
+                cert = f.read()
+
+        # validate client cert against CA
         system_utilities.verify_cert(
             cert, os.path.dirname(VPN_CONF) + '/etage-bundle.crt')
-        # write the VPN config
-        with open(VPN_CONF + 'vpn-client.conf.noauto', 'w') as f:
-            f.write(vpnconf)
         conf['bts_registered'] = True
 
 
