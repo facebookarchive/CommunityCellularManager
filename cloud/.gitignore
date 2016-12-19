@@ -60,4 +60,4 @@ ansible/files/openvpn/etc/openvpn/server.key
 ansible/*.retry
 
 # static uncompressed files
-static
+/static/**
