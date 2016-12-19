@@ -7,6 +7,12 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-- name: Install system packages
-  package: name="{{ item }}" state=present
+- name: Install system packages using apt
+  when: ansible_os_family == "Debian"
+  apt: name="{{ item }}" state=present
+  with_items: "{{ pkgs }}"
+
+- name: Install system packages using yum
+  when: ansible_os_family == "RedHat"
+  yum: name="{{ item }}" state=present
   with_items: "{{ pkgs }}"
