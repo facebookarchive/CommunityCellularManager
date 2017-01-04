@@ -31,7 +31,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
 
     openbts.vm.provider "virtualbox" do |vb|
-      vb.name = "openbts_client"
       vb.customize ['modifyvm', :id, '--usb', 'on']
       vb.customize ['usbfilter', 'add', '0', '--target', :id, '--name', 'RAD1',
                     '--vendorid', '0xfffe', '--productid', '0x0002']
@@ -65,7 +64,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
 
     osmocom.vm.provider "virtualbox" do |vb|
-      vb.name = "osmocom_client"
       vb.customize ["modifyvm", :id, "--memory", "1024"]
       vb.customize ["modifyvm", :id, "--cpus", "2"]
     end
