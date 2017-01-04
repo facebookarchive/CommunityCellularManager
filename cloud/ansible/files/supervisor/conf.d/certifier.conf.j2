@@ -7,10 +7,10 @@
 
 [program:certifier]
 
-directory=/home/ubuntu/certifier
+directory={{ homedir }}/certifier
 
 command=python certifier.py 80
 user=root
 autostart=true
-stderr_logfile=/home/ubuntu/certifier/certifier.err
-stdout_logfile=/home/ubuntu/certifier/certifier.log
+stderr_logfile={{ homedir }}/certifier/certifier.err
+stdout_logfile={{ homedir }}/certifier/certifier.log

@@ -6,7 +6,7 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-- hosts: cert
-  become: yes
-  roles:
-    - { role: certifier_base, homedir: "/home/vagrant" }
+dependencies:
+  - setup_fpm
+  - { role: python_packages, pkgs: [envoy, web.py] }
+  - { role: system_packages, pkgs: [git, supervisor] }

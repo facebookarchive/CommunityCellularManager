@@ -8,57 +8,13 @@
 
 - hosts: certifier
   remote_user: ubuntu
-  sudo: yes
+  become: yes
   vars:
-      pki_dir: /home/ubuntu/certifier/pki
+      homedir: /home/ubuntu
+      pki_dir: certifier/pki
   vars_prompt:
       - name: signing_key_passphrase
         prompt: "Enter signing key passphrase"
         private: true
-  # first build the package and push it to the keyserver
-  tasks:
-  - name: Install pip
-    apt: pkg=python-pip state=present update_cache=yes
-  - name: Install envoy
-    pip: name=envoy
-  - name: Install web
-    pip: name=web.py
-  - name: Install supervisor
-    apt: pkg=supervisor state=present
-  - name: Install prereqs for FPM
-    apt: pkg=ruby-dev state=present
-  - name: Setup FPM so we can build packages
-    shell: gem install fpm
-  - name: Copy over certifier
-    copy: src=../certifier dest=/tmp/
-    sudo: no
-  - name: Get version
-    command: cat /tmp/certifier/VERSION
-    sudo: no
-    register: cert_version
-  - name: Build certifier package
-    command: fpm -s dir -t deb -n certifier -v {{cert_version.stdout}} /tmp/certifier=/home/ubuntu/
-    ignore_errors: yes
-    sudo: no
-  # now that the package is deployed, set it up and start running it.
-  - name: Install certifier
-    apt: deb=certifier_{{cert_version.stdout}}_amd64.deb state=installed
-  - name: Remove certifier package
-    command: rm certifier_{{cert_version.stdout}}_amd64.deb
-    sudo: no
-  - name: Remove certifier directory
-    command: rm -rf /tmp/certifier
-    sudo: no
-  - name: Decrypt the signing key
-    command: openssl rsa -in {{pki_dir}}/private/signing-ca.key -out {{pki_dir}}/private/ca.key -passin pass:{{signing_key_passphrase}} creates={{pki_dir}}/private/ca.key
-
-  - name: Make sure that the config directory exists for supervisor
-    file: path=/etc/supervisor state=directory
-    file: path=/etc/supervisor/conf.d state=directory
-  - name: Add config files
-    copy: src=files/supervisor/supervisord.conf dest=/etc/supervisor/supervisord.conf
-    copy: src=files/supervisor/conf.d/certifier.conf dest=/etc/supervisor/conf.d/certifier.conf
-  - name: Make sure supervisor is running
-    service: name=supervisor state=restarted
-  - name: Make sure certifier is running
-    supervisorctl: name=certifier state=restarted
+  roles:
+    - { role: certifier_base, homedir: "/home/ubuntu" }

@@ -1,0 +1,59 @@
+---
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+# first build the package and push it to the keyserver
+- name: Copy over certifier
+  synchronize: src=../certifier dest=/tmp/
+  become: no
+- include: key-check.yml
+  vars:
+    cafile: '/tmp/certifier/etage-bundle.crt'
+    cert: '/tmp/certifier/pki/ca.crt'
+    key: '/tmp/certifier/pki/private/ca.key'
+- name: Get version
+  command: cat /tmp/certifier/VERSION
+  become: no
+  register: cert_version
+- name: Build certifier package
+  command: fpm -s dir -t deb -n certifier -v {{cert_version.stdout}} /tmp/certifier={{ homedir }}
+  ignore_errors: yes
+  become: no
+
+# now that the package is deployed, set it up and start running it.
+- name: Install certifier
+  apt: deb=certifier_{{cert_version.stdout}}_amd64.deb state=installed
+- name: Remove certifier package
+  file: path=certifier_{{cert_version.stdout}}_amd64.deb state=absent
+  become: no
+- name: Remove certifier directory
+  file: path=/tmp/certifier state=absent
+  become: no
+- name: Decrypt the signing key
+  when: (signing_key_passphrase is defined and
+         signing_key_passphrase != "")
+  command: openssl rsa -in {{pki_dir}}/private/signing-ca.key -out {{pki_dir}}/private/ca.key -passin pass:{{signing_key_passphrase}} creates={{pki_dir}}/private/ca.key
+
+# add easyrsa
+- name: Clone easyrsa repo
+  git: repo=https://github.com/OpenVPN/easy-rsa.git dest={{ homedir }}/easyrsa update=yes
+- name: Copy easyrsa script
+  command: cp {{ homedir }}/easyrsa/easyrsa3/easyrsa {{ homedir }}/certifier/
+- name: Make easyrsa script executable
+  file: path={{ homedir }}/certifier/easyrsa mode=a+x
+
+# configure certifier to run automatically
+- name: Make sure that the config directory exists for supervisor
+  file: path=/etc/supervisor/conf.d state=directory
+- name: Add supervisor config files
+  copy: src=files/supervisor/supervisord.conf dest=/etc/supervisor/supervisord.conf
+- name: Add certifier config file
+  template: src=files/supervisor/conf.d/certifier.conf.j2 dest=/etc/supervisor/conf.d/certifier.conf
+- name: Make sure supervisor is running
+  service: name=supervisor state=restarted
+- name: Make sure certifier is running
+  supervisorctl: name=certifier state=restarted
