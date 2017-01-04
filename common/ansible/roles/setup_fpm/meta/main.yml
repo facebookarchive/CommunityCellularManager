@@ -9,4 +9,4 @@
 
 allow_duplicates: yes
 dependencies:
-  - { role: system_packages, pkgs: [ ruby, ruby-dev ] }
+  - { role: system_packages, pkgs: [ make, ruby, ruby-dev ] }
