@@ -12,5 +12,6 @@ of patent rights can be found in the PATENTS file in the same directory.
 ADMIN_APPS = [
     'django.contrib.admin',
     'django.contrib.admindocs',
+    'logentry_admin',
     'loginas'
 ]

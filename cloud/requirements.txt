@@ -10,6 +10,7 @@ Django==1.10.1
 django-allauth==0.25.2
 django-crispy-forms==1.6.0
 django-debug-toolbar==1.4.0
+django-logentry-admin==1.0.2
 django-loginas==0.1.9
 django-mailgun==0.8.0
 django-picklefield==0.3.2
