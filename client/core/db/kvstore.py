@@ -126,7 +126,6 @@ class KVStore(dict):
         cache = dict(self.items())
         return [(k, cache[k]) for k in keys]
 
-    # this doesn't appear to be used anywhere
     def substring_search(self, query):
         """Returns a dictionary of keys containing the substring <query>."""
         ret = {}

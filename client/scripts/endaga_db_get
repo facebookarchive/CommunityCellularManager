@@ -1,13 +1,39 @@
 #!/usr/bin/env python
 
+# Retrieve a configuration value, or multiple values matching a simple pattern
+
 # Copyright (c) 2016-present, Facebook, Inc.
 # All rights reserved.
-# 
+#
 # This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree. An additional grant 
+# LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+from __future__ import print_function
+
 import sys
-from core import config_database as cdb
-db = cdb.ConfigDB()
-print(db[sys.argv[1]])
+from core.config_database import ConfigDB
+
+db = ConfigDB()
+
+# allow the simple wildcard search pattern of 'foo*' to indicate all keys
+# beginning with the string 'foo'.
+try:
+    key = sys.argv[1]
+    if key[-1] == "*":
+        key = key[:-1]
+        for k, v in db.substring_search(key).items():
+            if not k.startswith(key):
+                # skip items for which key is has a prefix before search key
+                continue
+            print("%s: %s" % (k, v))
+    else:
+        print(db[key])
+    sys.exit(0)
+except KeyError:
+    print("no such key: " + key)
+except IndexError:
+    print("no search key specified on command line")
+
+# we only get here if an exception was raised
+sys.exit(1)
