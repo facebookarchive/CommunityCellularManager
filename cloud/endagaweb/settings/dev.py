@@ -43,3 +43,7 @@ SASON_REQUEST_URL = os.environ.get("SASON_REQUEST_URL",
                                    "http://192.168.40.10:8000/sason/request/")
 SASON_ACQUIRE_URL = os.environ.get("SASON_ACQUIRE_URL",
                                    "http://192.168.40.10:8000/sason/acquire/")
+
+# in dev environment we serve static files directly, not via nginx, so
+# put them somewhere more convenient than /var/www
+STATIC_ROOT = os.path.join(os.environ["HOME"], "static")

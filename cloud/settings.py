@@ -50,7 +50,10 @@ MEDIA_URL = ''
 # put anything in this directory yourself; store your static files in apps'
 # "static/" subdirectories and in STATICFILES_DIRS.  Example:
 # "/var/www/example.com/static/"
-STATIC_ROOT = 'static'
+#
+# In CCM we serve static files using nginx, so we have to ensure that the
+# nginx configuration maps STATIC_URL (below) to this location.
+STATIC_ROOT = '/var/www/static'
 
 # URL prefix for static files.  And additional locations of static files.
 STATIC_URL = '/static/'

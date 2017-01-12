@@ -22,6 +22,7 @@ source /usr/local/bin/virtualenvwrapper.sh
 mkvirtualenv endaga
 cd ~/cloud
 pip install -r requirements.txt
+envdir envdir ./manage.py collectstatic --noinput
 
 echo ""
 echo ">>>>> Setup complete. Logout, log back in, and run 'workon endaga' to get started! <<<<<"

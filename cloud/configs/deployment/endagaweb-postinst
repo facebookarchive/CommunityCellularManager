@@ -10,9 +10,13 @@
 # postinst for endagaweb. Sets up everything after installing application
 # package.
 
-# Remove any python deps that aren't in the requirements, and then install the requirements.
+# Remove any python deps that aren't in the requirements, and then install
+# the requirements.
 pip freeze | grep -v -f requirements.txt - | grep -v '^#' | grep -v '^-e ' | xargs pip uninstall -y
 sudo pip install -r /var/opt/requirements.txt
+
+# Collect all the Django static resources into the location nginx expects
+sudo envdir /var/opt/endagaweb-envdir /var/www/manage.py collectstatic --noinput
 
 # We've installed new services, prep them
 sudo initctl reload-configuration
