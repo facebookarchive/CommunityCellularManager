@@ -12,7 +12,7 @@ of patent rights can be found in the PATENTS file in the same directory.
 
 import os
 
-from endagaweb.settings.prod import *  # noqa: F401, F403
+from endagaweb.settings.staff import *  # noqa: F401, F403
 
 # Use spatialite for unit tests
 GEOS_LIBRARY_PATH = os.environ['GEOS_LIBRARY_PATH']
