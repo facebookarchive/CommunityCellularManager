@@ -1,23 +1,19 @@
 The files in this directory are used as the Django settings module when
 deploying the web front-end servers, by setting the environment variable
 DJANGO_SETTINGS_MODULE (using Python module dot syntax, not path syntax,
-e.g., endagaweb.settings.dev):
+e.g., endagaweb.settings.dev). There is a simple linear relationship
+between them:
 
-dev.py - local Vagrant deployment
+prod.py - base front-end deployment (used in both production and staging
+tiers of the cloud environment). Does not include admin capabilities.
 
-prod.py - cloud deployment (both production and staging)
+staff.py - adds admin capabilities to the web front-end.
 
-staff.py - cloud admin front-end
+dev.py - override some staff settings in order to enable simpler local
+deployment, e.g., no nginx front-end, no https.
 
-Each file imports some top-level settings from the cloud/settings.py module,
-may set additional settings directly, and also imports a context-dependent
-set of modules that provide specific additions to the base settings:
-
-admin.py - enable the admin UI (dev and staff environments)
-
-secure.py - enable settings recommended for increased security (prod and
-staff environments)
+[In other words: staff = prod + admin. dev = staff + local dev changes.]
 
 Note that Django requires that all variables used as settings be defined
 in the exact module specified in DJANGO_SETTINGS_MODULE, hence the use of
-the 'from foo import *' syntax to 'flatten' all definitions into one module.
+the 'from foo import *' syntax to 'inherit' all definitions into one module.

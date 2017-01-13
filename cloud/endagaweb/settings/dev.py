@@ -1,5 +1,9 @@
 """Django dev settings.
 
+Override some of the production settings to suit local development,
+e.g., no https. We inherit from the staff settings since those are the
+full superset of all functionality we provide.
+
 Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
@@ -13,11 +17,10 @@ of patent rights can be found in the PATENTS file in the same directory.
 
 from __future__ import absolute_import
 
+from fnmatch import fnmatch
 import os
 
-from .admin import ADMIN_APPS
-from .base import *
-from fnmatch import fnmatch
+from .staff import *
 
 class glob_list(list):
     def __contains__(self, key):
@@ -27,8 +30,8 @@ class glob_list(list):
         return False
 
 
-# Add the admin apps and debug toolbar in the dev env.
-INSTALLED_APPS += ADMIN_APPS + [
+# Add the debug toolbar
+INSTALLED_APPS += [
     "debug_toolbar",
 ]
 
@@ -47,3 +50,7 @@ SASON_ACQUIRE_URL = os.environ.get("SASON_ACQUIRE_URL",
 # in dev environment we serve static files directly, not via nginx, so
 # put them somewhere more convenient than /var/www
 STATIC_ROOT = os.path.join(os.environ["HOME"], "static")
+
+# We don't use https in the dev env, so disable secure cookies
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False

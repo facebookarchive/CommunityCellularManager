@@ -1,5 +1,9 @@
 """Django staff site settings.
 
+Staff site extends production site functionality with admin capabilities.
+Keeping the two separate allows for operational changes to be applied to
+them separately.
+
 Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
@@ -16,11 +20,15 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from .admin import ADMIN_APPS
-from .base import *
-from .secure import *  # required for cloud deployments 'in the wild'
+from .prod import *
 
-INSTALLED_APPS += ADMIN_APPS
+# Add applications required for admin functionality
+INSTALLED_APPS += [
+    'django.contrib.admin',
+    'django.contrib.admindocs',
+    'logentry_admin',
+    'loginas'
+]
 
 # Set django-allauth oauth token scope to get email addresses and set the
 # post-login redirect to /dashboard.  We create a whitelist and only allow
