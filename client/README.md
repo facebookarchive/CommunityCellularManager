@@ -29,18 +29,23 @@ dependencies set up to build Freeswitch and OpenBTS if necessary.
 
 Setup
 ========
-- Check out all our repos and put them alongside each other
+After having checked out the Community Cellular Manager (CCM) repo:
 - `cd` into the `client` repo
-- `vagrant up` to launch the dev VM. This will set up all your build deps.
+- `vagrant up osmocom` to launch the Osmocom dev VM. This will set up
+all your build deps. Osmocom is suitable for most testing purposes, even
+if Osmocom-compatible hardware is not available.
+
+It is STRONGLY RECOMMENDED that the initial installation of client
+software within the VM is accomplished using `apt-get` to download the
+appropriate top-level package, to ensure that all dependencies are
+automatically satisfied. Install `endaga-osmocom` as follows: `apt-get
+install endaga-osmocom`.
 
 To build everything from source (i.e., what you have checked out on
 your box) do the following: On your box, you run `fab dev package` to
-create all the dpkg's, then ssh into the VM ('vagrant ssh
-[osmocom|openbts]'), then go to the endaga_packages folder and install
-all of the packages. Note that these packages have dependencies that
-will be pulled from production repos, so make sure to install them in
-order (endaga-core before the endaga metapackage is the only one that
-seems to matter).
+create all the `.deb` packages, then ssh into the VM (`vagrant ssh
+[osmocom|openbts]`), then go to the `endaga_packages` folder and install
+all of the packages (e.g., using `dpkg` or `gdebi`).
 
 You can also call `fab dev package:package_requirements=no` to not
 package up install requirements for python packages. This is useful
@@ -49,12 +54,6 @@ requirements. Also you can run `fab dev update:flush_cache=no` to stop
 the `localdev` repository from being rebuilt. This is also useful in
 development workflows where just want to install a `.deb` and not
 resolve dependencies.
-
-Alternatively, run 'sudo apt-get install endaga' from inside the VM to
-install the packaged version of our stack. This is not guaranteed to
-be compatible with the endaga cloud release, however.
-
-
 
 
 Testing
