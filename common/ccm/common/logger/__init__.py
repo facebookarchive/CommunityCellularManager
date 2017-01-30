@@ -1,5 +1,10 @@
 """Endaga/CCM global loggers.
 
+We create a standard logging.Logger object to be used by callers of the
+logger() method. We also install a syslog handler on the root logger so
+that all messages that are created using the logging module get sent to
+syslog, even if they didn't originate from this module.
+
 Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
@@ -27,13 +32,22 @@ _NOTICE = 25
 logging.addLevelName("NOTICE", 25)
 
 
+# export Formatter templates so they can be used elsewhere, e.g., Django
+# logging configuration.
+SIMPLE_FORMAT = "%(filename)s:%(lineno)d:%(funcName)s: %(message)s"
+VERBOSE_FORMAT = "[%(levelname)s] " + SIMPLE_FORMAT
+
+
 class DefaultLogger(object):
-    """ Capture state of default logging config. """
-    _log = logging.getLogger(__name__)
-    _log_formatter = logging.Formatter(
-        "endaga: %(filename)s:%(lineno)d:%(funcName)s: %(message)s")
-    _log_verbose = logging.Formatter(
-        "[%(levelname)s] %(filename)s:%(lineno)d:%(funcName)s: %(message)s")
+    """ Capture state of default logging config.
+
+    The environment variable CCM_LOGGER_NAME can be used to set a specific
+    logger name, e.g., endagaweb, that may be more appropriate in some cases.
+    """
+    _log = logging.getLogger(environ.get("CCM_LOGGER_NAME", __name__))
+    # Add 'endaga:' as format prefix for compatibility with old format
+    _log_formatter = logging.Formatter("endaga: " + SIMPLE_FORMAT)
+    _log_verbose = logging.Formatter(VERBOSE_FORMAT)
     _log_handler = None
 
     @classmethod
@@ -64,10 +78,16 @@ class DefaultLogger(object):
                 # Python 3 barfs on f without the funky '[:]' operator
                 [("  %s:%d:%s: %s" % f[:]) for f in tb])
         (pathname, lineno, function, _) = tb[-1]
+        # unfortunately we can't easily fix up the module name passed to the
+        # logger here, so if the formatter uses 'name' it will always be
+        # ccm.common.logger. We could maybe do some path mangling to convert
+        # pathname to module name...
+        modname = "<NOT %s>" % (__name__, )
 
         # by using standard LogRecord fields we are compatible with direct
-        # calls to the standard logging infrastructure (bypassing this module)
-        rec = cls._log.makeRecord(__name__, level, pathname, lineno,
+        # calls to the standard logging infrastructure (those that bypass
+        # this module, e.g., in endagaweb).
+        rec = cls._log.makeRecord(modname, level, pathname, lineno,
                                   message, args=None, exc_info=None,
                                   func=function)
         cls._log.handle(rec)
@@ -121,7 +141,9 @@ class DefaultLogger(object):
                 cls._log_verbose if verbose else cls._log_formatter)
             cls.log(logging.DEBUG,
                     "set default log handler to %s" % (handler, ))
-        if level is not None:
+        # Don't emit a 'log level changed' message if we haven't installed
+        # a handler, to avoid annoying 'no handler available' messages.
+        if level is not None and cls._log_handler:
             cls.log(_NOTICE,
                     "set log level to %d" % (cls._log.getEffectiveLevel(), ),
                     # use tb_offset=3 to omit this stack frame in output
@@ -132,8 +154,15 @@ class DefaultLogger(object):
 try:
     # in some environments /dev/log is not the syslog socket
     sock = environ.get('CCM_SYSLOG_SOCKET', '/dev/log')
+    # and in some cases, e.g., running under Django, we use a handler from,
+    # that env, so the empty socket name prevents adding our root handler.
+    if sock:
+        handler = SysLogHandler(address=sock, facility=LOG_LOCAL0)
+    else:
+        handler = None
     DefaultLogger.update_handler(
-        SysLogHandler(address=sock, facility=LOG_LOCAL0),
+        handler,
+        # note that we're setting the level of the logger, not handler, here
         logging.WARNING)
 except IOError as ex:
     if ex.errno == errno.ENOENT:
