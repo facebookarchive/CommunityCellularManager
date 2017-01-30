@@ -14,11 +14,17 @@ of patent rights can be found in the PATENTS file in the same directory.
 
 from __future__ import absolute_import
 
+import logging
 import os
+from syslog import LOG_LOCAL0
+
 import dj_database_url
 
 # inherit base Django settings (more general than the endagaweb app)
 from settings import *  # noqa: F403
+
+# combine ccm.common.logger settings with Django logging
+from ccm.common import logger
 
 # Specify with DATABASE_URL variable.
 DATABASES = {
@@ -126,49 +132,79 @@ INSTALLED_APPS = [
 ]
 
 SITE_ID = 1
-# A sample logging configuration. The only tangible logging performed by this
-# configuration is to send an email to the site admins on every HTTP 500 error
-# when DEBUG=False.  See http://docs.djangoproject.com/en/dev/topics/logging
-# for more details on how to customize your logging configuration.
+
+# We inherit the default Django logging configuration. Unfortunately
+# there is a mixed use of standard logging module and custom
+# ccm.common.logger within the endagaweb app. We can use the logger module's
+# syslog handler, but we need to set the level appropriately.
+#
+# See http://docs.djangoproject.com/en/dev/topics/logging for more
+# details on how to customize your logging configuration.
+
+# allow syslog to be disabled, e.g., for testing (default = enabled)
+_USE_SYSLOG = os.environ.get('DJANGO_DISABLE_SYSLOG', 'False').lower() != 'true'
+
+_ENDAGAWEB_LOGGER = {
+    'handlers': ['syslog'] if _USE_SYSLOG else [],
+    'level': logging.DEBUG,  # overridden by handler's level
+}
+
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse'
-        },
-    },
+    'disable_existing_loggers': False,  # NOT the default
     'formatters': {
-        'standard': {
-            'format':
-            "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-            'datefmt': "%d/%b/%Y %H:%M:%S"
-        },
+        'ccm.common.logger.verbose': {
+            # we use this for syslog, which inserts its own timestamps
+            'format': 'endagaweb ' + logger.VERBOSE_FORMAT,
+        }
     },
-    'handlers': {
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': ['require_debug_false'],
-            'class': 'django.utils.log.AdminEmailHandler'
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'standard'
-        },
-    },
+
+    # Create a logger that sends all endagaweb log messages to syslog
+    #
+    # Note: currently the endagaweb app is inconsistent in how it logs
+    # messages, which requires that we actually install the logger as root
+    # of the logging hierarchy rather than endagaweb. That means other stuff
+    # also gets sent to syslog.
+    # TODO: t15748193 Make endagaweb log usage consistent
     'loggers': {
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
-        'endagaweb': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-    }
+        '': _ENDAGAWEB_LOGGER,
+    },
 }
+
+# configure the syslog handler if enabled
+if _USE_SYSLOG:
+    LOGGING.setdefault('handlers', {})['syslog'] = {
+        'class': 'logging.handlers.SysLogHandler',
+        'address': '/dev/log',
+        'facility': LOG_LOCAL0,
+        'formatter': 'ccm.common.logger.verbose',
+        'level': os.environ.get('LOGGING_SYSLOG_LEVEL', 'WARN'),
+    }
+
+# Configure additional logging in dev/debug mode
+if DEBUG:  # noqa: F405
+    # send all endagaweb messages to the console (which then applies its
+    # own priority-based filter, INFO by default per above). Note that we
+    # use the CCM_LOGGER_NAME env var to direct ccm.common.logger messages
+    # to endagaweb.logger, so they get handled just like other endagaweb
+    # messages.
+    #
+    # See note above regarding endagaweb messages.
+    LOGGING['formatters']['standard'] = {
+        'format':
+            "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+        'datefmt': "%d/%b/%Y %H:%M:%S"
+    }
+    LOGGING.setdefault('handlers', {})['console'] = {
+        'level': os.environ.get('LOGGING_CONSOLE_LEVEL', 'INFO'),
+        'class': 'logging.StreamHandler',
+        'formatter': 'standard'
+    }
+    _ENDAGAWEB_LOGGER['handlers'] += ['console']
+
+    # this sets the ccm.common.logger threshold to INFO
+    logger.DefaultLogger.update_handler(level=logging.INFO)
+
 
 # Use the bcrypt hasher first, followed by the defaults.
 PASSWORD_HASHERS = [
