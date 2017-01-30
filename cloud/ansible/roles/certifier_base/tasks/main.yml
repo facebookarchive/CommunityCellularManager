@@ -19,6 +19,10 @@
   command: cat /tmp/certifier/VERSION
   become: no
   register: cert_version
+- name: Get architecture
+  command: dpkg --print-architecture
+  become: no
+  register: current_arch
 - name: Build certifier package
   command: fpm -s dir -t deb -n certifier -v {{cert_version.stdout}} /tmp/certifier={{ homedir }}
   ignore_errors: yes
@@ -26,9 +30,9 @@
 
 # now that the package is deployed, set it up and start running it.
 - name: Install certifier
-  apt: deb=certifier_{{cert_version.stdout}}_amd64.deb state=installed
+  apt: deb=certifier_{{cert_version.stdout}}_{{current_arch.stdout}}.deb state=installed
 - name: Remove certifier package
-  file: path=certifier_{{cert_version.stdout}}_amd64.deb state=absent
+  file: path=certifier_{{cert_version.stdout}}_{{current_arch.stdout}}.deb state=absent
   become: no
 - name: Remove certifier directory
   file: path=/tmp/certifier state=absent
