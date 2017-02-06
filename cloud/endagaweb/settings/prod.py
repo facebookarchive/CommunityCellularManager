@@ -192,7 +192,7 @@ if DEBUG:  # noqa: F405
     # See note above regarding endagaweb messages.
     LOGGING['formatters']['standard'] = {
         'format':
-            "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            "[%(asctime)s] %(levelname)s [%(filename)s:%(lineno)s] %(message)s",
         'datefmt': "%d/%b/%Y %H:%M:%S"
     }
     LOGGING.setdefault('handlers', {})['console'] = {

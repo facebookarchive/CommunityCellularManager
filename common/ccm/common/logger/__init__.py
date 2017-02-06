@@ -78,16 +78,11 @@ class DefaultLogger(object):
                 # Python 3 barfs on f without the funky '[:]' operator
                 [("  %s:%d:%s: %s" % f[:]) for f in tb])
         (pathname, lineno, function, _) = tb[-1]
-        # unfortunately we can't easily fix up the module name passed to the
-        # logger here, so if the formatter uses 'name' it will always be
-        # ccm.common.logger. We could maybe do some path mangling to convert
-        # pathname to module name...
-        modname = "<NOT %s>" % (__name__, )
 
         # by using standard LogRecord fields we are compatible with direct
         # calls to the standard logging infrastructure (those that bypass
         # this module, e.g., in endagaweb).
-        rec = cls._log.makeRecord(modname, level, pathname, lineno,
+        rec = cls._log.makeRecord(__name__, level, pathname, lineno,
                                   message, args=None, exc_info=None,
                                   func=function)
         cls._log.handle(rec)
