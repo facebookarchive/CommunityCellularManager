@@ -1,12 +1,16 @@
-"""Our internal API views.
+""" CCM internal API views.
 
 Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
+
+import urlparse
+import xml.dom.minidom
+import xml.parsers.expat
 
 from rest_framework import status
 from rest_framework.authentication import (BaseAuthentication,
@@ -17,13 +21,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from ccm.common import logger
 from endagaweb.util.api import get_network_from_user
 from endagaweb.models import Number, BTS, UserProfile, Network
-
-import logging
-import urlparse
-import xml.dom.minidom
-import xml.parsers.expat
 
 class NumberLookup(APIView):
     """Given a number, gives the IP and port of the BTS it is currently
@@ -131,7 +131,7 @@ class UUIDLookup(APIView):
     """
     def get(self, request):
 
-        logging.warn("Use of deprecated API call %s" % request.GET)
+        logger.warning("Use of deprecated API call %s" % (request.GET, ))
 
         if "uuid" not in request.GET:
             return Response("No uuid specified.",
@@ -173,8 +173,10 @@ class BillVoice(APIView):
         try:
             dom = xml.dom.minidom.parseString(request.POST['cdr'])
         except xml.parsers.expat.ExpatError:
+            logger.warning("invalid XML CDR: '%s'" % (request.POST['cdr'], ))
             return Response("Bad XML", status=status.HTTP_400_BAD_REQUEST)
         except KeyError:
+            logger.warning("invalid POST request: '%s'" % (request.POST, ))
             return Response("Missing CDR", status=status.HTTP_400_BAD_REQUEST)
         # Then make sure all of the necessary pieces are there.  Fail if any
         # required tags are missing
@@ -192,46 +194,43 @@ class BillVoice(APIView):
         for tag_name in ["billsec"]:
             data[tag_name] = int(data[tag_name])
         # Try to get Number instances for both the caller and recipient.
+        # If we find both Numbers in the system then a user on one Endaga
+        # network is calling a subscriber on a different Endaga-managed
+        # network, cool. In our cloud freeswitch instance we actually
+        # "short circuit" this call so it never goes to Nexmo, but to the
+        # operators the call is a regular incoming / outgoing event, so we
+        # will bill it as such.
         caller_number, dest_number = None, None
         try:
             caller_number = Number.objects.get(number=data["caller_id_name"])
+            try:
+                caller_cost = caller_number.network.calculate_operator_cost(
+                    'off_network_send', 'call',
+                    destination_number=data['destination_number'])
+            except ValueError as ex:
+                # this is raised iff the destination has an invalid prefix
+                logger.error("invalid number prefix: %s" % (ex, ))
+                caller_cost = 0
+            caller_number.network.bill_for_call(caller_cost,
+                                                data['billsec'],
+                                                'outside_call')
+            logger.info("billed network '%s' for outgoing call: %d" %
+                        (caller_number.network.name, caller_cost))
         except Number.DoesNotExist:
             pass
         try:
             dest_number = Number.objects.get(number=data["destination_number"])
-        except Number.DoesNotExist:
-            pass
-        if caller_number and dest_number:
-            # We found both Numbers in the system so a user on one Endaga
-            # network is calling a subscriber on a different Endaga-managed
-            # network, cool.  In our cloud freeswitch instance we actually
-            # "short circuit" this call so it never goes to Nexmo, but to the
-            # operators the call is a regular incoming / outgoing event, so we
-            # will bill it as such.
-            caller_cost = caller_number.network.calculate_operator_cost(
-                'off_network_send', 'call',
-                destination_number=data['destination_number'])
-            caller_number.network.bill_for_call(caller_cost, data['billsec'],
-                                          'outside_call')
+            # cost to receive doesn't take source/caller into account
             dest_cost = dest_number.network.calculate_operator_cost(
                 'off_network_receive', 'call')
-            dest_number.network.bill_for_call(dest_cost, data['billsec'],
-                                        'incoming_call')
-        elif caller_number:
-            # We only found the caller's Number so this is an outbound call.
-            cost_to_operator = caller_number.network.calculate_operator_cost(
-                'off_network_send', 'call',
-                destination_number=data['destination_number'])
-            caller_number.network.bill_for_call(cost_to_operator, data['billsec'],
-                                          'outside_call')
-        elif dest_number:
-            # We only know of the recipient's Number, so this is an inbound
-            # call.
-            cost_to_operator = dest_number.network.calculate_operator_cost(
-                'off_network_receive', 'call')
-            dest_number.network.bill_for_call(cost_to_operator, data['billsec'],
-                                        'incoming_call')
-        else:
+            dest_number.network.bill_for_call(dest_cost,
+                                              data['billsec'],
+                                              'incoming_call')
+            logger.info("billed network '%s' for incoming call: %d" %
+                        (dest_number.network.name, dest_cost))
+        except Number.DoesNotExist:
+            pass
+        if not (caller_number or dest_number):
             # We didn't find either Number, that's a failure.
             return Response("Invalid caller and destination",
                             status=status.HTTP_404_NOT_FOUND)
