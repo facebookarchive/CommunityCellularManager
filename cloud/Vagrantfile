@@ -22,6 +22,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     web.vm.network "forwarded_port", guest: 8000, host: 9000
     web.vm.network "forwarded_port", guest: 80, host: 9080
     web.vm.network "forwarded_port", guest: 443, host: 9443
+    web.vm.provision "ansible" do |ansible|
+        ansible.playbook = "ansible/web.dev.yml"
+        ansible.verbose = true
+    end
     web.vm.provision "shell",
     run: "always",
     inline: "route add -net 10.64.0.0 netmask 255.255.255.0 gw 192.168.40.60 || true"

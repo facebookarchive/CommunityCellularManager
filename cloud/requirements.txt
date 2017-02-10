@@ -10,6 +10,7 @@ Django==1.10.1
 django-allauth==0.25.2
 django-crispy-forms==1.6.0
 django-debug-toolbar==1.4.0
+django-guardian==1.4.2
 django-logentry-admin==1.0.2
 django-loginas==0.1.9
 django-mailgun==0.8.0
@@ -39,10 +40,10 @@ PyYAML==3.11
 requests==2.0.0
 requests-oauthlib==0.4.2
 six==1.10.0
+snowflake
 sqlparse==0.1.14
 stripe==1.9.5
 tornado==3.2.2
+urllib3[secure]>=1.18.1
 uWSGI==2.0.12
 xlrd==0.9.3
-django-guardian==1.4.2
-snowflake

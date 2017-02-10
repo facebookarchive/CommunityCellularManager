@@ -1,0 +1,37 @@
+---
+# Copyright (c) 2016-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+- hosts: web
+  vars:
+    home: /home/vagrant
+    virtualenv: "{{ home }}/.virtualenvs/endaga"
+  pre_tasks:
+  - name: Verify virtual network interfaces correctly configured
+    uri:
+      url: http://www.icanhazip.com/
+  - name: Install web front-end dependencies
+    shell: "{{ home }}/cloud/configs/deployment/scripts/install_dependencies"
+    become: yes
+  roles:
+  - { role: python_packages,
+      pkgs: [virtualenvwrapper, "urllib3[secure]"],
+      become: yes }
+  post_tasks:
+  - name: Ensure virtualenvwrapper commands available in shell
+    lineinfile:
+      name: "{{ home }}/.bashrc"
+      line: source /usr/local/bin/virtualenvwrapper.sh
+  - name: Install Django and dependencies
+    pip:
+      requirements: "{{ home }}/cloud/requirements.txt"
+      virtualenv: "{{ virtualenv }}"
+  - name: Collect Django static resources
+    django_manage:
+      app_path: "{{ home }}/cloud"
+      command: collectstatic
+      virtualenv: "{{ virtualenv }}"

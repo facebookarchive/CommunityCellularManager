@@ -48,27 +48,25 @@ run `vagrant ssh web`.
 There is a 6th vm, "smpp" that runs the kannel SMPP service. This is
 only needed if you wish to connect to a live SMSC.
 
-4) Connect to Vagrant VMs:
-
-Now you can connect to the web VM and create a virtual environment
-with [virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/)
-for your development work:
-
-    vagrant ssh web
-
-    # run these commands in the VM
-    ~/cloud/setup_dev.bash
+The Vagrantfile definition of the 'web' VM uses an Ansible
+provisioning step to automatically configure the VM for running Django
+within a Python 'virtual environment' (using
+[virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/)
+for testing and development.
 
 This sets up a virtualenv for you named 'endaga'; the name is
 arbitrary, and you can create additional virtualenvs with other names
 if you need.
 
-5) On the web VM, use the development environment:
+4) On the web VM, use the development environment:
 
     cd ~/cloud
     workon endaga
 
-6) Test whether things work:
+The 'endaga' virtual environment MUST be used to run the Django
+server; Django is not installed in the root system.
+
+5) Test whether things work:
 
 You can try starting Django (again in the web VM):
 
@@ -80,17 +78,29 @@ You can try starting Django (again in the web VM):
 
 You then can visit the website on the dev (host) web browser at:
 
-    192.168.40.10:8000
+    http://192.168.40.10:8000
 
-7) See the real system in action:
+Note that, unlike the production system, the Django server only runs
+when the `runserver` command is executed, i.e., it does not run in the
+background. Furthermore, `nginx` is not used as a front-end in the VM;
+all static resources are served directly by Django.
+
+6) See the real system in action:
 
 You can create a set of fake users and actions to show in the interface:
 
-   python manage.py setup_test_db
+    python manage.py setup_test_db
 
-After the db is populated, the log-in name will be "testuser" and "testpw" on the website
+After the db is populated, the log-in name will be "testuser" and
+"testpw" on the website.
 
-8) Connect a development client:
+It's also possible to create an administrative 'super user' account:
+
+    python manage.py createsuperuser
+
+which may be useful for performing certain actions.
+
+7) Connect a development client:
 
 Connecting a development client is detailed in the client README.md
 
