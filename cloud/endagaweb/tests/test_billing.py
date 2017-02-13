@@ -19,13 +19,14 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
+import mock
 import urllib
 
 from django.test import Client
 from django.test import TestCase
-import mock
 import stripe
 
+from ccm.common.utils import xml_cdr
 from endagaweb import models
 from endagaweb import notifications
 from endagaweb.billing import tier_setup
@@ -677,13 +678,16 @@ class VoiceBillingTest(TestCase):
     # Setup some CDR files.
     basepath = './endagaweb/tests/fixtures'
     with open("%s/cloud_to_bts.cdr.xml" % basepath) as cdrfile:
-        incoming_cdr = urllib.quote_plus(cdrfile.read())
+        incoming_xml = cdrfile.read()
+        incoming_xc = xml_cdr.CloudVoiceCdr.from_xml(incoming_xml)
     with open("%s/bts_to_cloud.cdr.xml" % basepath) as cdrfile:
-        outgoing_cdr = urllib.quote_plus(cdrfile.read())
+        outgoing_xml = cdrfile.read()
+        outgoing_xc = xml_cdr.CloudVoiceCdr.from_xml(outgoing_xml)
     with open("%s/bts_to_bts.cdr.xml" % basepath) as cdrfile:
-        internal_cdr = urllib.quote_plus(cdrfile.read())
+        internal_xml = cdrfile.read()
+        internal_xc = xml_cdr.CloudVoiceCdr.from_xml(internal_xml)
     with open("%s/invalid.cdr.xml" % basepath) as cdrfile:
-        invalid_cdr = urllib.quote_plus(cdrfile.read())
+        invalid_xml = cdrfile.read()
 
     @classmethod
     def setUpClass(cls):
@@ -746,14 +750,16 @@ class VoiceBillingTest(TestCase):
         """We can process outgoing voice CDRs."""
         client = Client()
         response = client.post(
-                "/internal/api/v1/voice/", data='cdr=%s' % self.outgoing_cdr,
+            "/internal/api/v1/voice/",
+            data='cdr=%s' % (urllib.quote_plus(self.outgoing_xml), ),
             content_type='application/x-www-form-urlencoded')
         self.assertEqual(200, response.status_code)
         # Refresh the user profile to get the latest balance.
         self.user_profile = models.UserProfile.objects.get(user=self.user)
-        # This CDR has 17 seconds billable and the destination number's prefix
-        # is 62 (Indonesia) which is in Tier A.
-        expected_cost = int((17 / 60.) * 5000)
+        # The destination number's prefix is 62 (Indonesia),
+        # which is in Tier A.
+        duration = self.outgoing_xc["billsec"]
+        expected_cost = int((duration / 60.) * 5000)
         self.assertEqual(self.initial_credit - expected_cost,
                          self.user_profile.network.ledger.balance)
 
@@ -768,12 +774,14 @@ class VoiceBillingTest(TestCase):
         off_receive_tier.save()
         client = Client()
         response = client.post(
-            "/internal/api/v1/voice/", data='cdr=%s' % self.incoming_cdr,
+            "/internal/api/v1/voice/",
+            data='cdr=%s' % (urllib.quote_plus(self.incoming_xml), ),
             content_type='application/x-www-form-urlencoded')
         # Refresh the user profile to get the latest balance.
         self.user_profile = models.UserProfile.objects.get(user=self.user)
-        # This CDR has 10 seconds billable.
-        expected_cost = int((10 / 60.) *
+        # Get billable duration of CDR
+        duration = self.incoming_xc["billsec"]
+        expected_cost = int((duration / 60.) *
                             off_receive_tier.cost_to_operator_per_min)
         transaction = models.Transaction.objects.order_by('created').get(
                 kind='incoming_call', ledger=self.user_profile.network.ledger)
@@ -799,16 +807,18 @@ class VoiceBillingTest(TestCase):
         off_receive_tier.save()
         client = Client()
         response = client.post(
-            "/internal/api/v1/voice/", data='cdr=%s' % self.internal_cdr,
+            "/internal/api/v1/voice/",
+            data='cdr=%s' % (urllib.quote_plus(self.internal_xml), ),
             content_type='application/x-www-form-urlencoded')
         self.assertEqual(200, response.status_code)
         # Refresh the user profiles to get the latest balance.
         self.user_profile = models.UserProfile.objects.get(user=self.user)
         self.user_profile2 = models.UserProfile.objects.get(user=self.user2)
-        # This CDR has 17 seconds billable and the destination number's prefix
-        # is 62 (Indonesia) which is in Tier A.
-        expected_incoming_cost = int((17 / 60.) * 2000)
-        expected_outside_cost = int((17 / 60.) * 5000)
+        # The destination number's prefix is 62 (Indonesia),
+        # which is in Tier A.
+        duration = self.internal_xc["billsec"]
+        expected_incoming_cost = int((duration / 60.) * 2000)
+        expected_outside_cost = int((duration / 60.) * 5000)
         # User Profile 1 is the caller and 2 is the recipient.
         self.assertEqual(self.initial_credit - expected_incoming_cost,
                          self.user_profile2.network.ledger.balance)
@@ -819,7 +829,8 @@ class VoiceBillingTest(TestCase):
         """We can process invalid CDRs."""
         client = Client()
         response = client.post(
-                "/internal/api/v1/voice/", data='cdr=%s' % self.invalid_cdr,
+            "/internal/api/v1/voice/",
+            data='cdr=%s' % (urllib.quote_plus(self.invalid_xml), ),
             content_type='application/x-www-form-urlencoded')
         self.assertEqual(404, response.status_code)
 
