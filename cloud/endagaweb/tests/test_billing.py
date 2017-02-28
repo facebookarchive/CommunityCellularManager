@@ -20,8 +20,11 @@ from __future__ import unicode_literals
 
 import json
 import mock
+import os
+from random import randrange
 import urllib
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.test import Client
 from django.test import TestCase
 import stripe
@@ -31,6 +34,22 @@ from endagaweb import models
 from endagaweb import notifications
 from endagaweb.billing import tier_setup
 import endagaweb.views.api
+
+
+def _set_network_credit(network, amount=-1):
+    """ Add credit to a network, unless billing disabled. """
+    if amount < 0:
+        amount = randrange(1000, 1000000)
+    if network.billing_enabled:
+        network.add_credit(amount)
+    else:
+        amount = 0
+    return amount
+
+
+def _network_cost(network, cost):
+    """ Check if billing is enabled, if not cost is effectively zero. """
+    return cost if network.billing_enabled else 0
 
 
 class OperatorBillingTest(TestCase):
@@ -44,8 +63,9 @@ class OperatorBillingTest(TestCase):
       to / from numbers and the BillingTiers.
     * We use network.calculate_operator_cost to determine how much the event
       should cost per SMS or per minute of a call.
-    * Then we user_profile.network.bill_for_sms or user_profile.network.bill_for_call which
-      creates Transactions.
+    * Then we user_profile.network.bill_for_sms or
+      user_profile.network.bill_for_call which creates Transactions (unless
+      billing is disabled for user_network)
     * Everytime a Transaction is created and saved, the operator's ledger's
       balance is updated and, if the new balance is below the recharge
       threshold, the operator's credit card is billed in a recharge / top-up.
@@ -80,82 +100,93 @@ class OperatorBillingTest(TestCase):
         self.user_profile = models.UserProfile.objects.get(
             id=self.user_profile.id)
 
+    def test_billing_enabled_global_setting(self):
+        """Can disable billing globally by setting environment variable."""
+        self.assertEqual(self.user_profile.network.billing_enabled,
+                         os.environ.get("NW_BILLING", "True").lower() == "true")
+
     def test_balance_starts_at_zero(self):
         """Ledger balance starts at zero."""
         self.assertEqual(0, self.user_profile.network.ledger.balance)
 
     def test_network_add_credit(self):
         """We can add credit to a profile."""
-        credit_amount = 1000
-        self.user_profile.network.add_credit(credit_amount)
+        credit_amount = _set_network_credit(self.user_profile.network)
         self.refresh_user_profile()
-        self.assertEqual(credit_amount, self.user_profile.network.ledger.balance)
+        self.assertEqual(credit_amount,
+                         self.user_profile.network.ledger.balance)
 
     def test_network_bill_for_number(self):
         """We can bill for numbers."""
         # Add some initial credit to the account.
         credit_amount = 80 * 100 * 1000
-        self.user_profile.network.add_credit(credit_amount)
+        credit_amount = _set_network_credit(self.user_profile.network,
+                                            credit_amount)
         self.refresh_user_profile()
-        self.assertEqual(credit_amount, self.user_profile.network.ledger.balance)
+        self.assertEqual(credit_amount,
+                         self.user_profile.network.ledger.balance)
         # Bill for a number and check that the balance has changed.  The cost
         # of a number is currently hardcoded to $1 USD / mo.
         self.user_profile.network.bill_for_number('5550987')
         self.refresh_user_profile()
-        number_cost = 1 * 100 * 1000
+        number_cost = _network_cost(self.user_profile.network,
+                                    1 * 100 * 1000)
         self.assertEqual(credit_amount - number_cost,
                          self.user_profile.network.ledger.balance)
 
     def test_network_bill_for_sms(self):
         """We can bill for SMS."""
         # Add some initial credit to the account.
-        credit_amount = 1000
-        self.user_profile.network.add_credit(credit_amount)
+        credit_amount = _set_network_credit(self.user_profile.network)
         self.refresh_user_profile()
         # Bill for the SMS.
         cost_to_operator = 300
         self.user_profile.network.bill_for_sms(cost_to_operator, 'outside_sms')
         self.refresh_user_profile()
+        cost_to_operator = _network_cost(self.user_profile.network,
+                                         cost_to_operator)
         self.assertEqual(credit_amount - cost_to_operator,
                          self.user_profile.network.ledger.balance)
 
     def test_network_bill_for_call(self):
         """We can bill for calls."""
         # Add some initial credit to the account.
-        credit_amount = 1000
-        self.user_profile.network.add_credit(credit_amount)
+        credit_amount = _set_network_credit(self.user_profile.network)
         self.refresh_user_profile()
         # Bill for the call.
         cost_to_operator = 300
         billable_seconds = 30
-        self.user_profile.network.bill_for_call(cost_to_operator, billable_seconds,
-                                        'outside_call')
+        self.user_profile.network.bill_for_call(cost_to_operator,
+                                                billable_seconds,
+                                                'outside_call')
         self.refresh_user_profile()
         billable_minutes = billable_seconds / 60.
+        cost_to_operator = _network_cost(self.user_profile.network,
+                                         cost_to_operator)
         self.assertEqual(credit_amount - cost_to_operator * billable_minutes,
                          self.user_profile.network.ledger.balance)
 
     def test_call_billing_math(self):
         """We round correctly."""
         # Add some initial credit to the account.
-        credit_amount = 1000
-        self.user_profile.network.add_credit(credit_amount)
+        credit_amount = _set_network_credit(self.user_profile.network)
         self.refresh_user_profile()
         # Bill for the call.
         cost_to_operator = 100
         billable_seconds = 175
-        self.user_profile.network.bill_for_call(cost_to_operator, billable_seconds,
-                                        'incoming_call')
+        self.user_profile.network.bill_for_call(cost_to_operator,
+                                                billable_seconds,
+                                                'incoming_call')
         self.refresh_user_profile()
         # We expect to round down to the nearest millicent.
-        expected_cost = 291
+        expected_cost = _network_cost(self.user_profile.network, 291)
         self.assertEqual(credit_amount - expected_cost,
                          self.user_profile.network.ledger.balance)
 
     def test_do_not_create_transaction_for_zero_second_call(self):
         """Zero second calls do not create Transactions."""
         original_number_of_transactions = models.Transaction.objects.count()
-        # Attempt to bill for a zero second call.
+        # Attempt to bill for a zero second call => no Transaction created.
         self.user_profile.network.bill_for_call(100, 0, 'incoming_call')
         new_number_of_transactions = models.Transaction.objects.count()
         self.assertEqual(new_number_of_transactions,
@@ -227,13 +258,18 @@ class RechargeTest(TestCase):
 
     def test_recharge(self):
         """We should be able to recharge a user's account."""
-        # Mock the Stripe charges and perform the recharge; it should succeed.
+        # Mock the Stripe charges and perform the recharge; it should succeed
+        # (if billing enabled for the network).
         self.mock_stripe.Charge.create.return_value = mock.Mock()
-        self.assertTrue(self.user_profile.network.recharge_if_necessary())
-        # And we should see the user's ledger balance change by the recharge
-        # amount.
+        self.assertEqual(self.user_profile.network.recharge_if_necessary(),
+                         self.user_profile.network.billing_enabled)
+        # Initial ledger balance is zero; after recharge ledger balance
+        # should equal network recharge amount.
         self.refresh_user_profile()
-        self.assertEqual(self.user_profile.network.recharge_amount,
+        new_balance = _network_cost(
+            self.user_profile.network,
+            self.user_profile.network.recharge_amount)
+        self.assertEqual(new_balance,
                          self.user_profile.network.ledger.balance)
 
     def test_recharge_zero_amount(self):
@@ -257,19 +293,25 @@ class RechargeTest(TestCase):
         """A recharge is attempted if the balance falls below a threshold."""
         # Add some initial credit to the account.
         self.refresh_user_profile()
-        credit_amount = self.user_profile.network.recharge_thresh + 1000
-        self.user_profile.network.add_credit(credit_amount)
+        credit_amount = _set_network_credit(
+            self.user_profile.network,
+            self.user_profile.network.recharge_thresh + 1000)
         self.refresh_user_profile()
         # Send an SMS.
         sms_cost = 3000
         self.user_profile.network.bill_for_sms(sms_cost, 'outside_sms')
         self.refresh_user_profile()
-        # That should take us below the recharge threshold and charge the card.
-        self.assertTrue(self.mock_stripe.Charge.create.called)
+        # That should take us below the recharge threshold and charge the card
+        # (unless network billing disabled).
+        self.assertEqual(self.mock_stripe.Charge.create.called,
+                         self.user_profile.network.billing_enabled)
         self.refresh_user_profile()
-        expected_credit = (credit_amount - sms_cost +
-                           self.user_profile.network.recharge_amount)
-        self.assertEqual(expected_credit, self.user_profile.network.ledger.balance)
+        delta = _network_cost(self.user_profile.network,
+                              (sms_cost -
+                               self.user_profile.network.recharge_amount))
+        expected_credit = credit_amount - delta
+        self.assertEqual(expected_credit,
+                         self.user_profile.network.ledger.balance)
 
 
 class CalculateOperatorCostTest(TestCase):
@@ -544,8 +586,8 @@ class SMSAPIBillingTest(TestCase):
         cls.user.save()
         cls.user_profile = models.UserProfile.objects.get(user=cls.user)
         # Add some initial credit to the user profile and disable CC recharge.
-        cls.credit_amount = 10 * 1e5
-        cls.user_profile.network.add_credit(cls.credit_amount)
+        cls.credit_amount = _set_network_credit(cls.user_profile.network,
+                                                10 * 1e5)
         cls.user_profile.network.autoload_enable = False
         cls.user_profile.save()
 
@@ -621,7 +663,7 @@ class SMSAPIBillingTest(TestCase):
         }
         self.client.post(self.send_endpoint, data, **self.header)
         self.refresh_user_profile()
-        tier_a_sms_cost = 2000
+        tier_a_sms_cost = _network_cost(self.user_profile.network, 2000)
         self.assertEqual(self.credit_amount - tier_a_sms_cost,
                          self.user_profile.network.ledger.balance)
 
@@ -648,7 +690,7 @@ class SMSAPIBillingTest(TestCase):
         }
         self.client.post(self.send_endpoint, data, **self.header)
         self.refresh_user_profile()
-        tier_b_sms_cost = 5000
+        tier_b_sms_cost = _network_cost(self.user_profile.network, 5000)
         self.assertEqual(self.credit_amount - tier_b_sms_cost,
                          self.user_profile.network.ledger.balance)
 
@@ -667,9 +709,12 @@ class SMSAPIBillingTest(TestCase):
         }
         self.client.post(self.inbound_endpoint, data, **self.header)
         self.refresh_user_profile()
-        expected_balance = (self.credit_amount -
-                            off_receive_tier.cost_to_operator_per_sms)
-        self.assertEqual(expected_balance, self.user_profile.network.ledger.balance)
+        expected_cost = _network_cost(
+            self.user_profile.network,
+            off_receive_tier.cost_to_operator_per_sms)
+        expected_balance = self.credit_amount - expected_cost
+        self.assertEqual(expected_balance,
+                         self.user_profile.network.ledger.balance)
 
 
 class VoiceBillingTest(TestCase):
@@ -698,9 +743,11 @@ class VoiceBillingTest(TestCase):
         cls.user_profile = models.UserProfile.objects.get(user=cls.user)
         cls.user_profile2 = models.UserProfile.objects.get(user=cls.user2)
         # Give the users some credit so they don't try to recharge.
-        cls.initial_credit = endagaweb.util.currency.dollars2mc(50)
-        cls.user_profile.network.add_credit(cls.initial_credit)
-        cls.user_profile2.network.add_credit(cls.initial_credit)
+        fifty_bucks = endagaweb.util.currency.dollars2mc(50)
+        cls.initial_credit = _set_network_credit(cls.user_profile.network,
+                                                 fifty_bucks)
+        cls.initial_credit2 = _set_network_credit(cls.user_profile2.network,
+                                                  fifty_bucks)
         # Refresh the objects so the ledger balances reload.
         cls.user_profile = models.UserProfile.objects.get(
             id=cls.user_profile.id)
@@ -759,7 +806,9 @@ class VoiceBillingTest(TestCase):
         # The destination number's prefix is 62 (Indonesia),
         # which is in Tier A.
         duration = self.outgoing_xc["billsec"]
-        expected_cost = int((duration / 60.) * 5000)
+        expected_cost = _network_cost(
+            self.user_profile.network,
+            int((duration / 60.) * 5000))
         self.assertEqual(self.initial_credit - expected_cost,
                          self.user_profile.network.ledger.balance)
 
@@ -781,11 +830,18 @@ class VoiceBillingTest(TestCase):
         self.user_profile = models.UserProfile.objects.get(user=self.user)
         # Get billable duration of CDR
         duration = self.incoming_xc["billsec"]
-        expected_cost = int((duration / 60.) *
-                            off_receive_tier.cost_to_operator_per_min)
-        transaction = models.Transaction.objects.order_by('created').get(
-                kind='incoming_call', ledger=self.user_profile.network.ledger)
-        self.assertEqual(-1 * transaction.amount, expected_cost)
+        expected_cost = _network_cost(
+            self.user_profile.network,
+            int((duration / 60.) * off_receive_tier.cost_to_operator_per_min))
+        transaction_list = models.Transaction.objects.order_by('created')
+        search_args = {"kind": "incoming_call",
+                       "ledger": self.user_profile.network.ledger}
+        if self.user_profile.network.billing_enabled:
+            transaction = transaction_list.get(**search_args)
+            self.assertEqual(-1 * transaction.amount, expected_cost)
+        else:
+            with self.assertRaises(ObjectDoesNotExist):
+                transaction = transaction_list.get(**search_args)
         self.assertEqual(self.initial_credit - expected_cost,
                          self.user_profile.network.ledger.balance)
 
@@ -817,10 +873,12 @@ class VoiceBillingTest(TestCase):
         # The destination number's prefix is 62 (Indonesia),
         # which is in Tier A.
         duration = self.internal_xc["billsec"]
-        expected_incoming_cost = int((duration / 60.) * 2000)
-        expected_outside_cost = int((duration / 60.) * 5000)
+        expected_incoming_cost = _network_cost(self.user_profile2.network,
+                                               int((duration / 60.) * 2000))
+        expected_outside_cost = _network_cost(self.user_profile.network,
+                                              int((duration / 60.) * 5000))
         # User Profile 1 is the caller and 2 is the recipient.
-        self.assertEqual(self.initial_credit - expected_incoming_cost,
+        self.assertEqual(self.initial_credit2 - expected_incoming_cost,
                          self.user_profile2.network.ledger.balance)
         self.assertEqual(self.initial_credit - expected_outside_cost,
                          self.user_profile.network.ledger.balance)

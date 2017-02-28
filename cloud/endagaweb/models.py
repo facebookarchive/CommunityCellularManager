@@ -40,7 +40,7 @@ import pytz
 import requests
 import stripe
 
-from ccm.common import crdt
+from ccm.common import crdt, logger
 from ccm.common.currency import humanize_credits, CURRENCIES
 from endagaweb.billing import tier_setup
 from endagaweb.celery import app as celery_app
@@ -123,14 +123,24 @@ class Ledger(models.Model):
         network: a network associated with the ledger
         balance: the account balance -- updated after every transaction
     """
-    network = models.OneToOneField('Network', related_name="ledger", null=True,
-                                    on_delete=models.CASCADE)
+    network = models.OneToOneField('Network',
+                                   related_name="ledger",
+                                   null=True,
+                                   on_delete=models.CASCADE)
     balance = models.BigIntegerField(default=0)
 
     def __unicode__(self):
         name = self.network.name if self.network else '<None>'
         return "Ledger: network %s, current balance %s (millicents)" % (
             name, self.balance)
+
+    def add_transaction(self, kind, amount, reason):
+        """ Create a new transaction, save it. """
+        if self.network.billing_enabled:
+            Transaction.new(ledger=self,
+                            amount=amount,
+                            kind=kind,
+                            reason=reason).save()
 
     @staticmethod
     def transaction_save_handler(sender, instance, created, **kwargs):
@@ -141,10 +151,20 @@ class Ledger(models.Model):
         """
         if not created:
             raise ValueError("Transactions should not be modified")
+
         # Atomically update the ledger's balance.
         with transaction.atomic():
             ledger = (Ledger.objects.select_for_update()
                       .get(id=instance.ledger.id))
+            # check if billing is enabled
+            if not ledger.network.billing_enabled:
+                # Transaction creator should have checked before saving,
+                # issue a warning
+                logger.with_trace(
+                    logger.warning,
+                    "creator should check if billing is enabled"
+                )
+                return
             ledger.balance = F('balance') + instance.amount
             ledger.save()
 
@@ -173,7 +193,6 @@ class Transaction(models.Model):
     count = models.IntegerField(default=1)
     amount = models.BigIntegerField(default=0)
 
-    # TODO(matt): actually validate kind.
     transaction_kinds = (
         ('credit', 'credit'),
         ('outside_sms', 'outside_sms'),
@@ -183,6 +202,7 @@ class Transaction(models.Model):
         ('local_sms', 'local_sms'),
         ('local_call', 'local_call'),
         ('local_recv_call', 'local_recv_call'),
+        ('number.nexmo.monthly', 'number.nexmo.monthly'),
     )
     kind = models.CharField(max_length=100, choices=transaction_kinds)
     reason = models.CharField(max_length=500)
@@ -194,6 +214,13 @@ class Transaction(models.Model):
     def pretty_amount(self):
         """The idea is to use a method like this to localize the currency."""
         return self.amount
+
+    @classmethod
+    def new(cls, kind, **kwargs):
+        """ Create a new Transaction, save it. """
+        if kind not in [k for k, _ in cls.transaction_kinds]:
+            raise ValueError("invalid transaction kind: '%s'" % (kind, ))
+        return Transaction(kind=kind, **kwargs)
 
 
 # Update the ledger balance after saving a transaction
@@ -960,6 +987,13 @@ class Network(models.Model):
     def api_token(self):
         return Token.objects.get(user=self.auth_user)
 
+    @property
+    def billing_enabled(self):
+        """ Check whether billing is enabled for this network. """
+        # currently a global setting, with a test-only override (since
+        # we don't have a database field yet to set this)
+        return settings.ENDAGA["NW_BILLING"]
+
     def __unicode__(self):
         return ("Network '%s' connected to %d users" %
                 (self.name, len(get_users_with_perms(self, 'view_network'))))
@@ -977,9 +1011,7 @@ class Network(models.Model):
         Returns: True if the operation succeeded so that we can know when to
                  capture authorized charges.
         """
-        new_transaction = Transaction(kind='credit', amount=credit_amount,
-                                      ledger=self.ledger, reason=reason)
-        new_transaction.save()
+        self.ledger.add_transaction('credit', credit_amount, reason)
         return True
 
     def bill_for_number(self, number):
@@ -994,9 +1026,7 @@ class Network(models.Model):
         amount = -1 * util_currency.dollars2mc(1)
         kind = 'number.nexmo.monthly'
         reason = 'charge for use of number "%s"' % number
-        new_transaction = Transaction(kind=kind, amount=amount,
-                                      ledger=self.ledger, reason=reason)
-        new_transaction.save()
+        self.ledger.add_transaction(kind, amount, reason)
 
     def bill_for_sms(self, cost_to_operator, kind):
         """Creates a transaction billing a network for the cost of an SMS.
@@ -1009,9 +1039,7 @@ class Network(models.Model):
         """
         amount = -1 * abs(cost_to_operator)
         reason = 'charge for %s' % kind
-        new_transaction = Transaction(kind=kind, amount=amount,
-                                      ledger=self.ledger, reason=reason)
-        new_transaction.save()
+        self.ledger.add_transaction(kind, amount, reason)
 
     def bill_for_call(self, cost_to_operator, billable_seconds, kind):
         """Creates a transaction billing a network for the cost of a call.
@@ -1028,9 +1056,7 @@ class Network(models.Model):
         billable_minutes = billable_seconds / 60.
         amount = int(-1 * abs(cost_to_operator) * billable_minutes)
         reason = 'charge for %s min %s' % (billable_minutes, kind)
-        new_transaction = Transaction(kind=kind, amount=amount,
-                                      ledger=self.ledger, reason=reason)
-        new_transaction.save()
+        self.ledger.add_transaction(kind, amount, reason)
 
     def recharge_if_necessary(self):
         """Recharge the account by the recharge_amount if the balance is low.
@@ -1041,6 +1067,10 @@ class Network(models.Model):
             True if we actually recharged the account, False otherwise
             (including failures).
         """
+        if not self.billing_enabled:
+            # avoid attempt to charge card for recharge
+            return False
+
         if self.recharge_amount <= 0:
             return False
         if self.ledger.balance >= self.recharge_thresh:
@@ -1056,7 +1086,7 @@ class Network(models.Model):
                 return False
         except stripe.StripeError:
             # TODO(matt): alert the staff.
-            logging.info('Recharge failed for %s', self)
+            logger.error('Recharge failed for %s' % (self, ))
             return False
 
     def update_card(self, token):
@@ -1319,7 +1349,8 @@ class Network(models.Model):
           instance: a Ledger instance
         """
         network = Network.objects.get(ledger=instance)
-        if created or not network.autoload_enable:
+        if created or not (network.billing_enabled and
+                           network.autoload_enable):
             return
         network.recharge_if_necessary()
 

@@ -923,8 +923,11 @@ class ChargeOperatorOnEventCreationTest(TestCase):
         checkin.handle_event(self.bts, self.event_template)
         # The operator's ledger's balance should have a deduction.
         self.reload_user_profile()
-        expected_credit = -1000
-        self.assertEqual(expected_credit, self.user_profile.network.ledger.balance)
+        expected_credit = (-1000
+                           if self.user_profile.network.billing_enabled
+                           else 0)
+        self.assertEqual(expected_credit,
+                         self.user_profile.network.ledger.balance)
 
     def test_bill_operator_for_local_received_call(self):
         """We can bill operators for local_recv_call events."""
@@ -941,8 +944,11 @@ class ChargeOperatorOnEventCreationTest(TestCase):
         checkin.handle_event(self.bts, self.event_template)
         # The operator's ledger's balance should have a deduction.
         self.reload_user_profile()
-        expected_credit = int(-2000 * 100 / 60.)
-        self.assertEqual(expected_credit, self.user_profile.network.ledger.balance)
+        expected_credit = (int(-2000 * 100 / 60.)
+                           if self.user_profile.network.billing_enabled
+                           else 0)
+        self.assertEqual(expected_credit,
+                         self.user_profile.network.ledger.balance)
 
 
 class HandleGPRSEventTest(TestCase):

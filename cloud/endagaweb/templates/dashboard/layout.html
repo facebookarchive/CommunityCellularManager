@@ -77,11 +77,12 @@ of patent rights can be found in the PATENTS file in the same directory.
           </ul>
 
           <ul class="nav navbar-nav navbar-top-links navbar-right navbar-user">
-            {% comment "2015dec11(shasan): Hide balance to avoid confusion" %}
+            {% if user_profile.network.billing_enabled %}
             <li class="dropdown">
-              <a>{{ user_profile.pretty_balance }}</a>
+              <a>{{ user_profile.network.pretty_balance }}</a>
             </li>
-            {% endcomment %}
+            {% endif %}
+
             {% comment %}
             <li class="dropdown alerts-dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-bell"></i> Alerts <span class="badge"> {{ user_profile.alerts | length }} </span>

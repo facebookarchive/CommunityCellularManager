@@ -340,8 +340,8 @@ class SendSMS(APIView):
         to_ = str(request.POST['to'])
         body = str(request.POST['body'])
         network = get_network_from_user(request.user)
-        if network.ledger.balance <= 0:
-            #shouldn't this be a 402 payment required? -kurtis
+        if network.billing_enabled and network.ledger.balance <= 0:
+            # Shouldn't this be a 402 payment required? -kurtis
             return Response("operator has no credit in Endaga account",
                             status=status.HTTP_400_BAD_REQUEST)
         q = models.Number.objects.get(number=from_)
