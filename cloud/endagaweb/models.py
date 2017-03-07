@@ -957,21 +957,25 @@ class Network(models.Model):
     auth_user = models.OneToOneField(User, null=True, blank=True,
                                         on_delete=models.CASCADE)
     # Each network is associated with a ledger and its own billing account
-    stripe_cust_token = models.CharField(max_length=1024, default="")
-    stripe_last4 = models.PositiveIntegerField(default=1)
-    stripe_card_type = models.TextField(default="")
-    stripe_exp_mo = models.CharField(max_length=2, default="")
-    stripe_exp_year = models.CharField(max_length=4, default="")
+    stripe_cust_token = models.CharField(max_length=1024, blank=True,
+                                         default="")
+    stripe_last4 = models.PositiveIntegerField(blank=True, default=1)
+    stripe_card_type = models.TextField(blank=True, default="")
+    stripe_exp_mo = models.CharField(max_length=2, blank=True, default="")
+    stripe_exp_year = models.CharField(max_length=4, blank=True, default="")
     # Billing.
-    autoload_enable = models.BooleanField(default=True)
-    recharge_thresh = models.IntegerField(default=util_currency.dollars2mc(10))
+    autoload_enable = models.BooleanField(default=False)
+    recharge_thresh = models.IntegerField(
+        default=util_currency.dollars2mc(10),
+        blank=True)
     # Based on Stripe fees, we'll get $96.73 per recharge.
     recharge_amount = models.IntegerField(
         default=util_currency.dollars2mc(100),
+        blank=True,
         validators=[MinValueValidator(util_currency.dollars2mc(5))],
     )
     # Network billing currency
-    currency = models.CharField(max_length=100, default="USD",
+    currency = models.CharField(max_length=100, default="USD", blank=True,
                                 choices=util_currency.supported_currencies())
 
     # Network environments let you specify things like "prod", "test", "dev",

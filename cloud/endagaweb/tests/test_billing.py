@@ -234,6 +234,7 @@ class RechargeTest(TestCase):
             'exp_year': 2020,
             'cvc': 987
         }
+        cls.user_profile.network.autoload_enable = True
         cls.user_profile.network.update_card(card)
 
     @classmethod
