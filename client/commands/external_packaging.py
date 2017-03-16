@@ -30,6 +30,7 @@ def package_freeswitch_mod_smpp(fs_version='1.6.9~16~d574870-1~jessie+1'):
         print 'path %s does not exist on the VM, cannot package' % path
         return
     with cd(path):
+        run('git apply ../client/packaging/smpp_reconnect.patch')
         run('./build/set-fs-version.sh %s' % fs_version)
         run('dch -b -m -v "%s" --force-distribution -D unstable "Endaga build."' % fs_version)
         run('./bootstrap.sh', warn_only=True)

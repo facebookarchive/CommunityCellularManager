@@ -1,0 +1,45 @@
+diff --git a/src/mod/event_handlers/mod_smpp/mod_smpp_gateway.c b/src/mod/event_handlers/mod_smpp/mod_smpp_gateway.c
+index 7125f04..1dbfd8a 100644
+--- a/src/mod/event_handlers/mod_smpp/mod_smpp_gateway.c
++++ b/src/mod/event_handlers/mod_smpp/mod_smpp_gateway.c
+@@ -292,9 +292,24 @@ switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, sw
+ 	return status;
+ }
+ 
++switch_status_t mod_smpp_gateway_reconnect(mod_smpp_gateway_t *gateway)
++{
++       switch_socket_shutdown(gateway->socket, SWITCH_SHUTDOWN_READWRITE);
++       switch_socket_close(gateway->socket);
++
++       if ( switch_socket_create(&(gateway->socket), switch_sockaddr_get_family(gateway->socketaddr),
++                                                         SOCK_STREAM, SWITCH_PROTO_TCP, mod_smpp_globals.pool) != SWITCH_STATUS_SUCCESS ) {
++               return SWITCH_STATUS_GENERR;
++       }
++       return mod_smpp_gateway_connect(gateway);
++}
++
++
+ static void *SWITCH_THREAD_FUNC mod_smpp_gateway_read_thread(switch_thread_t *thread, void *obj)
+ {
+ 	mod_smpp_gateway_t *gateway = (mod_smpp_gateway_t *) obj;
++	unsigned int sleep_secs = 1;
++
+ 
+ 	while ( gateway->running ) {
+ 		switch_event_t *event = NULL;
+@@ -302,8 +317,13 @@ static void *SWITCH_THREAD_FUNC mod_smpp_gateway_read_thread(switch_thread_t *th
+ 
+ 		if ( mod_smpp_gateway_connection_read(gateway, &event, &command_id) != SWITCH_STATUS_SUCCESS) {
+ 			if ( gateway->running ) {
+-				if ( mod_smpp_gateway_connect(gateway) != SWITCH_STATUS_SUCCESS) {
+-					switch_sleep(1000 * 1000);
++				if ( mod_smpp_gateway_reconnect(gateway) != SWITCH_STATUS_SUCCESS) {
++					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to reconnect to gateway[%s] sleeping for %d seconds\n", gateway->name, sleep_secs);
++					switch_sleep(sleep_secs * 1000 * 1000);
++					sleep_secs = sleep_secs > 60 ? sleep_secs : sleep_secs << 1;
++				} else {
++					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection re-established for gateway[%s]\n", gateway->name);
++					sleep_secs = 1;
+ 				}
+ 			}
+ 			continue;
