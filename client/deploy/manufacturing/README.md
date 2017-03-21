@@ -59,3 +59,14 @@ Think of this as the steps the factory does to manufacture a CCM system.
 5. Let the installation process complete. This could take a while.
 6. Once installation is complete, the machine may reboot, or you could see an error or a weird menu. Just ignore that and restart the machine. Don't forget to remove the USB stick!
 7. `endaga-osmocom` is not installed at this point! When the machine reboots, login then run `sudo apt-get update; sudo apt-get install -y endaga-osmocom; sudo reboot`
+8. Point the client to the cloud instance `endaga_db_set registry https://<CLOUD_SERVER>/api/v1`
+9. Add the tower `snowflake` on the cloud towers dashboard https://<CLOUD_SERVER>/dashboard/towers
+10. Configure the BSC external interface to the interface matching the VPN (typically the interface with an address in 10.64.1.0/20) `endaga_db_set external_interface tun1`
+11. Configure the BSC internal interface to the one the BTS is connected to (use lo if using osmo-bts-trx) `endaga_db_set internal_interface eth0`
+12. Configure osmo-sip-connector `remote` config at /etc/osmocom/osmo-sip-connector.cfg to the IP of the BTS that is exposed on the internal interface (use 127.0.0.1 if using osmo-bts-trx) 
+13. Configure the BTS to use the BSC (don't need to change anything if using osmo-bts-trx)
+    1. Set `oml remote-ip` to the address of the BSC
+    2. Set the `ipa unit-id` to 1800 to match what is defined in BSC configs
+14. Restart the BTS and `sudo reboot` the BSC
+15. Validate the BTS is connected to the BSC in the NITB vty `telnet 127.0.0.1 4242` and `show bts <BTS_ID>`
+
