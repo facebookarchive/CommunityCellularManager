@@ -47,20 +47,50 @@ def proxy():
     env.use_ssh_config = True
 
 
-def get_bookmark():
-    bookmarks = local("hg bookmarks", capture=True)
-    for line in bookmarks.split("\n"):
-        if "*" in line:
-            return line.split()[1]
-    return "master"
+def _is_hg():
+    """ Determines if the project is hg controlled """
+    try:
+        local("hg identify")
+        return True
+    except:
+        return False
+
+
+def _is_git():
+    """ Determines if the project is git controlled """
+    try:
+        local("git rev-parse")
+        return True
+    except:
+        return False
+
+
+def _get_versioning_metadata():
+    """ Extracts version metadata from the version control system """
+    if _is_hg():
+        commit_summary = local('hg id -i', capture=True).translate(None, "+")
+        # Extract the current branch/bookmark from the bookmarks list.
+        bookmarks = local("hg bookmarks", capture=True)
+        branch = "master"
+        for line in bookmarks.split("\n"):
+            if "*" in line:
+                branch = line.split()[1]
+                break
+    elif _is_git():
+        branch = local("git rev-parse --abbrev-ref HEAD", capture=True)
+        commit_summary = local('git rev-parse HEAD', capture=True).translate(None, "+")
+    else:
+        raise Exception("Not git or hg")
+
+    # dpkg requires the version start with a number, so lead with `0-`
+    version = "0-%s" % commit_summary.split()[0]
+    return branch, commit_summary, version
+
 
 def package():
     """ [deploy] Creates a deployment package. """
-    branch = get_bookmark()
-    commit_summary = local('hg id -i', capture=True).translate(None, "+")
-    # dpkg requires the version to start with a number, so we just always
-    # include a 0.
-    version = "0-%s" % commit_summary.split()[0]
+    branch, summary, version = _get_versioning_metadata()
+
     # Builds the deployment package.
     local('fpm -s dir -t deb -n endagaweb -a all -v %(version)s \
             --description "%(branch)s: %(cs)s" \
@@ -76,7 +106,7 @@ def package():
             configs/celeryd.conf=/etc/supervisor/conf.d/ \
             configs/celerybeat.conf=/etc/supervisor/conf.d/ \
             configs/celerystick.conf=/etc/supervisor/conf.d/' \
-            % {'branch': branch, 'cs': commit_summary, 'version': version})
+            % {'branch': branch, 'cs': summary, 'version': version})
     return version
 
 
@@ -215,7 +245,7 @@ def get_machines(environment=None):
 
 def deploy(description=None):
     """ [deploy] Make a deployment to an environment. """
-    branch = get_bookmark()
+    branch, _, _ = _get_versioning_metadata()
     try:
         if env.deploy_target == "production":
             if branch != "master":
@@ -270,7 +300,7 @@ def migrate(application="", migration="", fake_initial=""):
     Usage:
       fab staging migrate:application=endagaweb,fake_initial=True
     """
-    branch = get_bookmark()
+    branch, _, _ = _get_versioning_metadata()
     try:
         if env.deploy_target == "production":
             if branch != "master":
