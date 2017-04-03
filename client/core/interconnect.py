@@ -34,6 +34,7 @@ class endaga_ic(object):
         self.utilization_tracker = system_utilities.SystemUtilizationTracker()
         self._checkin_load_stats = {}
         self._session = None  # use persistent connection when possible
+        self._session_cookies = None
 
     @property
     def auth_header(self):
@@ -49,6 +50,8 @@ class endaga_ic(object):
         if self._session:
             # make a best effort to close session, ignore any errors,
             # session may be in unexpected state after a network error
+            # NOTE: we don't want to clean session cookies to let LBs
+            # to provide "stickiness" while the server is healthy
             try:
                 self._session.close()
             except BaseException:
@@ -184,10 +187,10 @@ class endaga_ic(object):
                 }
 
         # Send checkin request.
-
+        uuid = snowflake.snowflake()
         data = {
             'status': status,
-            'bts_uuid': snowflake.snowflake(),
+            'bts_uuid': uuid,
         }
         headers = dict(self.auth_header)
         # Set content type to app/json & utf-8, compressed or not - JSON should
@@ -215,10 +218,15 @@ class endaga_ic(object):
 
         post_start = time.time()
         try:
-            r = self.session.post(self.conf['registry'] + "/checkin",
+            r = self.session.post(self.conf['registry'] + "/checkin?id=" +
+                                  # add part of uuid to the query, it helps with
+                                  # debugging & server side logging and can
+                                  # be used by LBs
+                                  uuid[:8],
                                   headers=headers,
                                   data=data_json,
-                                  timeout=timeout)
+                                  timeout=timeout,
+                                  cookies=self._session_cookies)
 
         except BaseException as e:
             logger.error("Endaga: checkin failed , network error: %s." % e)
@@ -253,6 +261,18 @@ class endaga_ic(object):
             try:
                 CheckinHandler(text)
                 logger.info("Endaga: checkin success.")
+                if r.cookies is not None:
+                    if self._session_cookies is None:
+                        # First time cookies are seen from server
+                        # initialize the cookies dict
+                        self._session_cookies = dict(r.cookies)
+                    else:
+                        for key, value in r.cookies.items():
+                            # if server sent new/updated cookies, update them,
+                            # but keep previously set cokies as well. ELBs
+                            # do not send AWSELB cookies on every request &
+                            # expect clients to 'remember' them
+                            self._session_cookies[key] = value
             except BaseException:
                 self._cleanup_session()
                 raise
