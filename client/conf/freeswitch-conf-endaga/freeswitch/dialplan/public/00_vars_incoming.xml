@@ -24,6 +24,6 @@ of patent rights can be found in the PATENTS file in the same directory.
     or two days if the call is free -->
     <action application="set" data='sec_avail=${expr(if(${call_tariff},floor(${vbts_account_balance} / (${call_tariff} / 60)), 60*60*48))}'/>
     <!-- Always use the GSM codec for incoming calls (force transcoding if coming in some other way) -->
-    <action inline="true" application="export" data='nolocal:absolute_codec_string=GSM'/>
+    <action inline="true" application="export" data='_nolocal_absolute_codec_string=GSM'/>
   </condition>
 </extension>
