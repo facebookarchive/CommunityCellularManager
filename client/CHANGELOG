@@ -1,3 +1,12 @@
+endaga-openbts, endaga-osmocom 0.7.12 (2017 Apr 4)
+-----------------
+Packages affected: python-endaga-core, freeswitch-mod-smpp, freeswitch-conf-endaga, python-ccm-common
+Changes:
+- Checkin optimzation stickiness
+- Freeswitch mod_smpp autoreconnect
+- Freeswtich nonlocal GSM encoding variable
+- XML CDR parsing cleanup in common
+
 endaga-openbts, endaga-osmocom 0.7.11 (2016 Dec 13)
 -----------------
 Packages affected: python-endaga-core, python-osmocom, freeswitch-conf-endaga

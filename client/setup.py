@@ -49,7 +49,7 @@ setup(
     #fpm call as the pip version breaks python2 compatibility
     install_requires=[
         "argparse==1.2.1",
-        "ccm-common>=0.5.7",
+        "ccm-common>=0.5.8",
         "docopt==0.6.2",
         "envoy==0.0.3",
         "humanize==0.5.1",
