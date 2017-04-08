@@ -29,7 +29,6 @@ from snowflake import snowflake
 from ccm.common import logger
 from core import system_utilities
 from core.bts import bts
-from core.exceptions import BSSError
 from core.config_database import ConfigDB
 from core.servicecontrol import ServiceState
 from core.service import Service
@@ -138,7 +137,6 @@ def get_vpn_conf(eapi, csr):
         'bts_uuid': _get_snowflake(),
         'csr': csr
     }
-    registration = conf['registry'] + '/bts/register'
     try:
         return _send_cloud_req(
             requests.post,
@@ -328,7 +326,10 @@ def update_vpn():
     # Start all the other services.  This is safe to run if services are
     # already started.
     for s in SERVICES:
-        s.start()
+        try:
+            s.start()
+        except Exception as e:
+            logger.critical("Exception %s while starting %s" % (e, s.name))
 
 def ensure_fs_external_bound_to_vpn():
     # Make sure that we're bound to the VPN IP on the external sofia profile,

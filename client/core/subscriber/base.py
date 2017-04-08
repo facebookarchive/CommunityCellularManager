@@ -19,8 +19,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import json
-
 from ccm.common import crdt, logger
 from core.db.kvstore import KVStore
 from core.exceptions import SubscriberNotFound
@@ -161,7 +159,7 @@ class BaseSubscriber(KVStore):
         except TypeError:
             raise IOError()
         else:
-            if res is None:
+            if res is None or res == []:
                 raise SubscriberNotFound(imsi)
             return crdt.PNCounter.from_json(res)
 
@@ -317,6 +315,9 @@ class BaseSubscriber(KVStore):
         """
         raise NotImplementedError()
 
+    def get_subscriber_imsis(self):
+        return {s['name'] for s in self.get_subscribers()}
+
     def add_number(self, imsi, number):
         """Associate another number with an IMSI.
 
@@ -443,14 +444,30 @@ class BaseSubscriber(KVStore):
         this BTS.
         """
         # dict where keys are imsis and values are sub info
-        bts_subs = {s['name']: s for s in self.get_subscribers()}
-
-        bts_imsis = set(bts_subs.keys())
+        bts_imsis = self.get_subscriber_imsis()
         net_imsis = set(net_subs.keys())
 
         subs_to_add = net_imsis.difference(bts_imsis)
         subs_to_delete = bts_imsis.difference(net_imsis)
         subs_to_update = bts_imsis.intersection(net_imsis)
+
+        for imsi in subs_to_delete:
+            self.delete_subscriber(imsi)
+
+        # TODO(shasan) does not add new numbers
+        for imsi in subs_to_update:
+            sub = net_subs[imsi]
+            try:
+                bal = crdt.PNCounter.from_state(sub['balance'])
+                self.update_balance(imsi, bal)
+            except SubscriberNotFound as e:
+                logger.warning(
+                    "Balance sync fail! IMSI: %s is not found Error: %s" %
+                    (imsi, e))
+            except ValueError as e:
+                logger.error("Balance sync fail! IMSI: %s, %s Error: %s" %
+                             (imsi, sub['balance'], e))
+                subs_to_add.add(imsi)  # try to add it (again)
 
         for imsi in subs_to_add:
             sub = net_subs[imsi]
@@ -465,18 +482,6 @@ class BaseSubscriber(KVStore):
                 bal = crdt.PNCounter.from_state(sub['balance'])
                 self.update_balance(imsi, bal)
             except (SubscriberNotFound, ValueError) as e:
-                logger.critical("Balance sync fail! IMSI: %s, %s Error: %s" %
+                logger.error("Balance sync fail! IMSI: %s, %s Error: %s" %
                                 (imsi, sub['balance'], e))
 
-        for imsi in subs_to_delete:
-            self.delete_subscriber(imsi)
-
-        # TODO(shasan) does not add new numbers
-        for imsi in subs_to_update:
-            sub = net_subs[imsi]
-            try:
-                bal = crdt.PNCounter.from_state(sub['balance'])
-                self.update_balance(imsi, bal)
-            except (SubscriberNotFound, ValueError) as e:
-                logger.critical("Balance sync fail! IMSI: %s, %s Error: %s" %
-                                (imsi, sub['balance'], e))
