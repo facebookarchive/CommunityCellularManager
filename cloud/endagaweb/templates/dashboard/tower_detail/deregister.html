@@ -26,12 +26,36 @@ of patent rights can be found in the PATENTS file in the same directory.
   #deregister-tower-messages-container .alert {
     margin-top: 20px;
   }
+.input{
+width: 145px;
+height: 15px;
+border :2px inset #D5D5D5;
+float: left;
+margin :0 0 6px 0;
+padding:0 0 0 2px;
+font-family:Tahoma;
+font-size:11px;
+color:#828282
+}
+.checkbox{
+float:left;
+margin: 0 0 0 17px;
+width: auto;
+height:13px;
+color:#2C2C2C;
+vertical-align: middle;
+position: relative;
+top: -1px;
+}
+
+
 </style>
 {% endblock %}
 
 
 {% block content %}
 {% include "dashboard/tower_detail/header.html" with tower=tower %}
+
 
 <div class='modal fade' id='deregister-tower-modal'>
   <div class='modal-dialog'>
@@ -69,9 +93,8 @@ of patent rights can be found in the PATENTS file in the same directory.
 
 <div class = 'row'>
   {% include "dashboard/tower_detail/nav.html" with uuid=tower.uuid active_tab='deregister'%}
-
-  {% if endaga_version > '00000.00003.00019' or status == 'no-data' %}
-  <div class='content col-xs-12 col-sm-6'>
+<!--Made towerId common to use in both condition if and else-->
+<div id="towerId" class='content col-xs-12 col-sm-6' style="display:none">
     <p>
       Taking this action will remove the tower from your network
       and reset the hardware to a "factory default" state.
@@ -98,25 +121,50 @@ of patent rights can be found in the PATENTS file in the same directory.
       </a>
     </p>
   </div>
+<!-- Updated with correct value of 'No Data' tower status check -->
+  {% if endaga_version > '00000.00003.00019' or status == 'No Data' %}
+
+<!-- Added id for ForcefullyDeregister Tower-->
+
+<script type="text/javascript">
+var towerElement = document.getElementById("towerId");
+    if(towerElement.style.display == null || towerElement.style.display == "none") {
+       towerElement.style.display = "block";
+    }else {
+     towerElement.style.display = "block";
+   }
+</script>
 
   {% else %}
-  <div class='col-xs-12 col-sm-6 alert alert-warning'>
+<div class="col-xs-10">
+     <div  id ="warning" class='col-xs-12 col-sm-6 alert alert-warning'>
     Warning!  This tower is running old software
     that cannot correctly process a deregistration request.
     Please contact support if you have questions
     or would like to upgrade your towers.
-  </div>
+    </div>
+     <div class='content col-xs-12 col-sm-12' style="height:400px;color: #428bca;">
+     <label display="block" width="100px">Forcefully Deregister</label>
+     <input style ="color:#428bca;"class="checkbox" type="checkbox" id="forceFullyDeregister" />
+   </div>
+</div>
+{% endif %}
 
-  {% endif %}
+
+{% endblock %}
 
 </div>
-{% endblock %}
 
 
 {% block js %}
+
   <script>
 
     $(function() {
+      $('#forceFullyDeregister').change(function() {
+      $('#towerId').toggle();
+     });
+
 
       // Post the deregistration info when the confirm button is clicked.
       $('#deregister-tower-submit').click(function() {
