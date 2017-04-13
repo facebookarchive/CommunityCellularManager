@@ -1,3 +1,9 @@
+endaga-osmocom 0.7.13 (2017 Apr 13(
+-----------------
+Packages affected: python-endaga-core
+Changes:
+- Checkin no longer requires reading all subscribers from sqlite
+
 endaga-openbts, endaga-osmocom 0.7.12 (2017 Apr 4)
 -----------------
 Packages affected: python-endaga-core, freeswitch-mod-smpp, freeswitch-conf-endaga, python-ccm-common
