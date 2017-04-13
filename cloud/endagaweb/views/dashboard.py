@@ -767,7 +767,7 @@ class ActivityView(ProtectedView):
                     timezone,
                     subscriber,
                     e.bts_uuid,
-                    e.bts.nickname,
+                    e.bts.nickname if e.bts else "<deleted BTS>",
                     e.kind,
                     e.reason,
                     e.from_number,
