@@ -23,13 +23,13 @@ class MockSocketTestCase(unittest.TestCase):
         osmocom.vty.socket.socket.return_value = cls.mock_socket
 
         # We mock socket.recv to read one line from a text file defined for the class
-        f = open(cls.fixture_file)
+        f = open(cls.fixture_file, encoding='UTF-8', errors='ignore')
         recv_fixture_buffer = f.readlines()
 
         def recv_fixture(_):
             if len(recv_fixture_buffer):
-               return recv_fixture_buffer.pop(0)
-            return ''
+               return bytearray(recv_fixture_buffer.pop(0)[:-1] + '\r\n', 'utf-8')
+            return b''
 
         cls.mock_socket.recv = recv_fixture
 
@@ -44,7 +44,7 @@ class MockSocketTestCase(unittest.TestCase):
 
     def setUp(self):
         # We mock socket.sendall to capture what is sent to the tty
-        self.sendall_buffer = ""
+        self.sendall_buffer = ''
         def sendall_fixture(msg):
-          self.sendall_buffer += msg + "\n"
+          self.sendall_buffer += msg.decode('utf-8') + '\n'
         self.mock_socket.sendall = sendall_fixture

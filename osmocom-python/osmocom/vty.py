@@ -13,7 +13,7 @@ import select
 import socket
 import time
 
-from exceptions import VTYException, VTYChainedException
+from .exceptions import VTYException, VTYChainedException
 
 class BaseVTY(object):
     """VTY interface and context manager for OpenBSC."""
@@ -23,9 +23,9 @@ class BaseVTY(object):
     SOCKET_ERRORS = (socket.error, socket.herror, socket.timeout)
 
     def __init__(self, app_name, host='127.0.0.1', port=4242, timeout=None):
-        """Interface for Osmocom VTTY application.
+        """Interface for Osmocom VTY application.
 
-        `app_name` is the name that appears on the VTTY shell
+        `app_name` is the name that appears on the VTY shell
         and is used to determine when we have reached the end of
         a repsonse.
         """
@@ -56,7 +56,7 @@ class BaseVTY(object):
             raise e
 
     def open(self):
-        """Opens the socket with Osmocom VTTY"""
+        """Opens the socket with Osmocom VTY"""
         if self._socket_obj:
             raise VTYException('Connection already established')
         try:
@@ -66,11 +66,11 @@ class BaseVTY(object):
         except self.SOCKET_ERRORS as e:
             self._socket_obj = None
             raise VTYChainedException(e)
+        self.sendrecv('')
 
-        self.sendrecv('') # clear past the welcome message
 
     def close(self):
-        """Closes the socket with Osmocom VTTY"""
+        """Closes the socket with Osmocom VTY"""
         if not self._socket_obj:
             raise VTYException('Connection not open')
         self._socket_obj.close()
@@ -82,16 +82,16 @@ class BaseVTY(object):
             raise VTYException('Connection not open')
 
         with self._socket() as s:
-            s.sendall("%s\r" % command)
+            s.sendall(bytearray(command + '\r', 'utf-8'))
             has_data = lambda : len(select.select([s], [], [], self.TIMEOUT)[0])
             while self.EOM not in self._buf and has_data():
-                recv = s.recv(self.BUF_SIZE).decode('utf-8', 'ignore')
+                recv = bytearray(s.recv(self.BUF_SIZE)).decode('utf-8', 'ignore')
                 if not len(recv):
                     raise VTYException('Connection died during recv')
                 self._buf += recv
 
             if self.EOM not in self._buf:
-                raise VTYException("Connection stopped responding or timed out")
+                raise VTYException("Connection stopped responding or timed out: %s", self._buf)
 
         # Find the the response by seeking past the command to the next line and reading until the first EOM.
         resp_start = self._buf.find(command) + len(command + self.EOL)
@@ -102,7 +102,7 @@ class BaseVTY(object):
         if 'Unknown command' in ret:
             raise ValueError('Invalid command: %s' % command)
 
-        return ret.encode('utf-8', 'ignore')
+        return ret
 
     def running_config(self):
         """Reads and parses the running configuration into
@@ -191,7 +191,7 @@ class BaseVTY(object):
         with self.enable_mode():
             while not self.is_configure_mode:
                 if 'locked' in self.sendrecv('configure terminal'):
-                    print 'waiting for lock'
+                    print('waiting for lock')
                     time.sleep(self.TIMEOUT)
                 else:
                     self.is_configure_mode = True
@@ -213,14 +213,14 @@ class BaseVTY(object):
             self.sendrecv('exit')
 
     def __enter__(self):
-        """For constructing VTTY connection context"""
+        """For constructing VTY connection context"""
         if self._context_depth == 0:
             self.open()
         self._context_depth += 1
         return self
 
     def __exit__(self, type, value, traceback):
-        """For exiting VTTY connection context"""
+        """For exiting VTY connection context"""
         self._context_depth -= 1
         if self._context_depth == 0 and self._socket_obj:
             self.close()

@@ -12,7 +12,7 @@ def parse_imsi(imsi):
     ie. it is 14 or 15 digits. It will also strip the prefix "IMSI".
     """
     imsi = imsi[4:] if 'IMSI' in imsi else imsi
-    if not unicode(imsi).isdecimal():
+    if not str(imsi).isdecimal():
         raise TypeError('IMSI not decimal: %s' % imsi)
     if len(str(imsi)) not in [14, 15]:
         raise ValueError('len(IMSI) invalid')

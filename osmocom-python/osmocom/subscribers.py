@@ -9,8 +9,8 @@ of patent rights can be found in the PATENTS file in the same directory.
 import re
 import sqlite3
 
-from vty import BaseVTY
-from util import parse_imsi, format_imsi
+from .vty import BaseVTY
+from .util import parse_imsi, format_imsi
 
 class Subscribers(BaseVTY):
 
@@ -60,7 +60,7 @@ class Subscribers(BaseVTY):
 
         subscribers = []
         for row in con.execute(query):
-            subscriber = dict(zip(row.keys(), row))
+            subscriber = dict(list(zip(list(row.keys()), row)))
 
             # Ensure that the IMSI is 15 digits
             subscriber['IMSI'] = format_imsi(subscriber['IMSI'])

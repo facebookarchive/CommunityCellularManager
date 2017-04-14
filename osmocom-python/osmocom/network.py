@@ -8,7 +8,7 @@ of patent rights can be found in the PATENTS file in the same directory.
 """
 import re
 
-from vty import BaseVTY
+from .vty import BaseVTY
 
 class Network(BaseVTY):
 

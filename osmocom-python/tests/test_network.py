@@ -8,7 +8,7 @@ of patent rights can be found in the PATENTS file in the same directory.
 """
 import osmocom.network
 
-from base import MockSocketTestCase
+from .base import MockSocketTestCase
 from tests import get_fixture_path
 
 class NetworkSetTestCase(MockSocketTestCase):

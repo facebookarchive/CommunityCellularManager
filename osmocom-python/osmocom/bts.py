@@ -7,10 +7,10 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
+
+
+
 
 import re
 
@@ -65,10 +65,10 @@ class BTS(BaseVTY):
     def get_available_arfcns(self, bts_id):
         """Returns a list of valid ARFCNs for the current band"""
         cur_band = self.show(bts_id)['band']
-        valid_arfcns = {'GSM850': range(128, 252),
-                        'GSM900': range(0,125) + range(955,1024),
-                        'DCS1800': range(512,886),
-                        'PCS1900': range(512,811)}
+        valid_arfcns = {'GSM850': list(range(128, 252)),
+                        'GSM900': list(range(0,125)) + list(range(955,1024)),
+                        'DCS1800': list(range(512,886)),
+                        'PCS1900': list(range(512,811))}
         return valid_arfcns[cur_band]
 
     def running_config(self, bts_id):

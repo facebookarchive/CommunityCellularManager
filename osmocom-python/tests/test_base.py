@@ -8,10 +8,10 @@ of patent rights can be found in the PATENTS file in the same directory.
 """
 import osmocom.vty
 
-from base import MockSocketTestCase
+from .base import MockSocketTestCase
 
-from jsoncompare import jsoncompare
 from tests import get_fixture_path
+import json
 import unittest
 import mock
 
@@ -226,8 +226,8 @@ class RunningConfigTestCase(MockSocketTestCase):
                         "login": "no"
                         }
                     }
-        are_same = jsoncompare.are_same(data_a, data_b, True)
-        self.assertEqual(True, are_same[0])
+        a, b = json.dumps(data_a, sort_keys=True), json.dumps(data_b, sort_keys=True)
+        self.assertEqual(a, b)
 
 
 class NestedContextTestCase(MockSocketTestCase):
@@ -328,8 +328,8 @@ class DroppedConnectionTestCase(MockSocketTestCase):
     def recv_fixture(self, _):
         if self.NUM_READS > 0:
             self.NUM_READS -= 1
-            return 'EOM\r\nOpenBSC'
-        return ''
+            return b'EOM\r\nOpenBSC'
+        return b''
 
     def sendall_fixture(self, _):
         if self.NUM_WRITES > 0:

@@ -15,7 +15,7 @@ from setuptools import setup
 with open('README.md') as f:
   README = f.read()
 
-VERSION = '0.0.4'
+VERSION = '0.0.5'
 
 
 setup(

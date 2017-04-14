@@ -20,28 +20,28 @@ HOST = '127.0.0.1'
 if __name__ == "__main__":
     with TRX(host=HOST) as t:
         t.set_arfcn(0,0,0)
-        print t.running_config(0,0)
+        print(t.running_config(0,0))
         data = t.show(0, 0)
         assert data['arfcn'] == '0'
         assert data['id'] == '0'
         assert data['bts_id'] == '0'
         assert data['description'] == '(null)'
-        assert data['nominal_power'] == '23'
+        assert len(data['nominal_power']) > 0
         assert data['attenuation'] == '0'
-        assert data['power'] == '23'
+        assert len(data['power']) > 0
     with Network(host=HOST) as n:
         n.set_mcc(901)
         n.set_mnc(55)
         n.set_short_name('Test')
         n.set_long_name('Test_Network')
         data = n.show()
-        print data
+        print(data)
         assert len(data) == 13, len(data)
         assert data['mcc'] == '901', 'Failed to set mcc'
         assert data['mnc'] == '55', 'Failed to set mnc'
         assert data['short_name'] == 'Test', 'Failed to set shortname'
         assert data['long_name'] == 'Test_Network', 'Failed to set longname'
-        print n.running_config()
+        print(n.running_config())
     with BTS(host=HOST) as b:
         b.set_type(0, 'sysmobts')
         b.set_cell_identity(0, 1)
@@ -49,8 +49,8 @@ if __name__ == "__main__":
         b.set_bsic(0, 61)
         b.set_band(0, 'DCS1800')
         data = b.show(0)
-        print data
-        assert len(data) == 15, len(data)
+        print(data)
+        assert len(data) > 14, len(data)
         assert data['ms_max_power'] != None
         assert data['ci'] == '1'
         assert data['ms_min_rx'] == '-110'
@@ -66,14 +66,14 @@ if __name__ == "__main__":
         assert data['type'] == 'sysmobts'
         assert data['id'] == '0'
         assert data['description'] == '(null)'
-        print b.running_config(0)
+        print(b.running_config(0))
     with Subscribers(host=HOST) as o:
         o.create('901550000000001')
         o.set_extension('901550000000001', '5722543')
         o.set_name('901550000000001', 'Omar')
         o.set_authorized('901550000000001', 1)
         data = o.show('imsi', '901550000000001')
-        print data
+        print(data)
         assert len(data) == 11, len(data)
         assert data['name'] == 'Omar'
         assert data['extension'] == '5722543'
