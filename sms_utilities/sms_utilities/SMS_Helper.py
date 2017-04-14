@@ -40,7 +40,7 @@ def encode_num(num):
 
 
 def clean(s):
-    if isinstance(s, basestring):
+    if isinstance(s, str):
         return filter(lambda x: x in string.printable, s).strip()
     elif isinstance(s, int):
         return "%X" % s
@@ -57,4 +57,4 @@ if __name__ == '__main__':
     to = "1234567"
     if len(sys.argv) > 1:
         to = sys.argv[1]
-    print encode_num(to)
+    print(encode_num(to))

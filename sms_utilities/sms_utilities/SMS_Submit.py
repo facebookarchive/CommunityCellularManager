@@ -13,7 +13,7 @@ import sys
 
 from smspdu import SMS_SUBMIT
 
-import SMS_Helper
+from . import SMS_Helper
 
 
 def gen_tpdu(ref, to, text, empty):
@@ -54,4 +54,4 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         to = sys.argv[1]
         msg = sys.argv[2]
-    print gen_msg(to, msg)
+    print(gen_msg(to, msg))

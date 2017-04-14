@@ -12,8 +12,8 @@ import sys
 
 from smspdu import SMS_SUBMIT
 
-from rpdu import RPDU
-from SMS_Helper import clean, smspdu_charstring_to_hex
+from .rpdu import RPDU
+from .SMS_Helper import clean, smspdu_charstring_to_hex
 
 
 def parse(rp_message):
@@ -40,4 +40,4 @@ if __name__ == '__main__':
     h = "001000038100000e05df04810011000005cbb7fb0c02"
     if len(sys.argv) > 1:
         h = sys.argv[1]
-    print parse(h)
+    print(parse(h))

@@ -1,1 +1,1 @@
-smspdu==1.0
+smspdu==1.1
