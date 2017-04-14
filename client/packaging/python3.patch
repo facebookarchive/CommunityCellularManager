@@ -1,0 +1,215 @@
+diff --git a/src/mod/languages/mod_python/Makefile.am b/src/mod/languages/mod_python/Makefile.am
+index f3073c5..c6a5436 100644
+--- a/src/mod/languages/mod_python/Makefile.am
++++ b/src/mod/languages/mod_python/Makefile.am
+@@ -27,4 +27,5 @@ mod_python_wrap.cpp: mod_python_extra.c hack.diff
+ install-data-local:
+ 	mkdir -m755 -p $(DESTDIR)$(PYTHON_SITE_DIR)
+ 	cp -f freeswitch.py $(DESTDIR)$(PYTHON_SITE_DIR)
++	cp -f .libs/mod_python.so $(DESTDIR)$(PYTHON_SITE_DIR)/_freeswitch.so
+ 
+diff --git a/src/mod/languages/mod_python/freeswitch_python.cpp b/src/mod/languages/mod_python/freeswitch_python.cpp
+index 2fa58da..d6fdef4 100644
+--- a/src/mod/languages/mod_python/freeswitch_python.cpp
++++ b/src/mod/languages/mod_python/freeswitch_python.cpp
+@@ -1,6 +1,7 @@
+ 
+ #include <switch.h>
+ #include "freeswitch_python.h"
++#include "py3.h"
+ using namespace PYTHON;
+ 
+ #define py_init_vars() cb_function = cb_arg = hangup_func = hangup_func_arg = NULL; hh = mark = 0; TS = NULL
+@@ -319,7 +320,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
+ 	}
+ 
+ 	if ((pyresult = PyEval_CallObject(cb_function, arglist))) {
+-		str = (char *) PyString_AsString(pyresult);
++		str = (char *) PyUnicode_AsUTF8(pyresult);
+ 	} else {
+ 		PyErr_Print();
+ 	}
+diff --git a/src/mod/languages/mod_python/mod_python.c b/src/mod/languages/mod_python/mod_python.c
+index c9bd272..e0ffa56 100644
+--- a/src/mod/languages/mod_python/mod_python.c
++++ b/src/mod/languages/mod_python/mod_python.c
+@@ -44,12 +44,12 @@
+ #endif
+ 
+ #include <switch.h>
++#include "py3.h"
+ #include "mod_python_extra.h"
+ #include <string.h>
+ 
+ PyThreadState *mainThreadState = NULL;
+ 
+-void init_freeswitch(void);
+ int py_thread(const char *text);
+ static void set_max_recursion_depth(void);
+ static switch_api_interface_t python_run_interface;
+@@ -92,7 +92,7 @@ static void print_python_error(const char * script)
+ 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough Memory to create the error buffer");
+ 	}
+    
+-	/* just for security that we will always have a string terminater */
++	/* just for security that we will always have a char terminater */
+ 	memset(buffer, 0,  20 * 1024  * sizeof(char) );
+ 
+ 	/*Get the errordata*/
+@@ -103,8 +103,8 @@ static void print_python_error(const char * script)
+ 	/* Printing header*/
+ 	sprintf(buffer, "Python Error by calling script \"%s\": ", script );
+ 
+-	if (pyType != NULL && (pyString=PyObject_Str(pyType))!=NULL && (PyString_Check(pyString))) {
+-		strcat(buffer, PyString_AsString(pyString));
++	if (pyType != NULL && (pyString=PyObject_Str(pyType))!=NULL && (PyUnicode_Check(pyString))) {
++		strcat(buffer, PyUnicode_AsUTF8(pyString));
+ 	} else {
+ 		strcat(buffer, "<unknown exception type> ");
+ 	}
+@@ -112,9 +112,9 @@ static void print_python_error(const char * script)
+ 
+ 
+ 	/*Print error message*/
+-	if (pyValue != NULL && (pyString=PyObject_Str(pyValue))!=NULL && (PyString_Check(pyString))) {
++	if (pyValue != NULL && (pyString=PyObject_Str(pyValue))!=NULL && (PyUnicode_Check(pyString))) {
+ 		strcat(buffer, "\nMessage: ");	  
+-		strcat(buffer, PyString_AsString(pyString));
++		strcat(buffer, PyUnicode_AsUTF8(pyString));
+ 	} else {
+ 		strcat(buffer, "\nMessage: <unknown exception date> ");
+ 	}
+@@ -131,8 +131,8 @@ static void print_python_error(const char * script)
+ 			pyFunction = PyObject_GetAttrString(pyModule, "format_exc");
+ 			if (pyFunction) {
+ 				pyResult = PyObject_CallObject(pyFunction, NULL);
+-				if (pyResult && PyString_Check(pyResult)) {
+-					strcat(buffer, PyString_AsString(pyResult));
++				if (pyResult && PyUnicode_Check(pyResult)) {
++					strcat(buffer, PyUnicode_AsUTF8(pyResult));
+ 				} else {
+ 					strcat(buffer, "<exception not available>");
+ 				}
+@@ -150,9 +150,9 @@ static void print_python_error(const char * script)
+ 		/* Traceback */
+ 		do {
+ 			sprintf((char*)sTemp, "\n\tFile: \"%s\", line %i, in %s",
+-					PyString_AsString(pyTB->tb_frame->f_code->co_filename),
++					PyUnicode_AsUTF8(pyTB->tb_frame->f_code->co_filename),
+ 					pyTB->tb_lineno,
+-					PyString_AsString(pyTB->tb_frame->f_code->co_name) );
++					PyUnicode_AsUTF8(pyTB->tb_frame->f_code->co_name) );
+ 			strcat(buffer, (char*)sTemp);
+ 
+ 			pyTB=pyTB->tb_next;
+@@ -223,7 +223,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
+ 
+ 	// swap in thread state
+ 	PyEval_AcquireThread(tstate);
+-	init_freeswitch();
++        SWIG_init();
+ 
+ 	// import the module
+ 	module = PyImport_ImportModule((char *) script);
+@@ -288,7 +288,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
+ 	// check the result and print out any errors
+ 	if (result) {
+ 		if (str) {
+-			*str = strdup((char *) PyString_AsString(result));
++			*str = strdup((char *) PyUnicode_AsUTF8(result));
+ 		}
+ 	} else if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+ 		// Print error, but ignore SystemExit 
+diff --git a/libs/esl/python/Makefile b/libs/esl/python/Makefile
+index 09b3876..472b5ac 100644
+--- a/libs/esl/python/Makefile
++++ b/libs/esl/python/Makefile
+@@ -1,6 +1,6 @@
+-LOCAL_CFLAGS=`python ./python-config --includes`
+-LOCAL_LDFLAGS=`python ./python-config --ldflags`
+-SITE_DIR=$(DESTDIR)/`python -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)"`
++LOCAL_CFLAGS=`python3 ./python-config --includes`
++LOCAL_LDFLAGS=`python3 ./python-config --ldflags`
++SITE_DIR=$(DESTDIR)/`python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))"`
+ 
+ all: _ESL.so
+ 
+diff --git a/libs/esl/python/python-config b/libs/esl/python/python-config
+index 7169991..be580fd 100644
+--- a/libs/esl/python/python-config
++++ b/libs/esl/python/python-config
+@@ -9,8 +9,8 @@ valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags',
+               'ldflags', 'help']
+ 
+ def exit_with_usage(code=1):
+-    print >>sys.stderr, "Usage: %s [%s]" % (sys.argv[0], 
+-                                            '|'.join('--'+opt for opt in valid_opts))
++    print("Usage: %s [%s]" % (sys.argv[0],
++                                            '|'.join('--'+opt for opt in valid_opts)), file=sys.stderr)
+     sys.exit(code)
+ 
+ try:
+@@ -30,17 +30,17 @@ if opt == '--help':
+     exit_with_usage(0)
+ 
+ elif opt == '--prefix':
+-    print sysconfig.PREFIX
++    print(sysconfig.PREFIX)
+ 
+ elif opt == '--exec-prefix':
+-    print sysconfig.EXEC_PREFIX
++    print(sysconfig.EXEC_PREFIX)
+ 
+ elif opt in ('--includes', '--cflags'):
+     flags = ['-I' + sysconfig.get_python_inc(),
+              '-I' + sysconfig.get_python_inc(plat_specific=True)]
+     if opt == '--cflags':
+         flags.extend(getvar('CFLAGS').split())
+-    print ' '.join(flags)
++    print(' '.join(flags))
+ 
+ elif opt in ('--libs', '--ldflags'):
+     libs = getvar('LIBS').split() + getvar('SYSLIBS').split()
+@@ -49,5 +49,5 @@ elif opt in ('--libs', '--ldflags'):
+     # shared library in prefix/lib/.
+     if opt == '--ldflags' and not getvar('Py_ENABLE_SHARED'):
+         libs.insert(0, '-L' + getvar('LIBPL'))
+-    print ' '.join(libs)
++    print(' '.join(libs))
+
+diff --git a/debian/freeswitch-mod-python.install.tmpl b/debian/freeswitch-mod-python.install.tmpl
+index 7f85582..a667c85 100644
+--- a/debian/freeswitch-mod-python.install.tmpl
++++ b/debian/freeswitch-mod-python.install.tmpl
+@@ -1 +1,2 @@
+ /usr/lib/python*/*-packages/freeswitch.py
++/usr/lib/python*/*-packages/_freeswitch.so
+diff --git a/debian/rules b/debian/rules
+index f890165..c178f4d 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -12,6 +12,7 @@ FS_CPPFLAGS?=-D_FORTIFY_SOURCE=2
+ FS_CFLAGS?=-g3 -O2 -fPIC -fstack-protector --param=ssp-buffer-size=4
+ FS_CXXFLAGS?=$(FS_CFLAGS)
+ FS_LDFLAGS?=-Wl,-z,relro
++PYTHON_PATH?=/usr/bin/python3
+ export PATH?=/usr/lib/ccache:/usr/sbin:/usr/bin:/sbin:/bin
+ export CC:=$(FS_CC)
+ export CXX:=$(FS_CXX)
+@@ -36,6 +37,7 @@ show_vars= \
+ 	echo "CXXFLAGS='$(CXXFLAGS)'"; \
+ 	echo "LDFLAGS='$(LDFLAGS)'"; \
+ 	echo "CCACHE_DIR='$(CCACHE_DIR)'"; \
++	echo "PYTHON_PATH='$(PYTHON_PATH)'"; \
+ 	echo;
+ 
+ binary:
+@@ -73,7 +75,7 @@ override_dh_auto_clean:
+ 	./configure -C --enable-portable-binary --disable-dependency-tracking \
+ 		--host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+ 		--prefix=/usr --localstatedir=/var --sysconfdir=/etc \
+-		--with-gnu-ld --with-python --with-erlang --with-openssl \
++		--with-gnu-ld --with-python=$(PYTHON_PATH) --with-erlang --with-openssl \
+ 		--enable-core-odbc-support --enable-zrtp \
+ 		--enable-core-pgsql-support \
+ 		--enable-static-v8 --disable-parallel-build-v8

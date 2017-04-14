@@ -20,7 +20,7 @@ from commands.python_packaging import package_python_openbts
 from commands.python_packaging import package_python_osmocom
 from commands.python_packaging import package_python_sms_utilities
 from commands.python_packaging import package_python_freeswitch
-from commands.external_packaging import package_freeswitch_mod_smpp
+from commands.external_packaging import package_freeswitch
 from commands.translating import compile_lang
 from commands.translating import extract_pot
 try:
