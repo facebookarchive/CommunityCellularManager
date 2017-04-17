@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
@@ -12,10 +11,7 @@ of patent rights can be found in the PATENTS file in the same directory.
 Ericcson T39 phone.
 
 '''
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
 import serial
 from .pdu import SMS_SUBMIT
 
