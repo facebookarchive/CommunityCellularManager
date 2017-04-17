@@ -21,7 +21,7 @@ from core import config_database
 from core.system_utilities import uptime
 from core import system_utilities
 from core.system_utilities import get_fs_profile_ip
-from core.tests.mocks import MockEnvoy
+from core.tests.mocks import MockDelegator
 
 
 class SystemUtilitiesTest(unittest.TestCase):
@@ -146,17 +146,17 @@ class ExternalProfileIPTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Monkeypatch the envoy return value."""
+        """Monkeypatch the delegator return value."""
         with open('core/tests/fixtures/sofia-status-output.txt') as output:
             return_text = output.read()
-        mock_envoy = MockEnvoy(return_text)
-        cls.original_envoy = core.system_utilities.envoy
-        core.system_utilities.envoy = mock_envoy
+        mock_delegator = MockDelegator(return_text)
+        cls.original_delegator = core.system_utilities.delegator
+        core.system_utilities.delegator = mock_delegator
 
     @classmethod
     def tearDownClass(cls):
         """Repair the monkeypatch."""
-        core.system_utilities.envoy = cls.original_envoy
+        core.system_utilities.delegator = cls.original_delegator
 
     def test_external(self):
         """We can get data for the 'external' profile."""

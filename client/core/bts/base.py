@@ -12,16 +12,12 @@ This source code is licensed under the BSD-style license found in the
 LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
 import time
 
 from ccm.common import logger
 from core import VERSION
 from core.config_database import ConfigDB
-from core.exceptions import BSSError
 
 class BaseBTS(object):
     # list of authorization values that count as active/camped
@@ -265,12 +261,12 @@ class BaseBTS(object):
         """ Get the version of software on this BTS
         """
         return {
-            'endaga': self.conf['endaga_version'],
-            'freeswitch': self.conf['freeswitch_version'],
+            'endaga': self.conf.get('endaga_version', ''),
+            'freeswitch': self.conf.get('freeswitch_version', ''),
             'type' : self.conf['bts.type'],
-            'gsm': self.conf['gsm_version'],
+            'gsm': self.conf.get('gsm_version', ''),
             'python-endaga-core': VERSION,
-            'python-gsm': self.conf['python-gsm_version'],
+            'python-gsm': self.conf.get('python-gsm_version', ''),
             #legacy ones for backwards compatibility
             'python-openbts' : None,
             'openbts-public' : None,
@@ -304,7 +300,7 @@ class BaseBTS(object):
                 {'get': lambda: self.get_timer('3212'),
                  'set': lambda minutes: self.set_timer('3212', minutes)},
         }
-        for (key, val) in data_dict.items():
+        for (key, val) in list(data_dict.items()):
             try:
                 cur_val = settings_map[key]['get']()
                 if cur_val != val:

@@ -8,16 +8,11 @@
 
 endaga_db_set bts.type openbts
 
-# upgrade any non-int balances to crdt
-migrate_to_crdt_balance
 
 # Figure out the versions of the main packages that were installed,
 # and write those version numbers into the ConfigDB.
 # We'll send that info to the cloud during checkins.
 update_installed_versions
-
-# Removes deprecatd BTS specific profiles
-remove_bts_sip_profiles
 
 # Set new configdb defaults
 set_configdb_defaults

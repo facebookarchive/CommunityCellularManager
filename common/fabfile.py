@@ -42,6 +42,8 @@ def localhost():
 def package_common_lib():
     RUNCMD("fpm"
            " -s python"      # read from standard Python setup.py
+           " --python-pip pip3 --python-bin python3"
+           " --python-package-name-prefix python3"
            " -t %(pkgfmt)s"  # set output package format
            " -f"             # overwrite any existing file
            " -p ~/endaga-packages"  # put output in endaga-packages

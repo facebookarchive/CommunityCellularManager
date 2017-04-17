@@ -70,8 +70,8 @@ class SubscriberTest(unittest.TestCase):
         self._hlr.add_subscriber_to_hlr(imsi, msisdn, None, None)
 
         # Check that we can lookup by IMSI and number.
-        self.assertEquals(self._hlr.get_caller_id(imsi), msisdn)
-        self.assertEquals(self._hlr.get_imsi_from_number(msisdn), imsi)
+        self.assertEqual(self._hlr.get_caller_id(imsi), msisdn)
+        self.assertEqual(self._hlr.get_imsi_from_number(msisdn), imsi)
 
         # Check that we can check if an IMSI is authorized.
         with mock.patch.object(self._hlr, 'get_subscriber_states') as _get:

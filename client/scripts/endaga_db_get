@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Retrieve a configuration value, or multiple values matching a simple pattern
 
@@ -9,7 +9,7 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-from __future__ import print_function
+
 
 import sys
 from core.config_database import ConfigDB
@@ -22,7 +22,7 @@ try:
     key = sys.argv[1]
     if key[-1] == "*":
         key = key[:-1]
-        for k, v in db.substring_search(key).items():
+        for k, v in list(db.substring_search(key).items()):
             if not k.startswith(key):
                 # skip items for which key is has a prefix before search key
                 continue

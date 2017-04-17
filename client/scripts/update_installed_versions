@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Writes the versions of the main installed packages into the ConfigDB.
 
 This runs as a postinst for the endaga metapackage.  We'll later send this info
@@ -12,21 +12,22 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-import envoy
+import delegator
 
 from core.config_database import ConfigDB
 
 #this should be moved to common and used in the bts classes directly
 def get_version(package_name):
     """Runs dpkg-query to get package version info."""
-    query = envoy.run("dpkg-query -W -f '${version}' %s" % package_name)
-    result = query.std_out
-    if 'dpkg-query' in result:
+    query = delegator.run("dpkg-query -W -f '${version}' %s" % package_name)
+    if query.return_code != 0:
         # The result was probably "dpkg-query: no packages found matching
         # <package_name>" (an error).
         return ''
-    return result
-
+    try:
+        return query.out
+    except ValueError:
+        return ''
 
 config_db = ConfigDB()
 packages = [('endaga', ['endaga-openbts',
@@ -44,7 +45,7 @@ for package in packages:
     for name in working_package_names:
         res = get_version(name)
         if (res):
-            print (key + ":" + res)
+            print(key + ":" + res)
             key = '%s_version' % key
             config_db[key] = res
             break

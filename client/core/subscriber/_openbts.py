@@ -5,16 +5,15 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
+
+
+
 import sys
 
 import openbts
 from openbts.exceptions import InvalidRequestError
 
-from ccm.common import logger
 from core import number_utilities
 from core.config_database import ConfigDB
 from core.subscriber.base import BaseSubscriber, SubscriberNotFound
@@ -32,27 +31,27 @@ class OpenBTSSubscriber(BaseSubscriber):
         """Adds a subscriber to the system."""
         try:
             return self.sip_auth_serve.create_subscriber(imsi, number, ip, port)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def delete_subscriber_from_hlr(self, imsi):
         """Removes a subscriber from the system."""
         try:
             return self.sip_auth_serve.delete_subscriber(imsi)
-        except InvalidRequestError as e:
+        except InvalidRequestError:
             raise SubscriberNotFound(imsi)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_subscribers(self, imsi=None):
         """Get subscribers, filter by IMSI if it's specified."""
         try:
             return self.sip_auth_serve.get_subscribers(imsi=imsi)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def add_number(self, imsi, number):
         """Associate another number with an IMSI.
@@ -62,11 +61,11 @@ class OpenBTSSubscriber(BaseSubscriber):
         """
         try:
             return self.sip_auth_serve.add_number(imsi, number)
-        except InvalidRequestError as e:
+        except InvalidRequestError:
             raise SubscriberNotFound(imsi)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def delete_number(self, imsi, number):
         """Disassociate a number with an IMSI.
@@ -77,17 +76,17 @@ class OpenBTSSubscriber(BaseSubscriber):
                   or this is the sub's last number
         """
         try:
-            get_caller_id(imsi) # raise InvalidRequestError when sub doesnt exist
+            self.get_caller_id(imsi)  # raise InvalidRequestError when sub doesnt exist
             return self.sip_auth_serve.delete_number(imsi, number)
-        except InvalidRequestError as e:
+        except InvalidRequestError:
             raise SubscriberNotFound(imsi)
         except ValueError as e:
             # this is raised when a number doesn't belong to a sub
             # also raised when this is the subs last number
             raise e
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_caller_id(self, imsi):
         """Get a subscriber's caller_id.
@@ -97,11 +96,11 @@ class OpenBTSSubscriber(BaseSubscriber):
         """
         try:
             return self.sip_auth_serve.get_caller_id(imsi)
-        except InvalidRequestError as e:
+        except InvalidRequestError:
             raise SubscriberNotFound(imsi)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_ip(self, imsi):
         """Get a subscriber's IP address.
@@ -111,11 +110,11 @@ class OpenBTSSubscriber(BaseSubscriber):
         """
         try:
             return self.sip_auth_serve.get_openbts_ipaddr(imsi)
-        except InvalidRequestError as e:
+        except InvalidRequestError:
             raise SubscriberNotFound(imsi)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_port(self, imsi):
         """Get a subscriber's port.
@@ -125,11 +124,11 @@ class OpenBTSSubscriber(BaseSubscriber):
         """
         try:
             return self.sip_auth_serve.get_openbts_port(imsi)
-        except InvalidRequestError as e:
+        except InvalidRequestError:
             raise SubscriberNotFound(imsi)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_numbers_from_imsi(self, imsi):
         """Gets numbers associated with a subscriber.
@@ -139,11 +138,11 @@ class OpenBTSSubscriber(BaseSubscriber):
         """
         try:
             return self.sip_auth_serve.get_numbers(imsi)
-        except InvalidRequestError as e:
+        except InvalidRequestError:
             raise SubscriberNotFound(imsi)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_imsi_from_number(self, number, canonicalize=True):
         """Gets the IMSI associated with a number.
@@ -155,11 +154,11 @@ class OpenBTSSubscriber(BaseSubscriber):
             number = number_utilities.canonicalize(number)
         try:
             return self.sip_auth_serve.get_imsi_from_number(number)
-        except InvalidRequestError as e:
+        except InvalidRequestError:
             raise SubscriberNotFound('MSISDN %s' % number)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_username_from_imsi(self, imsi):
         """Gets the SIP name of the subscriber
@@ -185,11 +184,11 @@ class OpenBTSSubscriber(BaseSubscriber):
         """
         try:
             return len(self.get_numbers_from_imsi(imsi)) > 0
-        except InvalidRequestError as e:
+        except InvalidRequestError:
             return False
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_gprs_usage(self, target_imsi=None):
         """Get all available GPRS data, or that of a specific IMSI (experimental).
@@ -208,9 +207,9 @@ class OpenBTSSubscriber(BaseSubscriber):
         """
         try:
             res = self.sip_auth_serve.get_gprs_usage(target_imsi)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
         if not res:
             raise SubscriberNotFound(target_imsi)
         return res

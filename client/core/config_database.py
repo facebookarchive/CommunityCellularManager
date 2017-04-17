@@ -8,10 +8,10 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
+
+
+
 
 from ccm.common import logger
 from .db.kvstore import KVStore
@@ -65,7 +65,7 @@ class ConfigDB(KVStore):
         This should be a dictionary of key-value pairs. For each pair, we add
         it to the ConfigDB.
         """
-        for (key, v) in data_dict.items():
+        for (key, v) in list(data_dict.items()):
             if key not in self:
                 logger.notice("Adding endaga setting: %s -> %s" % (key, v))
             else:

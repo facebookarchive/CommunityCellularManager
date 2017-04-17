@@ -11,10 +11,10 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
+
+
+
 
 from os import environ
 from random import randrange
@@ -140,7 +140,7 @@ class KVStoreTest(unittest.TestCase):
             'key1': 'bar',
             'key2': 'baz',
         }
-        self.db.set_multiple(data.items())
+        self.db.set_multiple(list(data.items()))
         del data['key1']
         res = self.db.get_multiple(['key0', 'key2'])
         self.assertEqual(2, len(res))
@@ -155,7 +155,7 @@ class KVStoreTest(unittest.TestCase):
             'key1': 'bar',
             'key2': 'baz',
         }
-        self.db.set_multiple(data.items())
+        self.db.set_multiple(list(data.items()))
         self.assertEqual([], self.db.get_multiple([]))
 
     def test_get_multiple_one(self):
@@ -165,21 +165,21 @@ class KVStoreTest(unittest.TestCase):
             'key1': 'bar',
             'key2': 'baz',
         }
-        self.db.set_multiple(data.items())
+        self.db.set_multiple(list(data.items()))
         self.assertEqual([('key0', 'foo')], self.db.get_multiple(['key0']))
 
     def test_items(self):
         """ We can get all items in the db. """
         # clear db first
-        for (k, _) in self.db.items():
+        for (k, _) in list(self.db.items()):
             del self.db[k]
         data = {
             'key0': 'foo',
             'key1': 'bar',
             'key2': 'baz',
         }
-        self.db.set_multiple(data.items())
-        res = self.db.items()
+        self.db.set_multiple(list(data.items()))
+        res = list(self.db.items())
         self.assertEqual(len(data), len(res))
         for (k, v) in res:
             self.assertEqual(data[k], v)
@@ -192,10 +192,10 @@ class KVStoreTest(unittest.TestCase):
             'key-aa-': 'bar',
             'key-aaa--': 'baz',
         }
-        self.db.set_multiple(data.items())
+        self.db.set_multiple(list(data.items()))
         res = self.db.substring_search('aa')
         self.assertEqual(2, len(res))
-        for (k, v) in res.items():
+        for (k, v) in list(res.items()):
             self.assertEqual(data[k], v)
             del self.db[k]
 

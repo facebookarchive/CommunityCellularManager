@@ -15,7 +15,7 @@ def chat(message, args):
     try:
         consoleLog('info', "Parsing:%s\n" % message.getBody())
         content = sms.parse_message(message)
-        for key, value in content.items():
+        for key, value in list(content.items()):
             consoleLog('info', "Setting %s=%s\n" % (str(key), str(value)))
             message.chat_execute('set', '%s=%s' % (str(key), str(value)))
     except Exception as err:

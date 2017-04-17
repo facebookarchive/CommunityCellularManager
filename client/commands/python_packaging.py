@@ -39,18 +39,20 @@ def package_python_endaga_core(package_requirements='no',
     with cd(path):
         #note flup is a python dep but included here
         #as the pip version breaks compat with python2 --kurtis
-        run('fpm -s python -t %s'
-            ' --deb-pre-depends "postgresql-9.1 | postgresql-9.3 | postgresql-9.4 | postgresql-9.5"'
-            ' --deb-pre-depends postgresql-common'
-            ' --deb-pre-depends "postgresql-client-9.1 | postgresql-client-9.3 | postgresql-client-9.4 | postgresql-client-9.5"'
-            ' --deb-pre-depends postgresql-client-common'
-            ' --depends supervisor'
-            ' --depends python-flup'
-            ' --after-install'
-            ' /home/vagrant/client/deploy/files/endaga-python-core/postinst'
-            ' --before-install'
-            ' /home/vagrant/client/deploy/files/endaga-python-core/preinst'
-            ' setup.py' % env.pkgfmt)
+        _run_fpm_python(' --deb-pre-depends "postgresql-9.1 | postgresql-9.3 |'
+                        ' postgresql-9.4 | postgresql-9.5"'
+                        ' --deb-pre-depends postgresql-common'
+                        ' --deb-pre-depends "postgresql-client-9.1 |'
+                        ' postgresql-client-9.3 | postgresql-client-9.4 |'
+                        ' postgresql-client-9.5"'
+                        ' --deb-pre-depends postgresql-client-common'
+                        ' --depends supervisor'
+                        ' --depends python3-flup6'
+                        ' --after-install'
+                        ' /home/vagrant/client/deploy/files/endaga-python-core/postinst'
+                        ' --before-install'
+                        ' /home/vagrant/client/deploy/files/endaga-python-core/preinst'
+                        ' setup.py')
         run('mv *.%s ~/endaga-packages' % env.pkgfmt)
 
 
@@ -68,7 +70,7 @@ def package_python_sms_utilities(package_requirements='no'):
     if package_requirements == 'yes':
         package_install_requirements(path)
     with cd(path):
-        run('fpm -s python -t %s setup.py' % env.pkgfmt)
+        _run_fpm_python('setup.py')
         run('mv *.%s ~/endaga-packages' % env.pkgfmt)
 
 
@@ -105,7 +107,7 @@ def package_python_osmocom(package_requirements='no'):
     if package_requirements == 'yes':
         package_install_requirements(path)
     with cd(path):
-        run('fpm -s python -t %s setup.py' % env.pkgfmt)
+        _run_fpm_python('setup.py')
         run('mv *.%s ~/endaga-packages' % env.pkgfmt)
 
 
@@ -114,9 +116,8 @@ def package_python_snowflake():
     """
     print 'packaging snowflake from pypi'
     run('mkdir -p ~/endaga-packages')
-    run('fpm -s python -t %s'
-        ' --after-install ~/client/deploy/files/snowflake/postinst snowflake'
-        % env.pkgfmt)
+    _run_fpm_python('--after-install'
+                    '~/client/deploy/files/snowflake/postinst snowflake')
     run('mv python-snowflake*.%s ~/endaga-packages' % env.pkgfmt)
 
 
@@ -154,7 +155,7 @@ def package_python_freeswitch():
                 o.write(line)
         o.close()
         put(remote_path='modules.conf', local_path='/tmp/modules.conf')
-        run('./configure')
+        run('./configure --with-python=`which python3`')
         run('make')
 
     with cd('%s/libs/esl' % path):
@@ -166,8 +167,8 @@ def package_python_freeswitch():
             ' -s dir'
             ' -t %s'
             ' -v %s'
-            ' libs/esl/python/ESL.py=/usr/lib/python2.7/dist-packages/ESL.py'
-            ' libs/esl/python/_ESL.so=/usr/lib/python2.7/dist-packages/_ESL.so'
+            ' libs/esl/python/ESL.py=/usr/lib/python3.4/dist-packages/ESL.py'
+            ' libs/esl/python/_ESL.so=/usr/lib/python3.4/dist-packages/_ESL.so'
             ' src/mod/languages/mod_python/freeswitch.py='
             '/usr/share/freeswitch/scripts/freeswitch.py' % (
                 package_name, env.pkgfmt, version))
@@ -181,14 +182,14 @@ def package_install_requirements(path):
     metadata_pkg_path = os.path.join(fpm_path[0], 'fpm/package')
     with cd(path):
         with shell_env(PYTHONPATH=metadata_pkg_path):
-            run('python setup.py --command-packages=pyfpm get_metadata '
+            run('python3 setup.py --command-packages=pyfpm get_metadata '
                 '--output=package_metadata.json')
             get(remote_path='package_metadata.json',
                 local_path='/tmp/package_metadata.json')
             with open('/tmp/package_metadata.json') as metadata_file:
                 package_metadata = json.load(metadata_file)
             for dependency in package_metadata['dependencies']:
-                if run('fpm -s python -t %s \'%s\'' % (env.pkgfmt, dependency),
+                if _run_fpm_python('\'%s\'' % (dependency),
                        warn_only=True).failed:
                     # If this fails, it is likely that this is an Endaga python
                     # package and will be fulfilled from the Endaga repo.
@@ -197,3 +198,7 @@ def package_install_requirements(path):
             run('mv -n *.%s ~/endaga-packages/ || exit 0' % env.pkgfmt)
             run('rm *.%s || exit 0' % env.pkgfmt)
             run('rm package_metadata.json')
+
+def _run_fpm_python(command, **kwargs):
+    return run('fpm -s python --verbose --python-pip pip3 --python-bin python3 '
+               '--python-package-name-prefix python3 -t %s %s' % (env.pkgfmt, command), **kwargs)

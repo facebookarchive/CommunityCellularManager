@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """A tool for simulating a user phone.
 
 Select a user at start then act as them in the network.
@@ -44,20 +44,20 @@ port = int(args['--port'])
 
 
 def error():
-    print "Usage: sms DEST CONTENT"
-    print "Usage: call DEST"
+    print("Usage: sms DEST CONTENT")
+    print("Usage: call DEST")
 
 
 def call_handler(to, fromm):
     print ("Incoming Call")
-    print ("to:" + to)
-    print ("from:" + fromm)
+    print("to:" + to)
+    print("from:" + fromm)
 
 
 def sms_handler(to, fromm, content):
     print ("Incoming SMS")
-    print ("To:" + to)
-    print ("From:" + fromm)
+    print("To:" + to)
+    print("From:" + fromm)
     print (content)
 
 #IMSIS can be 14 or 15 digits (18 or 19 with the IMSI prepend)

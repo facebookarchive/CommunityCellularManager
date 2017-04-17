@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (c) 2016-present, Facebook, Inc.
 # All rights reserved.
@@ -17,10 +17,10 @@ Options:
                           with caution, no confirmation required)
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
+
+
+
 
 import sys
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     args = docopt.docopt(__doc__)
 
     if args["list"]:
-        for imsi, data in subscriber.get_subscriber_states().items():
+        for imsi, data in list(subscriber.get_subscriber_states().items()):
             bal = PNCounter.from_json(data["balance"]).value()
             sub_info = subscriber.get_subscribers(imsi)
             numbers = sub_info[0]["numbers"] if sub_info else "<none>"

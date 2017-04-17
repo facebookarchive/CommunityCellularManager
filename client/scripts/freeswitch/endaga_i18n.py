@@ -45,7 +45,7 @@ def chat(message, args):
 
 def fsapi(session, stream, env, args):
     res = localize(args)
-    if isinstance(session, basestring):
+    if isinstance(session, str):
         # we're in the FS CLI, so no session object
         consoleLog('info', "No session; otherwise would set _localstr=%s" % res)
     else:

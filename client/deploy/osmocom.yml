@@ -7,11 +7,6 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-    - name: Add FS key
-      apt_key: url=https://files.freeswitch.org/repo/deb/freeswitch-1.6/key.gpg state=present
-    - name: Add FS repo
-      apt_repository: repo='deb http://files.freeswitch.org/repo/deb/freeswitch-1.6/ jessie main' update_cache=no mode=664
-
     - name: Set the Endaga version preferences
       copy: src=files/endaga-preferences dest=/etc/apt/preferences.d/endaga-preferences
 

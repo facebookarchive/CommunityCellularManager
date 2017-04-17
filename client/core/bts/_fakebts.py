@@ -7,12 +7,10 @@
 
 import sys
 import random
-import time
 import json
+import time
 
-from ccm.common import logger
 from core.config_database import ConfigDB
-
 from core.bts.base import BaseBTS, BSSError
 
 class FakeBTS(BaseBTS):
@@ -23,19 +21,19 @@ class FakeBTS(BaseBTS):
     def __init__(self):
         self.conf = ConfigDB()
         self.defaults = {
-            'sddch' : 8,
-            'tchf' : 4,
-            'pch' : 2,
-            'agch' : 2,
-            'pdch' : 2,
-            'mnc' : "001",
-            'mnc' : "01",
-            'c0' : 51,
-            'band' : "GSM900",
-            'shortName' : "fakeBTS",
-            'openRegistration' : ".*",
+            'sddch': 8,
+            'tchf': 4,
+            'pch': 2,
+            'agch': 2,
+            'pdch': 2,
+            'mnc': "001",
+            'mcc': "01",
+            'c0': 51,
+            'band': "GSM900",
+            'shortName': "fakeBTS",
+            'openRegistration': ".*",
             'timer.3212': 6,
-            'camped' : json.dumps([]),
+            'camped': json.dumps([]),
         }
 
     def __get(self, name):
@@ -59,22 +57,22 @@ class FakeBTS(BaseBTS):
         camped +=  ['IMSI001010000000000']
         res = []
         for camp in camped:
-            res.append({'IMSI' : camp,
+            res.append({'IMSI': camp,
                         'ACCESSED' : time.time(),
                     })
         return res
 
     def get_load(self):
         return {
-            'sdcch_load': random.choice(range(0,self.__get('sddch'))),
+            'sdcch_load': random.choice(list(range(0, self.__get('sddch')))),
             'sdcch_available': self.__get('sddch'),
-            'tchf_load': random.choice(range(0,self.__get('tchf'))),
+            'tchf_load': random.choice(list(range(0, self.__get('tchf')))),
             'tchf_available': self.__get('tchf'),
-            'pch_active': random.choice(range(0,self.__get('pch'))),
+            'pch_active': random.choice(list(range(0, self.__get('pch')))),
             'pch_total': self.__get('pch'),
-            'agch_active': random.choice(range(0,self.__get('agch'))),
+            'agch_active': random.choice(list(range(0, self.__get('agch')))),
             'agch_pending': 0,
-            'gprs_current_pdchs': random.choice(range(0,self.__get('pdch'))),
+            'gprs_current_pdchs': random.choice(list(range(0, self.__get('pdch')))),
             #probably should math this
             'gprs_utilization_percentage': .4,
         }
@@ -121,9 +119,9 @@ class FakeBTS(BaseBTS):
     def get_timer(self, timer):
         try:
             return self.__get('timer.' + timer)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_available_bands(self):
         return [self.get_band()]

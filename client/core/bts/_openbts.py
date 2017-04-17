@@ -5,12 +5,13 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-import envoy
+import delegator
 import errno
+import os
 import sys
 
 import openbts
-from openbts.exceptions import OpenBTSError, TimeoutError
+from openbts.exceptions import TimeoutError
 
 from ccm.common import logger
 from core.config_database import ConfigDB
@@ -34,17 +35,20 @@ class OpenBTSBTS(BaseBTS):
 
     def restart(self):
         """An openbts specific command to restart the bts."""
-        envoy.run("sudo killall transceiver")
+        delegator.run("sudo killall transceiver")
 
         # If the pid file specified doesn't match a running instance of the
         # process, remove the PID file. This is a workaround for a recurring
         # OpenBTS issue we see. Note, caller must have permissions to remove file.
         # Determine PIDs associated with pname
         path="/var/run/OpenBTS.pid"
-        pname="OpenBTS"
-        output = envoy.run("ps -A | grep OpenBTS")
+        cmd = delegator.run("ps -A | grep OpenBTS")
+        if cmd.return_code != 0:
+            output = ''
+        else:
+            output = cmd.out
         pids = []
-        for line in output.std_out.split('\n'):
+        for line in output.split('\n'):
             try:
                 pids.append(int(line.strip().split()[0]))
             except ValueError:
@@ -113,10 +117,10 @@ class OpenBTSBTS(BaseBTS):
 
             # We run this command via the CLI to immediately update the frequency
             # offset.
-            r = envoy.run("/OpenBTS/OpenBTSCLI -c 'freqcorr %s'" %
+            r = delegator.run("/OpenBTS/OpenBTSCLI -c 'freqcorr %s'" %
                     (default_offset,), timeout=self.conf['bss_timeout'])
-            if r.status_code != 0:
-                err = "Error %s: %s" % (r.status_code, " ".join(r.command))
+            if r.return_code != 0:
+                err = "Error %s: %s" % (r.return_code, " ".join(r.cmd))
                 logger.error(err)
                 raise BSSError(err)
             logger.notice("Frequency offset update to %s" % default_offset)
@@ -124,7 +128,7 @@ class OpenBTSBTS(BaseBTS):
         # Set band
         res = self.openbts.read_config("GSM.Radio.Band")
         if res.data['defaultValue'] != res.data['value']:
-            # We use envoy to update this value instead of the NodeManager
+            # We use delegator to update this value instead of the NodeManager
             # interface because of a weird behavior in self.openbts. We rely on OpenBTS
             # to report what ARFCNs in the band it supports when we read the self.config
             # of GSM.Radio.C0 (specifically the validValues section). If we update
@@ -135,10 +139,10 @@ class OpenBTSBTS(BaseBTS):
             # for the new band setting.
 
             logger.notice("Trying to set radio band from %s to %s" % (res.data['value'], res.data['defaultValue']))
-            r = envoy.run("/OpenBTS/OpenBTSCLI -c 'config GSM.Radio.Band %s'" %
+            r = delegator.run("/OpenBTS/OpenBTSCLI -c 'config GSM.Radio.Band %s'" %
                       (res.data['defaultValue'],), timeout=self.conf['bss_timeout'])
-            if r.status_code != 0:
-                err = "Error %s: %s" % (r.status_code, " ".join(r.command))
+            if r.return_code != 0:
+                err = "Error %s: %s" % (r.return_code, " ".join(r.cmd))
                 logger.error(err)
                 raise BSSError(err)
 
@@ -160,9 +164,9 @@ class OpenBTSBTS(BaseBTS):
     def get_camped_subscribers(self, access_period=0, auth=1):
         try:
             return self.openbts.tmsis(access_period, auth)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_load(self):
         try:
@@ -180,9 +184,9 @@ class OpenBTSBTS(BaseBTS):
                     'gprs_utilization_percentage': (
                         tower_load['gprs_utilization_percentage']),
                     }
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
 
     def get_noise(self):
@@ -193,124 +197,124 @@ class OpenBTSBTS(BaseBTS):
                     'noise_ms_rssi_target_db': (
                         tower_noise['noise_ms_rssi_target_db']),
                     }
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
 
     def set_mcc(self, mcc):
         """Set MCC"""
         try:
             return self.openbts.update_config("GSM.Identity.MCC", mcc)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_mnc(self, mnc):
         """Set MNC"""
         try:
             return self.openbts.update_config("GSM.Identity.MNC", mnc)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_short_name(self, short_name):
         """Set beacon short name"""
         try:
             return self.openbts.update_config("GSM.Identity.ShortName", short_name)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_open_registration(self, expression):
         """Set a regular expression matching IMSIs
         that can camp to the network"""
         try:
             return self.openbts.update_config("Control.LUR.OpenRegistration", expression)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_timer(self, timer, value):
         """Set a particular BTS timer.
         The only timer in use currently is T3212"""
         try:
             return self.openbts.update_config("GSM.Timer.T%s" % str(timer), value)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_band(self, band):
         """Set the GSM band"""
         try:
             return self.openbts.update_config("GSM.Radio.Band", band)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_arfcn_c0(self, arfcn):
         """Set the ARFCN of the first carrier."""
         try:
             return self.openbts.update_config("GSM.Radio.C0", arfcn)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_mcc(self):
         try:
             res = self.openbts.read_config("GSM.Identity.MCC")
             return res.data['value']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_mnc(self):
         try:
             res = self.openbts.read_config("GSM.Identity.MNC")
             return res.data['value']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_short_name(self):
         try:
             res = self.openbts.read_config("GSM.Identity.ShortName")
             return res.data['value']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_open_registration(self):
         try:
             res = self.openbts.read_config("Control.LUR.OpenRegistration")
             return res.data['value']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_timer(self, timer):
         try:
             res = self.openbts.read_config("GSM.Timer.T%s" % str(timer))
             return res.data['value']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_available_bands(self):
         try:
             res = self.openbts.read_config("GSM.Radio.Band")
             return res.data['validValues'].split(",")
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_available_arfcns(self):
         try:
             res = self.openbts.read_config("GSM.Radio.C0")
             return res.data['validValues'].split(",")
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_band(self):
         # as per github.com/endaga/openbts/GSM/GSMConfig.cpp:gsmInit()
@@ -320,17 +324,17 @@ class OpenBTSBTS(BaseBTS):
             res = self.openbts.read_config("GSM.Radio.Band")
             #convert to CCM standard
             return "GSM" + str(res.data['value'])
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_arfcn_c0(self):
         try:
             res = self.openbts.read_config("GSM.Radio.C0")
             return res.data['value']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_versions(self):
         #custom keys for this BTS type

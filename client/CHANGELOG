@@ -1,4 +1,11 @@
-endaga-osmocom 0.7.13 (2017 Apr 13(
+endaga-osmocom 0.8.0 (2017 Apr 13)
+-----------------
+Pacakges affected: python3-endaga-core, python3-ccm-common, python3-osmocom, python3-sms-utilities, python3-smspdu
+Changes:
+- Python3 compatibility
+
+
+endaga-osmocom 0.7.13 (2017 Apr 13)
 -----------------
 Packages affected: python-endaga-core
 Changes:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """A utility to control the system logger reporting level.
 
 The logging value specied will allow all log entries of the specified or
@@ -32,7 +32,7 @@ of patent rights can be found in the PATENTS file in the same directory.
 """
 
 import docopt
-import envoy
+import delegator
 import sys
 
 from ccm.common import logger
@@ -48,9 +48,9 @@ if __name__ == "__main__":
         if log_level.isdigit() and 0 <= int(log_level) <= 7:
             log_level = logger.LOG_LEVELS[int(log_level)]
         if not log_level in logger.LOG_LEVELS:
-            print 'Invalid log priority level. ' \
+            print('Invalid log priority level. ' \
                   'Log level valid range is 0-7 or %s' % \
-                    ', '.join(logger.LOG_LEVELS)
+                    ', '.join(logger.LOG_LEVELS))
             sys.exit(1)
 
         try:
@@ -65,21 +65,21 @@ if __name__ == "__main__":
             old_log_level = '<unset>'
 
         conf[conf_key] = log_level
-        print 'Log level for %s set from %s to %s' % \
-                (program_name, old_log_level, log_level)
-        envoy.run('sudo service rsyslog restart')
+        print('Log level for %s set from %s to %s' % \
+                (program_name, old_log_level, log_level))
+        delegator.run('sudo service rsyslog restart')
         sys.exit(0)
     elif args['unset']:
         program_name = args['<app>']
         conf_name = 'logger.%s.log_level' % program_name
         if program_name != 'global' and conf_name in conf:
             del conf[conf_name]
-            envoy.run('sudo service rsyslog restart')
+            delegator.run('sudo service rsyslog restart')
             sys.exit(0)
         else:
-            print 'Entry does not exist to be unset'
+            print('Entry does not exist to be unset')
             sys.exit(1)
     elif args['list']:
-        for k,v in conf.substring_search('log_level').items():
-            print '%s=%s' % (k, v)
+        for k,v in list(conf.substring_search('log_level').items()):
+            print('%s=%s' % (k, v))
         sys.exit(0)

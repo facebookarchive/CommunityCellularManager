@@ -46,16 +46,15 @@ class DatabaseError(Exception):
                    (msg,
                     inner.__class__.__name__,
                     inner,
-                    format_exc(exc_info()[2])))
+                    format_exc()))
         super(DatabaseError, self).__init__(msg)
 
 
-class BaseConnector(object):
+class BaseConnector(object, metaclass=abc.ABCMeta):
     """
     BaseConnector represents a connection to the database that may be
     recreated without user impact if, say, the database is restarted.
     """
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, retry_limit=5):
 

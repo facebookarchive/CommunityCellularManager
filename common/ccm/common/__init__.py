@@ -12,4 +12,4 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-VERSION = '0.5.8'
+VERSION = '0.6.0'

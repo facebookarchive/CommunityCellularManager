@@ -9,7 +9,7 @@ In general, user-facing strings in Python code should use the following conventi
     import gettext
     from libendaga.config import ConfigDB
     cdb = ConfigDB()
-    gt = gettext.translation("endaga", cdb['localedir'], [cdb['locale'], "en"]).ugettext
+    gt = gettext.translation("endaga", cdb['localedir'], [cdb['locale'], "en"]).gettext
     gt("Your message has been delivered to %(from)s") % {'from': from_}
 
 A couple things to note here. First, we don't use an underscore to prefix gettext strings,
@@ -99,7 +99,7 @@ Generating i18n and l10n files
     4) Actually use the translations. Put the following at the top of your scripts:
 
             import gettext
-            gt = gettext.translation("endaga", "/path/to/localedir", ["es", "en"]).ugettext
+            gt = gettext.translation("endaga", "/path/to/localedir", ["es", "en"]).gettext
 
        Then, you can wrap any string with gt(...) and you'll get the
        translation. What we'll probably want to do for setting locale

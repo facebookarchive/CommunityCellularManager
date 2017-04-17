@@ -17,7 +17,7 @@ from fabric.operations import get, put
 
 def package_freeswitch(fs_version='1.6.16~33~e6d643b-1~jessie+1'):
     """Builds freeswitch with our patches.
-    
+
     This will build the package based on what is currently checked out in the
     local freeswitc repo. Be sure that the tag that is checked out matches the
     version string that is needed. The tag we have used in the past is v1.6.9 and
@@ -30,8 +30,6 @@ def package_freeswitch(fs_version='1.6.16~33~e6d643b-1~jessie+1'):
         print 'path %s does not exist on the VM, cannot package' % path
         return
     with cd(path):
-        run('git apply ../client/packaging/smpp_reconnect.patch')
-        run('git apply ../client/packaging/python3.patch')
         run('cp ../client/packaging/py3.h src/mod/languages/mod_python')
         run('./build/set-fs-version.sh %s' % fs_version)
         run('dch -b -m -v "%s" --force-distribution -D unstable "Endaga build."' % fs_version)
@@ -42,12 +40,12 @@ def package_freeswitch(fs_version='1.6.16~33~e6d643b-1~jessie+1'):
         o.write("languages/mod_python\n")
         o.write("applications/mod_esl\n")
         o.close()
-	with cd('debian/'):
+        with cd('debian/'):
             put(remote_path='modules.conf', local_path='/tmp/modules.conf')
             run('./bootstrap.sh -c jessie')
         run('./configure --with-python=`which python3`')
         run('sudo mk-build-deps -i -t "apt-get -y --no-install-recommends" debian/control')
-        run('dpkg-buildpackage -b -us -nc')
+        run('dpkg-buildpackage -b -nc -us')
         run('mkdir -p ~/endaga-packages')
         run('mv ../*.deb ~/endaga-packages/')
 

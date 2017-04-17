@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """A CLI for manipulating subscriber credit.
 
 Usage:
@@ -48,13 +48,13 @@ if __name__ == "__main__":
             imsi = subscriber.get_imsi_from_number(args['<imsi_or_number>'])
             old_balance = subscriber.get_account_balance(imsi)
         except SubscriberNotFound:
-            print ('error: no number or IMSI record for %s' %
+            print('error: no number or IMSI record for %s' %
                    args['<imsi_or_number>'])
             sys.exit(1)
 
-    print '%s currently has %s' % (imsi,
-            humanize_credits(old_balance))
-    print 'adjusting..'
+    print('%s currently has %s' % (imsi,
+            humanize_credits(old_balance)))
+    print('adjusting..')
 
     amount_raw = parse_credits(args['<amount>']).amount_raw
     if args['add']:
@@ -70,5 +70,5 @@ if __name__ == "__main__":
         reason = '%s (set_balance)' % args['<reason>']
     events.create_add_money_event(imsi, old_balance, amount_raw, reason)
 
-    print '%s now has %s' % (
-        imsi, humanize_credits(subscriber.get_account_balance(imsi)))
+    print('%s now has %s' % (
+        imsi, humanize_credits(subscriber.get_account_balance(imsi))))

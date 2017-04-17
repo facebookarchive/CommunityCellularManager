@@ -9,10 +9,10 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
+
+
+
 
 from core import number_utilities
 from core.subscriber.base import BaseSubscriber, SubscriberNotFound
@@ -23,7 +23,7 @@ class FakeSubscriberDB(BaseSubscriber):
         super(FakeSubscriberDB, self).__init__()
         self._hlr = {}
         # initialise list of known subscribers
-        for imsi, data in self.get_subscriber_states().items():
+        for imsi, data in list(self.get_subscriber_states().items()):
             self._add_sub(imsi, data['numbers'])
 
     def _add_sub(self, imsi, numbers, ip=None, port=None):
@@ -64,7 +64,7 @@ class FakeSubscriberDB(BaseSubscriber):
             # per docstring, return empty list if IMSI not found
             sub = self._hlr.get(imsi)
             return [sub] if sub else []
-        return self._hlr.values()
+        return list(self._hlr.values())
 
     def add_number(self, imsi, number):
         """Associate another number with an IMSI.
@@ -112,7 +112,7 @@ class FakeSubscriberDB(BaseSubscriber):
         """Gets the IMSI associated with a number."""
         if canonicalize:
             number = number_utilities.canonicalize(number)
-        for imsi, data in self._hlr.items():
+        for imsi, data in list(self._hlr.items()):
             if number in data['numbers']:
                 return imsi
         return None

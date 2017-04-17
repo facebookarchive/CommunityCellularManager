@@ -49,9 +49,10 @@
     - name: Setup build requirements for python packages
       apt: pkg={{ item }} state=present update_cache=no
       with_items:
-          - python-pip
-          - python-pybabel
-          - python-dev
+          - python3-pip
+          - python3-babel
+          - python3-dev
+          - python3-setuptools
 
     - name: Setup requirements for building FS from source (needed to generate working python modules)
       apt: pkg={{ item }} state=present update_cache=no

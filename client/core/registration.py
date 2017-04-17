@@ -21,7 +21,7 @@ import os
 import socket
 import time
 
-import envoy
+import delegator
 import requests
 from requests.exceptions import RequestException
 from snowflake import snowflake
@@ -213,7 +213,7 @@ def generate_keys():
     # generate keys and csr
     with open('/etc/openvpn/endaga-sslconf.conf.noauto', 'w') as f:
         f.write(sslconf)
-    envoy.run('openssl req -new -newkey rsa:2048'
+    delegator.run('openssl req -new -newkey rsa:2048'
               ' -config /etc/openvpn/endaga-sslconf.conf.noauto'
               ' -keyout /etc/openvpn/endaga-client.key'
               ' -out /etc/openvpn/endaga-client.req -nodes')
@@ -349,9 +349,12 @@ def clear_old_pid(pname='OpenBTS', path='/var/run/OpenBTS.pid'):
     # OpenBTS issue we see. Note, caller must have permissions to remove file.
 
     # Determine PIDs associated with pname
-    output = envoy.run('ps -A | grep OpenBTS')
+    c = delegator.run('ps -A | grep OpenBTS')
+    if c.return_code != 0:
+        return
+
     pids = []
-    for line in output.std_out.split('\n'):
+    for line in c.out.split('\n'):
         try:
             pids.append(int(line.strip().split()[0]))
         except ValueError:

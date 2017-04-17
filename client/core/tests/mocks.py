@@ -4,7 +4,7 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
@@ -22,6 +22,7 @@ class MockRequests(object):
     def __init__(self, return_code):
         """All methods will return the specified return_code."""
         self.response = requests.Response()
+        self.Session = lambda: MockRequests(return_code)
         self.response.status_code = return_code
         self.post_endpoint = None
         self.post_headers = None
@@ -32,7 +33,7 @@ class MockRequests(object):
         """Mocking requests.get."""
         return self.response
 
-    def post(self, endpoint, headers=None, data=None, timeout=None):
+    def post(self, endpoint, headers=None, data=None, timeout=None, cookies=None):
         """Mocking requests.post and capturing the data that's sent."""
         self.post_endpoint = endpoint
         self.post_headers = headers
@@ -188,18 +189,18 @@ class MockSnowflake(object):
         return self.uuid
 
 
-class MockEnvoy(object):
-    """Mocking the envoy package."""
+class MockDelegator(object):
+    """Mocking the delegatyor package."""
 
     def __init__(self, return_text):
         self.return_text = return_text
 
     class Response(object):
-        """Mock envoy response."""
+        """Mock delegator response."""
 
         def __init__(self, return_text):
-            self.std_out = return_text
-            self.status_code = 0
+            self.out = return_text
+            self.return_code = 0
 
     def run(self, _):
         return self.Response(self.return_text)

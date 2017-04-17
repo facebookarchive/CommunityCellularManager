@@ -15,7 +15,6 @@ from core import events
 from core import number_utilities
 from core import system_utilities
 from core.subscriber import subscriber
-from core.subscriber.base import BaseSubscriber
 from core.bts import bts
 from core.checkin import CheckinHandler
 from core.exceptions import BSSError
@@ -147,7 +146,7 @@ class endaga_ic(object):
         except BSSError as e:
             logger.error("bts get_load error: %s" % e)
 
-        for key, val in self._checkin_load_stats.items():
+        for key, val in list(self._checkin_load_stats.items()):
             status['openbts_load']['checkin.' + key] = val
         self._checkin_load_stats.clear()
 
@@ -177,7 +176,7 @@ class endaga_ic(object):
         # client supports delta optimization & has a prior delta state
         if delta.DeltaProtocol.CTX_KEY not in status:  # just a precaution
             sections_ctx = {}
-            for section, ctx in CheckinHandler.section_ctx.items():
+            for section, ctx in list(CheckinHandler.section_ctx.items()):
                 if ctx:
                     sections_ctx[section] = ctx.to_proto_dict()
 
@@ -205,7 +204,7 @@ class endaga_ic(object):
             try:
                 gzbuf = BytesIO()
                 with GzipFile(mode='wb', fileobj=gzbuf) as gzfile:
-                    gzfile.write(data_json)
+                    gzfile.write(bytes(data_json, encoding='UTF-8'))
                 data_json = gzbuf.getvalue()
                 # Using Content-Encoding header since AWS cannot handle
                 # Transfer-Encoding header which would be more appropriate here

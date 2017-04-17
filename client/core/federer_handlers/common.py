@@ -24,7 +24,7 @@ from core.message_database import MessageDB
 
 cdb = ConfigDB()
 gt = gettext.translation(
-    "endaga", cdb['localedir'], [cdb['locale'], "en"]).ugettext
+    "endaga", cdb['localedir'], [cdb['locale'], "en"]).gettext
 # Hardcode the dashboard's from_number.
 DASHBOARD_FROM_NUMBER = '0000'
 

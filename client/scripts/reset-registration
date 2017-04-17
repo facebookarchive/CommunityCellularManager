@@ -15,7 +15,7 @@ the dashboard, not from the device. This script is useful for development in
 some cases, however.
 """
 
-from __future__ import print_function
+
 
 import sys
 

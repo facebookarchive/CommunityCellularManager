@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Copies a metapackage deb file (and its deps) from a repo to another dir.
 
@@ -47,7 +47,7 @@ PACKAGE_CACHE = {}
 
 def fill_package_cache(repo):
     """Fills out the PACKAGE_CACHE for a specified repo."""
-    print '\nlearning about packages in %s' % repo
+    print('\nlearning about packages in %s' % repo)
     PACKAGE_CACHE[repo] = []
     base_path = '/var/lib/freight/apt/'
     directory = os.path.join(base_path, repo)
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     deb_filepaths_to_process = [metapackage_path]
     while deb_filepaths_to_process:
         filepath = deb_filepaths_to_process.pop()
-        print '\nprocessing %s' % filepath
+        print('\nprocessing %s' % filepath)
         pkg = package.inspect_package(filepath)[0]
         # We can move on if this package has no deps at all.
         if 'Depends' not in pkg:
@@ -154,7 +154,7 @@ if __name__ == "__main__":
         # deps in the from_repo.
         deps = []
         for dependency in relationships_to_process:
-            print '  listed dep: %s' % dependency.name
+            print('  listed dep: %s' % dependency.name)
             version = None
             if 'version' in dir(dependency):
                 version = dependency.version
@@ -163,24 +163,24 @@ if __name__ == "__main__":
                 'version': version,
             })
         found_packages = find_packages_in_repo(args['<from_repo>'], deps)
-        print '  found packages in repo: %s' % ', '.join(
-            [p['name'] for p in found_packages])
+        print('  found packages in repo: %s' % ', '.join(
+            [p['name'] for p in found_packages]))
         # Add those to the list of found deps and to the list of packages to
         # analyze for more deps.
         for pkg in found_packages:
             if pkg['filepath'] in dependency_filepaths:
-                print '  (already have %s as a dep)' % pkg['name']
+                print('  (already have %s as a dep)' % pkg['name'])
                 continue
             if pkg['filepath'] in deb_filepaths_to_process:
-                print '  (%s is already queued for analysis)' % pkg['name']
+                print('  (%s is already queued for analysis)' % pkg['name'])
                 continue
             dependency_filepaths.append(pkg['filepath'])
             deb_filepaths_to_process.append(pkg['filepath'])
 
     # Copy the metapackage and all its deps over to the to_dir.
     base_path = '/var/lib/freight/apt/'
-    print '\n\ncopying %s to %s' % (metapackage_path, args['<to_dir>'])
+    print('\n\ncopying %s to %s' % (metapackage_path, args['<to_dir>']))
     shutil.copy2(metapackage_path, args['<to_dir>'])
     for filepath in dependency_filepaths:
-        print 'copying dep "%s"' % filepath
+        print('copying dep "%s"' % filepath)
         shutil.copy2(filepath, args['<to_dir>'])

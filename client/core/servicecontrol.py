@@ -10,9 +10,9 @@ of patent rights can be found in the PATENTS file in the same directory.
 
 import abc
 from enum import Enum
-import envoy
-import xmlrpclib
+import delegator
 from supervisor.xmlrpc import SupervisorTransport
+import xmlrpc.client
 
 from ccm.common import logger
 
@@ -21,13 +21,12 @@ class ServiceState(Enum):
     Error = 2
 
 
-class BaseServiceControl(object):
+class BaseServiceControl(object, metaclass=abc.ABCMeta):
     """
     Service Control is the interface to managing services and their state. This
     allows us to start system services after system provisiong, and probe
     service state to monitor service health and issue restarts on failures.
     """
-    __metaclass__ = abc.ABCMeta
     __instance = None
 
     @abc.abstractmethod
@@ -77,14 +76,14 @@ class SupervisorControl(BaseServiceControl):
 
     def __init__(self):
         t = SupervisorTransport(None, None, "unix:///var/run/supervisor.sock")
-        self.server = xmlrpclib.ServerProxy("http://127.0.0.1", transport=t)
+        self.server = xmlrpc.client.ServerProxy("http://127.0.0.1", transport=t)
 
     def stopProcess(self, name):
         """Stops a process by name."""
         try:
             logger.info("Supervisor: stopping %s" % name)
             return self.server.supervisor.stopProcess(name)
-        except xmlrpclib.Fault as e:
+        except xmlrpc.client.Fault as e:
             if e.faultCode == 70:  # NOT_RUNNING
                 return True
             logger.error("Supervisor: failed to stop %s, fault code: %d" %
@@ -99,7 +98,7 @@ class SupervisorControl(BaseServiceControl):
         try:
             logger.info("Supervisor: starting %s" % name)
             return self.server.supervisor.startProcess(name)
-        except xmlrpclib.Fault as e:
+        except xmlrpc.client.Fault as e:
             if e.faultCode == 60:  # ALREADY_STARTED
                 logger.info("Supervisor: %s already started" % name)
                 return True
@@ -124,7 +123,7 @@ class SupervisorControl(BaseServiceControl):
                 return ServiceState.Running
             else:
                 return ServiceState.Error
-        except xmlrpclib.Fault:
+        except xmlrpc.client.Fault:
             return ServiceState.Error
 
 
@@ -136,21 +135,21 @@ class SystemControl(BaseServiceControl):
 
     def _runCommand(self, name, command):
         if not self.cmd:
-            try:  # envoy.run may throw due to an internal bug in timeout handling
-                r = envoy.run("systemctl --version", timeout=2)
-                if r.status_code == 0:
+            try:
+                r = delegator.run("systemctl --version")
+                if r.return_code == 0:
                     self.cmd = "systemctl"
                 else:
                     self.cmd = "service"
             except BaseException as e:
-                logger.error("envoy systemctl exception %s" % e)
+                logger.error("delegator systemctl exception %s" % e)
                 self.cmd = "service"
 
         if self.cmd == "systemctl":
-            r = envoy.run("sudo systemctl %s %s" % (command, name))
+            r = delegator.run("sudo systemctl %s %s" % (command, name))
         else:
-            r = envoy.run("sudo service %s %s" % (name, command))
-        result = r.status_code == 0
+            r = delegator.run("sudo service %s %s" % (name, command))
+        result = r.return_code == 0
         return result
 
     def stopProcess(self, name):

@@ -16,7 +16,7 @@
 
 set -e
 BUILD_DATE=`date -u +"%Y%m%d%H%M%S"`
-ENDAGA_VERSION="0.7.13"
+ENDAGA_VERSION="0.8.0"
 
 # The resulting package is placed in $OUTPUT_DIR
 # or in the cwd.
@@ -91,7 +91,8 @@ elif [[ $GSM =~ osmocom ]]; then
 	'--depends' 'osmo-trx (>= 0.1.9)'
 	'--depends' 'osmo-pcu (>= 0.2)'
 	'--depends' 'osmocom-sgsn (>= 0.15.0)'
-	'--depends' 'python-osmocom (>= 0.0.3)'
+	'--depends' 'python3-osmocom (>= 0.0.5)'
+        '--depends' 'python-esl'
 	'--depends' 'freeswitch-meta-vanilla'
 	'--depends' 'freeswitch-mod-python'
 	'--depends' 'freeswitch-mod-sms'
@@ -138,9 +139,9 @@ fpm \
     --depends "libpq-dev" \
     --depends "lighttpd" \
     --depends "openvpn" \
-    --deb-pre-depends "python-endaga-core (= 0.5.13)" \
-    --depends "python-psycopg2" \
-    --depends "python-snowflake (= 0.0.2)" \
+    --deb-pre-depends "python3-endaga-core (= 0.6.0)" \
+    --depends "python3-psycopg2" \
+    --depends "python3-snowflake (= 0.0.3)" \
     --depends "postgresql" \
     --depends "postgresql-contrib" \
     --depends "sqlite3" \

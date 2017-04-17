@@ -23,7 +23,7 @@ def gather_gprs_data():
         data = subscriber.get_gprs_usage()
     except SubscriberNotFound:
         return
-    for imsi in data.keys():
+    for imsi in list(data.keys()):
         # If the IMSI is not a registered sub, ignore its data.
         if not subscriber.get_subscribers(imsi=imsi):
             continue

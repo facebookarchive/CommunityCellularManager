@@ -24,7 +24,7 @@ from twisted.protocols.sip import Request
 from ESL import ESLconnection
 from core.config_database import ConfigDB
 
-from base import BaseFakePhone
+from .base import BaseFakePhone
 
 
 SIP_PORT = 5060
@@ -55,11 +55,11 @@ class SipProxy(sip.Proxy):
 
     def handle_response(self, message, addr):
         if message.code == 401:
-            print ("REGISTER REJECTED, DISABLE AUTH IN SIPAUTH")
-            print ("INSERT INTO \"CONFIG\" VALUES('SubscriberRegistry"
+            print("REGISTER REJECTED, DISABLE AUTH IN SIPAUTH")
+            print("INSERT INTO \"CONFIG\" VALUES('SubscriberRegistry"
                    ".IgnoreAuthentication','1',0,1,'Disable Auth');")
         else:
-            print ("RESPONSE: " + str(message.code))
+            print("RESPONSE: " + str(message.code))
 
     def handle_request(self, message, addr):
         to = message.uri.username

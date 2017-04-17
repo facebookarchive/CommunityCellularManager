@@ -14,10 +14,10 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
+
+
+
 
 from ccm.common import crdt, logger
 from core.db.kvstore import KVStore
@@ -51,7 +51,7 @@ class BaseSubscriber(KVStore):
         if imsis:  # non-empty list, return requested subscribers
             subs = self.get_multiple(imsis)
         elif imsis is None:  # empty list, return all subscribers
-            subs = self.items()
+            subs = list(self.items())
         else:
             return {}  # empty list - return an empty dict
 

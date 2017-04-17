@@ -62,9 +62,9 @@ class OsmocomBTS(BaseBTS):
         try:
             with self.subscribers as s:
                 return s.camped_subscribers(access_period, auth)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_load(self):
         try:
@@ -75,9 +75,9 @@ class OsmocomBTS(BaseBTS):
                 if sum(load.values()) == 0:
                     raise BSSError("TRX not running")
                 return load
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_noise(self):
         return {'some_noise_stats_here_tbd': 0}
@@ -87,27 +87,27 @@ class OsmocomBTS(BaseBTS):
         try:
             with self.network as n:
                 return n.set_mcc(mcc)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_mnc(self, mnc):
         """Set MNC"""
         try:
             with self.network as n:
                 return n.set_mnc(mnc)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_short_name(self, short_name):
         """Set beacon short name"""
         try:
             with self.network as n:
                 return n.set_short_name(short_name)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_open_registration(self, expression):
         """Set a regular expression matching IMSIs
@@ -124,51 +124,51 @@ class OsmocomBTS(BaseBTS):
             else:
                 with self.network as n:
                     return n.set_timer(timer, value)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_band(self, band):
         """Set the GSM band of default BTS"""
         try:
             with self.bts as b:
                 return b.set_band(self.DEFAULT_BTS_ID, band)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def set_arfcn_c0(self, arfcn):
         """Set the ARFCN of the first carrier."""
         try:
             with self.trx as t:
                 return t.set_arfcn(self.DEFAULT_BTS_ID, self.DEFAULT_TRX_ID, arfcn)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_mcc(self):
         try:
             with self.network as n:
                 return n.show()['mcc']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_mnc(self):
         try:
             with self.network as n:
                 return n.show()['mnc']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_short_name(self):
         try:
             with self.network as n:
                 return n.show()['short_name']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_open_registration(self):
         raise NotImplementedError()
@@ -181,42 +181,42 @@ class OsmocomBTS(BaseBTS):
             else:
                 with self.network as n:
                     return n.running_config()['timer t%d' % timer]
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_available_bands(self):
         try:
             with self.bts as b:
                 return b.get_available_bands()
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_available_arfcns(self):
         """Returns a list of available ARFCNs for the default BTS"""
         try:
             with self.bts as b:
                 return b.get_available_arfcns(self.DEFAULT_BTS_ID)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_band(self):
         try:
             with self.bts as b:
                 return b.show(self.DEFAULT_BTS_ID)['band']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_arfcn_c0(self):
         try:
             with self.trx as t:
                 return t.show(self.DEFAULT_BTS_ID, self.DEFAULT_TRX_ID)['arfcn']
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_trace = sys.exc_info()
-            raise BSSError, "%s: %s" % (exc_type, exc_value), exc_trace
+            raise BSSError("%s: %s" % (exc_type, exc_value)).with_traceback(exc_trace)
 
     def get_gprs_usage(self, target_imsi=None):
         """Get all available GPRS data, or that of a specific IMSI (experimental).

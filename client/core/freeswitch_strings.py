@@ -28,7 +28,7 @@ import core.config_database
 
 configdb = core.config_database.ConfigDB()
 
-gt = gettext.translation("endaga", configdb['localedir'], [configdb['locale'], "en"]).ugettext
+gt = gettext.translation("endaga", configdb['localedir'], [configdb['locale'], "en"]).gettext
 
 # NOTE: (chatplan/01_provisioning) This message is sent when a user tries to register an already registered SIM card.
 gt("Already registered with number %(number)s.")

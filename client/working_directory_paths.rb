@@ -13,6 +13,7 @@ module SyncPaths
     "snowflake" =>  "../snowflake",
     "openbts-python" =>  "../openbts-python",
     "common" => "../common",
+    "smspdu" => "../smspdu",
     "client" =>  "./",
   }
 end
