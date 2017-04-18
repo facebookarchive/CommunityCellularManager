@@ -13,7 +13,8 @@ from osmocom.vty.trx import TRX
 from osmocom.vty.subscribers import Subscribers
 
 from core.config_database import ConfigDB
-from core.bts.base import BaseBTS, BSSError
+from core.bts.base import BaseBTS
+from core.exceptions import BSSError
 from core.service import Service
 
 class OsmocomBTS(BaseBTS):

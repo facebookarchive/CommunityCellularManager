@@ -11,7 +11,7 @@ import osmocom
 from core.config_database import ConfigDB
 from core.sms.base import BaseSMS
 
-from osmocom.subscribers import Subscribers
+from osmocom.vty.subscribers import Subscribers
 
 class OsmocomSMS(BaseSMS):
 

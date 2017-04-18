@@ -16,7 +16,8 @@ from openbts.exceptions import TimeoutError
 from ccm.common import logger
 from core.config_database import ConfigDB
 
-from core.bts.base import BaseBTS, BSSError
+from core.bts.base import BaseBTS
+from core.exceptions import BSSError
 from core.service import Service
 
 class OpenBTSBTS(BaseBTS):

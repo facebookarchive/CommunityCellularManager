@@ -11,7 +11,8 @@ import json
 import time
 
 from core.config_database import ConfigDB
-from core.bts.base import BaseBTS, BSSError
+from core.bts.base import BaseBTS
+from core.exceptions import BSSError
 
 class FakeBTS(BaseBTS):
 
