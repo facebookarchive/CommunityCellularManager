@@ -7,14 +7,10 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-
-
-
-
-import osmocom.bts
+import osmocom.vty.bts
 
 from .base import MockSocketTestCase
-from tests import get_fixture_path
+from . import get_fixture_path
 
 class BTSSetTestCase(MockSocketTestCase):
     fixture_file = get_fixture_path('bts_set.txt')
@@ -22,7 +18,7 @@ class BTSSetTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(BTSSetTestCase, cls).setUpClass()
-        cls.b = osmocom.bts.BTS()
+        cls.b = osmocom.vty.bts.BTS()
         cls.b.open()
 
     @classmethod
@@ -103,7 +99,7 @@ class BTSGetOnlineTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(BTSGetOnlineTestCase, cls).setUpClass()
-        cls.b = osmocom.bts.BTS()
+        cls.b = osmocom.vty.bts.BTS()
         cls.b.open()
 
     def test_get_online(self):
@@ -127,7 +123,7 @@ class BTSGetOfflineTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(BTSGetOfflineTestCase, cls).setUpClass()
-        cls.b = osmocom.bts.BTS()
+        cls.b = osmocom.vty.bts.BTS()
         cls.b.open()
 
     def test_get_offline(self):
@@ -157,7 +153,7 @@ class BTSConnectedOnlineTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(BTSConnectedOnlineTestCase, cls).setUpClass()
-        cls.b = osmocom.bts.BTS()
+        cls.b = osmocom.vty.bts.BTS()
         cls.b.open()
 
     def test_get_online(self):
@@ -171,7 +167,7 @@ class BTSConnectedOfflineTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(BTSConnectedOfflineTestCase, cls).setUpClass()
-        cls.b = osmocom.bts.BTS()
+        cls.b = osmocom.vty.bts.BTS()
         cls.b.open()
 
     def test_get_offline(self):
@@ -185,7 +181,7 @@ class BTSLoadOnlineTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(BTSLoadOnlineTestCase, cls).setUpClass()
-        cls.b = osmocom.bts.BTS()
+        cls.b = osmocom.vty.bts.BTS()
         cls.b.open()
 
     def test_get_online_load(self):
@@ -209,7 +205,7 @@ class BTSLoadOfflineTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(BTSLoadOfflineTestCase, cls).setUpClass()
-        cls.b = osmocom.bts.BTS()
+        cls.b = osmocom.vty.bts.BTS()
         cls.b.open()
 
     def test_get_offline_load(self):
@@ -232,7 +228,7 @@ class BTSRunningConfigTestCase(MockSocketTestCase):
 
     def test_running_config(self):
         """Test reading bts settings."""
-        with osmocom.bts.BTS() as b:
+        with osmocom.vty.bts.BTS() as b:
             data = b.running_config(0)
             self.assertEqual(data['type'], 'sysmobts')
             self.assertEqual(data['channel-descrption bs-ag-blks-res'], '1')

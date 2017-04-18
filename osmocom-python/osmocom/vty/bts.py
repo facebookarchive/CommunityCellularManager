@@ -7,14 +7,9 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-
-
-
-
-
 import re
 
-from .vty import BaseVTY
+from .base import BaseVTY
 
 class BTS(BaseVTY):
 

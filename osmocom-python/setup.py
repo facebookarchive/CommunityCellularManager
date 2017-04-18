@@ -15,7 +15,7 @@ from setuptools import setup
 with open('README.md') as f:
   README = f.read()
 
-VERSION = '0.0.5'
+VERSION = '0.1.0'
 
 
 setup(
@@ -25,7 +25,15 @@ setup(
   long_description=README,
   author='Facebook',
   author_email='CommunityCellularManager@fb.com',
-  packages=['osmocom'],
-  install_requires=[
-  ],
+  packages=['osmocom.gsup',
+            'osmocom.gsup.store',
+            'osmocom.gsup.store.protos',
+            'osmocom.gsup.crypto',
+            'osmocom.gsup.protocols',
+            'osmocom.vty'],
+  scripts=['scripts/osmocom_hlr'],
+  install_requires=['grpcio==1.0.4',
+                    'aiohttp>=0.17.2'],
+  extras_require={'dev': ['grpcio-tools>=1.0.0',
+                          'nose==1.3.7']},
 )

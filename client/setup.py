@@ -68,6 +68,8 @@ setup(
         "pytz==2015.7",
         "snowflake>=0.0.3",
         "supervisor>=0.4.0",
+        "pexpect>=4.2.1",
+        "ptyprocess>=0.5.1",
     ],
     scripts=[
         'scripts/ccm_hlr',

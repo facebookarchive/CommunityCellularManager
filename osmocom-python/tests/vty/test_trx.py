@@ -3,13 +3,13 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
-import osmocom.trx
+import osmocom.vty.trx
 
 from .base import MockSocketTestCase
-from tests import get_fixture_path
+from . import get_fixture_path
 
 class TRXSetTestCase(MockSocketTestCase):
     fixture_file = get_fixture_path('trx_set.txt')
@@ -17,7 +17,7 @@ class TRXSetTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(TRXSetTestCase, cls).setUpClass()
-        cls.t = osmocom.trx.TRX()
+        cls.t = osmocom.vty.trx.TRX()
         cls.t.open()
 
     @classmethod
@@ -46,7 +46,7 @@ class TRXGetTestCase(MockSocketTestCase):
 
     def test_get(self):
         """Test reading trx settings."""
-        with osmocom.trx.TRX() as t:
+        with osmocom.vty.trx.TRX() as t:
             data = t.show(0,0)
             self.assertEqual(data['arfcn'], '1')
             self.assertEqual(data['id'], '0')

@@ -6,10 +6,10 @@ This source code is licensed under the BSD-style license found in the
 LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
-import osmocom.network
+import osmocom.vty.network
 
 from .base import MockSocketTestCase
-from tests import get_fixture_path
+from . import get_fixture_path
 
 class NetworkSetTestCase(MockSocketTestCase):
     fixture_file = get_fixture_path('network_set.txt')
@@ -17,7 +17,7 @@ class NetworkSetTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(NetworkSetTestCase, cls).setUpClass()
-        cls.n = osmocom.network.Network()
+        cls.n = osmocom.vty.network.Network()
         cls.n.open()
 
     @classmethod
@@ -80,7 +80,7 @@ class NetworkSetBadTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(NetworkSetBadTestCase, cls).setUpClass()
-        cls.n = osmocom.network.Network()
+        cls.n = osmocom.vty.network.Network()
         cls.n.open()
 
     @classmethod
@@ -105,7 +105,7 @@ class NetworkGetTestCase(MockSocketTestCase):
 
     def test_get(self):
         """Test reading writing network settings."""
-        with osmocom.network.Network() as n:
+        with osmocom.vty.network.Network() as n:
             network_data = n.show()
             self.assertEqual(network_data['handover'], 'Off')
             self.assertEqual(network_data['auth_policy'], 'accept-all')

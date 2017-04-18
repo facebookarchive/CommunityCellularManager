@@ -7,17 +7,17 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-import osmocom.subscribers
+import osmocom.vty.subscribers
 
 from .base import MockSocketTestCase
-from tests import get_fixture_path
+from . import get_fixture_path
 
 class SubscriberCreateTestCase(MockSocketTestCase):
     fixture_file = get_fixture_path('subscriber_create.txt')
 
     def test_create(self):
         """Test create subscriber."""
-        with osmocom.subscribers.Subscribers() as s:
+        with osmocom.vty.subscribers.Subscribers() as s:
             data = s.create('901550000000001')
             self.assertEqual(data['name'], 'Omar')
             self.assertEqual(data['extension'], '5722543')
@@ -38,7 +38,7 @@ class SubscriberSetTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(SubscriberSetTestCase, cls).setUpClass()
-        cls.s = osmocom.subscribers.Subscribers()
+        cls.s = osmocom.vty.subscribers.Subscribers()
         cls.s.open()
 
     @classmethod
@@ -74,7 +74,7 @@ class SubscriberSetErrorTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(SubscriberSetErrorTestCase, cls).setUpClass()
-        cls.s = osmocom.subscribers.Subscribers()
+        cls.s = osmocom.vty.subscribers.Subscribers()
         cls.s.open()
 
     @classmethod
@@ -97,7 +97,7 @@ class SubscriberGetTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(SubscriberGetTestCase, cls).setUpClass()
-        cls.s = osmocom.subscribers.Subscribers()
+        cls.s = osmocom.vty.subscribers.Subscribers()
         cls.s.open()
 
     def test_get(self):
@@ -122,7 +122,7 @@ class SubscriberTestIMSITestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(SubscriberTestIMSITestCase, cls).setUpClass()
-        cls.s = osmocom.subscribers.Subscribers()
+        cls.s = osmocom.vty.subscribers.Subscribers()
         cls.s.open()
 
     def test_pad_imsi_len_15(self):
@@ -138,7 +138,7 @@ class SubscriberGetInvalidTestCase(MockSocketTestCase):
 
     def test_get_error(self):
         """Getting a subscriber that doesnt exist will raise a ValueError"""
-        with osmocom.subscribers.Subscribers() as s:
+        with osmocom.vty.subscribers.Subscribers() as s:
             with self.assertRaises(ValueError):
                 s.show('imsi', '901550000000002')
 
@@ -149,7 +149,7 @@ class SubscriberDeleteTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(SubscriberDeleteTestCase, cls).setUpClass()
-        cls.s = osmocom.subscribers.Subscribers()
+        cls.s = osmocom.vty.subscribers.Subscribers()
         cls.s.open()
 
     @classmethod
@@ -176,7 +176,7 @@ class SubscriberDeleteErrorTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
         super(SubscriberDeleteErrorTestCase, cls).setUpClass()
-        cls.s = osmocom.subscribers.Subscribers()
+        cls.s = osmocom.vty.subscribers.Subscribers()
         cls.s.open()
 
     @classmethod

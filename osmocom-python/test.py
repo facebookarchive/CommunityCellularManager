@@ -7,10 +7,10 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-from osmocom.subscribers import Subscribers
-from osmocom.network import Network
-from osmocom.bts import BTS
-from osmocom.trx import TRX
+from osmocom.vty.subscribers import Subscribers
+from osmocom.vty.network import Network
+from osmocom.vty.bts import BTS
+from osmocom.vty.trx import TRX
 
 import json
 

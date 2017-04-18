@@ -22,7 +22,7 @@ import os
 import sys
 
 import psycopg2
-from osmocom.subscribers import Subscribers
+from osmocom.vty.subscribers import Subscribers
 
 from core import number_utilities
 from core.config_database import ConfigDB

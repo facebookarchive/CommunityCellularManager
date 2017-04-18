@@ -7,10 +7,10 @@
 
 import sys
 
-from osmocom.bts import BTS
-from osmocom.network import Network
-from osmocom.trx import TRX
-from osmocom.subscribers import Subscribers
+from osmocom.vty.bts import BTS
+from osmocom.vty.network import Network
+from osmocom.vty.trx import TRX
+from osmocom.vty.subscribers import Subscribers
 
 from core.config_database import ConfigDB
 from core.bts.base import BaseBTS, BSSError

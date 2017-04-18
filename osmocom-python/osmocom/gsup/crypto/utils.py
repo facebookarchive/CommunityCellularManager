@@ -1,6 +1,4 @@
 """
-Client modules.
-
 Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
@@ -9,4 +7,9 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-VERSION = '0.6.1'
+
+class CryptoError(Exception):
+    """
+    Represents any error triggered during a crypto operation.
+    """
+    pass

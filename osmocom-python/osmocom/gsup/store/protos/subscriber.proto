@@ -1,0 +1,112 @@
+// Copyright (c) 2016-present, Facebook, Inc.
+// All rights reserved.
+//
+// This source code is licensed under the BSD-style license found in the
+// LICENSE file in the root directory of this source tree. An additional grant
+// of patent rights can be found in the PATENTS file in the same directory.
+
+syntax = "proto3";
+
+import "google/protobuf/field_mask.proto";
+
+package osmocom;
+
+message Void {
+}
+
+// --------------------------------------------------------------------------
+// SubscriberID (or SID) uniquely identifies the subscriber across the system
+// --------------------------------------------------------------------------
+message SubscriberID {
+  string id = 1;
+
+  enum IDType {
+    IMSI = 0;
+  }
+  IDType type = 2;
+}
+
+message SubscriberIDSet {
+  repeated SubscriberID sids = 1;
+}
+
+// --------------------------------------------------------------------------
+// GSM/LTE subscription info
+// --------------------------------------------------------------------------
+message GSMSubscription {
+  enum GSMSubscriptionState {
+    INACTIVE = 0;
+    ACTIVE = 1;
+  }
+  GSMSubscriptionState state = 1;
+
+  enum GSMAuthAlgo {
+    PRECOMPUTED_AUTH_TUPLES = 0;  // default
+    // COMP128_V1 = 1; Not supported
+  }
+  GSMAuthAlgo auth_algo = 2;
+
+  // Authentication key (ki). Need for A3/A8 algos. This is not used
+  // when the auth_algo is PRECOMPUTED_AUTH_TUPLES.
+  bytes auth_key = 3;
+
+  // Precomputed (rand, sres, kc) tuples. Used when the auth_algo is
+  // PRECOMPUTED_AUTH_TUPLES.
+  repeated bytes auth_tuples = 4;
+}
+
+message SubscriberState {
+
+}
+
+// --------------------------------------------------------------------------
+// User subscription record. This record is serialized and stored in the DB.
+// --------------------------------------------------------------------------
+message SubscriberData {
+  // Unique indentifier for the subscriber
+  SubscriberID sid = 1;
+
+  GSMSubscription gsm = 2;
+
+  SubscriberState state = 3;
+}
+
+message SubscriberUpdate {
+  // Updated subscription data
+  SubscriberData data = 1;
+
+  // Specifies the fields to be updated
+  // The mask can be individual subscription elements (Eg: 'lte.auth_key') or
+  // entire subset in the SubscriberData (Eg: 'lte' to update all lte.* fields)
+  google.protobuf.FieldMask mask = 2;
+}
+
+// --------------------------------------------------------------------------
+// SubscriberDB service definition.
+// --------------------------------------------------------------------------
+service SubscriberDB {
+
+  // Adds a new subscriber to the store.
+  // Throws ALREADY_EXISTS if the subscriber already exists.
+  //
+  rpc AddSubscriber (SubscriberData) returns (Void) {}
+
+  // Deletes an existing subscriber.
+  // If the subscriber is not already present, this request is ignored.
+  //
+  rpc DeleteSubscriber (SubscriberID) returns (Void) {}
+
+  // Updates an existing subscriber.
+  // Throws NOT_FOUND if the subscriber is missing.
+  //
+  rpc UpdateSubscriber (SubscriberUpdate) returns (Void) {}
+
+  // Returns the SubscriberData for a subscriber.
+  // Throws NOT_FOUND if the subscriber is missing.
+  //
+  rpc GetSubscriberData (SubscriberID) returns (SubscriberData) {}
+
+  // List the subscribers in the store.
+  //
+  rpc ListSubscribers (Void) returns (SubscriberIDSet) {}
+}

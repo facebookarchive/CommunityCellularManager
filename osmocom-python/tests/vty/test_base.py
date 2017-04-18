@@ -6,11 +6,11 @@ This source code is licensed under the BSD-style license found in the
 LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
-import osmocom.vty
+import osmocom.vty.base
 
 from .base import MockSocketTestCase
 
-from tests import get_fixture_path
+from . import get_fixture_path
 import json
 import unittest
 import mock
@@ -20,7 +20,7 @@ class RunningConfigTestCase(MockSocketTestCase):
 
     def test_running_config(self):
         """Test reading bts settings."""
-        with osmocom.vty.BaseVTY('OpenBSC') as v:
+        with osmocom.vty.base.BaseVTY('OpenBSC') as v:
             data_a = v.running_config()
             data_b = {"network": {
                       "encryption a5": "0",
@@ -236,7 +236,7 @@ class NestedContextTestCase(MockSocketTestCase):
     @classmethod
     def setUpClass(cls):
        super(NestedContextTestCase, cls).setUpClass()
-       cls.vty = osmocom.vty.BaseVTY('OpenBSC')
+       cls.vty = osmocom.vty.base.BaseVTY('OpenBSC')
 
     def test_nested_context(self):
         """Tests that we can share a connection context."""
@@ -269,7 +269,7 @@ class FailedConnectionTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
        super(FailedConnectionTestCase, cls).setUpClass()
-       cls.vty = osmocom.vty.BaseVTY('OpenBSC')
+       cls.vty = osmocom.vty.base.BaseVTY('OpenBSC')
 
     def test_open_exceptions(self):
         """Tests that a failed connect attempt keeps the
@@ -279,14 +279,14 @@ class FailedConnectionTestCase(unittest.TestCase):
         self.assertEqual(self.vty._socket_obj, None)
 
         # Connection with context manager will fail
-        with self.assertRaises(osmocom.exceptions.VTYChainedException):
+        with self.assertRaises(osmocom.vty.exceptions.VTYChainedException):
             with self.vty:
                 pass
         # Still "disconnected"
         self.assertEqual(self.vty._socket_obj, None)
 
         # Connection with open will fail
-        with self.assertRaises(osmocom.exceptions.VTYChainedException):
+        with self.assertRaises(osmocom.vty.exceptions.VTYChainedException):
             self.vty.open()
         # Remains disconnected
         self.assertEqual(self.vty._socket_obj, None)
@@ -298,24 +298,24 @@ class DroppedConnectionTestCase(MockSocketTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.vty = osmocom.vty.BaseVTY('OpenBSC')
+        cls.vty = osmocom.vty.base.BaseVTY('OpenBSC')
 
-        cls.original_socket_obj = osmocom.vty.socket
+        cls.original_socket_obj = osmocom.vty.base.socket
         cls.mock_socket_obj = mock.MagicMock()
-        osmocom.vty.socket.socket = mock.Mock()
-        osmocom.vty.socket.socket.return_value = cls.mock_socket_obj
+        osmocom.vty.base.socket.socket = mock.Mock()
+        osmocom.vty.base.socket.socket.return_value = cls.mock_socket_obj
 
         # We also need to mock the check the recv loop uses to see if there more to read
-        cls.original_select = osmocom.vty.select
-        osmocom.vty.select = mock.Mock()
+        cls.original_select = osmocom.vty.base.select
+        osmocom.vty.base.select = mock.Mock()
 
     @classmethod
     def tearDownClass(cls):
-        osmocom.vty.select = cls.original_select
-        osmocom.vty.socket = cls.original_socket_obj
+        osmocom.vty.base.select = cls.original_select
+        osmocom.vty.base.socket = cls.original_socket_obj
 
     def setUp(self):
-        osmocom.vty.select.select = self.select_fixture
+        osmocom.vty.base.select.select = self.select_fixture
         self.mock_socket_obj.sendall = self.sendall_fixture
         self.mock_socket_obj.recv = self.recv_fixture
 
@@ -352,7 +352,7 @@ class DroppedConnectionTestCase(MockSocketTestCase):
             for i in range(self.NUM_READS):
                 v.sendrecv('')
             # Call will fail on read
-            with self.assertRaises(osmocom.exceptions.VTYException):
+            with self.assertRaises(osmocom.vty.exceptions.VTYException):
                 v.sendrecv('')
             self.assertEqual(self.vty._socket_obj, None)
         self.assertEqual(self.vty._socket_obj, None)
@@ -372,7 +372,7 @@ class DroppedConnectionTestCase(MockSocketTestCase):
             for i in range(self.NUM_WRITES):
                 v.sendrecv('')
             # Call will fail on write
-            with self.assertRaises(osmocom.exceptions.VTYException):
+            with self.assertRaises(osmocom.vty.exceptions.VTYException):
                 v.sendrecv('')
             self.assertEqual(self.vty._socket_obj, None)
         self.assertEqual(self.vty._socket_obj, None)

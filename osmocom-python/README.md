@@ -42,6 +42,12 @@ with osmocom.subscribers.Subscribers() as s:
 
 ### releases
 * 0.0.1 - basic utilities for managing the network, bts and subscribers
+* 0.1.0 - Add GSUP server
+
+### development
+Changes to the subscriber data protobuf need to be regenerated. A Makefile is
+included in osmoocom/gsup/store/protos for this purpose. Run `sudo make` to install
+dependencies and generate the protobuf code.
 
 ### testing
 To run the `nose` tests run:
