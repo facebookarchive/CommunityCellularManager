@@ -15,7 +15,6 @@ from __future__ import unicode_literals
 
 import calendar
 import datetime
-import decimal
 import json
 import logging
 import time
@@ -31,13 +30,11 @@ from django.db import models
 from django.db import transaction
 from django.db.models import F
 from django.db.models.signals import post_save
-from guardian.shortcuts import (assign_perm, get_objects_for_user,
-        get_users_with_perms)
+from guardian.shortcuts import (assign_perm, get_users_with_perms)
 from rest_framework.authtoken.models import Token
 import django.utils.timezone
 import itsdangerous
 import pytz
-import requests
 import stripe
 
 from ccm.common import crdt, logger
@@ -46,7 +43,6 @@ from endagaweb.billing import tier_setup
 from endagaweb.celery import app as celery_app
 from endagaweb.notifications import bts_up
 from endagaweb.util import currency as util_currency
-from endagaweb.util.parse_destination import parse_destination
 from endagaweb.util import dbutils as dbutils
 
 stripe.api_key = settings.STRIPE_API_KEY
@@ -202,6 +198,7 @@ class Transaction(models.Model):
         ('local_sms', 'local_sms'),
         ('local_call', 'local_call'),
         ('local_recv_call', 'local_recv_call'),
+        ('local_recv_sms', 'local_recv_sms'),
         ('number.nexmo.monthly', 'number.nexmo.monthly'),
     )
     kind = models.CharField(max_length=100, choices=transaction_kinds)
