@@ -27,6 +27,7 @@ SMS_KINDS = [
     'error_sms']
 USAGE_EVENT_KINDS = CALL_KINDS + SMS_KINDS + ['gprs']
 TIMESERIES_STAT_KEYS = [
+    'ccch_sdcch4_load', 'tch_f_max', 'tch_f_load', 'sdcch8_max', 'tch_f_pdch_load', 'tch_f_pdch_max', 'tch_h_load', 'tch_h_max', 'sdcch8_load', 'ccch_sdcch4_max',
     'sdcch_load', 'sdcch_available', 'tchf_load', 'tchf_available',
     'pch_active', 'pch_total', 'agch_active', 'agch_pending',
     'gprs_current_pdchs', 'gprs_utilization_percentage', 'noise_rssi_db',
