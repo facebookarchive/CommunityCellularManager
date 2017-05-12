@@ -14,8 +14,17 @@ import csv
 import datetime
 import json
 import time
+import os
 import paramiko
 import zipfile
+try:
+    # we only import zlib here to check that it is available
+    # (why would it not be?), so we have to disable the 'unused' warning
+    import zlib  # noqa: F401
+    zip_compression = zipfile.ZIP_DEFLATED
+except:
+    zip_compression = zipfile.ZIP_STORED
+
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -23,7 +32,6 @@ from django.template.loader import render_to_string
 from django.db.models import Avg, Count
 import django.utils.timezone
 import requests
-from django.utils import timezone as django_utils_timezone
 
 from endagaweb.celery import app
 from endagaweb.models import BTS
@@ -70,8 +78,9 @@ def usageevents_to_sftp(self):
 
     local_path = "/tmp/"
     destination_path = 'TIP/data/'
-    usageevent_data_file = "usageevent_%s.csv" % (datetime.datetime.now().date(),)
-    zip_file = "usageevent_%s.zip" % (datetime.datetime.now().date(),)
+    now = datetime.datetime.now().date()
+    usageevent_data_file = "usageevent_%s.csv" % (now, )
+    zip_file = "usageevent_%s.zip" % (now, )
 
     writer = csv.writer(open(local_path + usageevent_data_file, 'wb'))
     writer.writerow(headers)
@@ -108,18 +117,12 @@ def usageevents_to_sftp(self):
             print "Failure: %s" % e
             continue
 
-    try:
-        import zlib
-        compression = zipfile.ZIP_DEFLATED
-    except:
-        compression = zipfile.ZIP_STORED
-
-    zipf = zipfile.ZipFile(local_path + zip_file, mode='w')
-
-    try:
-        zipf.write(local_path + usageevent_data_file, compress_type=compression)
-    finally:
-        zipf.close()
+    with zipfile.ZipFile(local_path + zip_file, mode='w') as zipf:
+        zipf.write(local_path + usageevent_data_file,
+                   compress_type=zip_compression)
+        # if we successfully wrote the CSV file into the ZIP archive we can
+        # now delete the CSV file.
+        os.remove(local_path + usageevent_data_file)
 
     host = settings.SFTP['SFTP_HOST']
     username = settings.SFTP['SFTP_USERNAME']
@@ -127,8 +130,11 @@ def usageevents_to_sftp(self):
     transport = paramiko.Transport(host)
     transport.connect(username=username, password=password)
     sftp = paramiko.SFTPClient.from_transport(transport)
-    sftp.put(local_path + zip_file, destination_path + zip_file)
+    sftp.put(local_path + zip_file, destination_path + zip_file, confirm=True)
     transport.close()
+    # no exception raised: assume ZIP successfully transferred and delete
+    # it (can always be recreated).
+    os.remove(local_path + zip_file)
 
 
 @app.task(bind=True)
@@ -271,8 +277,6 @@ def facebook_ods_checkin(self):
     for bts in BTS.objects.iterator():
         if bts.last_active:
             network = bts.network
-            checkin_secs = (django.utils.timezone.now() -
-                  bts.last_active).total_seconds()
             ent_name = 'etagecom.%s.%s.%s.%s' % (network.environment,
                 network.id, network.name, bts.uuid)
             datapoint = {'entity': ent_name,
