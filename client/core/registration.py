@@ -273,8 +273,24 @@ def register(eapi):
                 cert = f.read()
 
         # validate client cert against CA
-        system_utilities.verify_cert(
-            cert, os.path.dirname(VPN_CONF) + '/etage-bundle.crt')
+        cert_verified = False
+        cert_dir = os.path.dirname(VPN_CONF)
+        cert_path = os.path.join(cert_dir, 'endaga-client.crt')
+        for c in ['etage-bundle.local.crt', 'etage-bundle.crt']:
+            ca_path = os.path.join(cert_dir, c)
+            if system_utilities.verify_cert(cert, cert_path, ca_path):
+                logger.info("Verified client cert against CA %s" % (ca_path, ))
+                cert_verified = True
+                break
+        if not cert_verified:
+            """
+            Any error requires manual intervention, i.e., updating the CA
+            cert, and hence cannot be resolved by retrying
+            registration. Therefore we just raise an exception that
+            terminates the agent.
+            """
+            raise SystemExit("Unable to verify client cert, terminating")
+
         conf['bts_registered'] = True
 
 

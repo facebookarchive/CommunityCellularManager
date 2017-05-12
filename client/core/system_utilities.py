@@ -15,6 +15,7 @@ import glob
 import gzip
 import os
 import re
+import subprocess
 
 import dateutil.parser
 import dateutil.tz
@@ -162,12 +163,12 @@ def upgrade_endaga(channel):
         return
     logger.notice('upgrading the endaga metapackage with channel %s' % channel)
     # Update packages.
-    response = delegator.run('sudo apt get update')
+    response = delegator.run('sudo apt-get update')
     if response.return_code != 0:
         message = 'Error while running "apt-get update": %s' % response.out
         logger.error(message)
     # Try a dry-run of the upgrade.
-    command = ('sudo apt get install --assume-yes --dry-run'
+    command = ('sudo apt-get install --assume-yes --dry-run'
                ' --only-upgrade -t %s endaga' % channel)
     response = delegator.run(command)
     if response.return_code != 0:
@@ -176,7 +177,7 @@ def upgrade_endaga(channel):
         logger.error(message)
         return
     # Upgrade just the metapackage.
-    command = ('sudo apt get install --assume-yes'
+    command = ('sudo apt-get install --assume-yes'
                ' --only-upgrade -t %s endaga' % channel)
     response = delegator.run(command)
     if response.return_code != 0:
@@ -244,19 +245,16 @@ def sortable_version(version):
     return '.'.join(bit.zfill(5) for bit in version.split('.'))
 
 
-def verify_cert(_, ca_file):
-    """ Validate that cert has been signed by the Etage CA. """
-    r = delegator.run("openssl verify -CAfile %s %s/endaga-client.crt" %
-                  (ca_file, os.path.dirname(ca_file)))
-    if r.return_code != 0:
-        """
-        Any error requires manual intervention, i.e., updating the CA
-        cert, and hence cannot be resolved by retrying
-        registration. Therefore we just raise an exception that
-        terminates the agent.
-        """
-        msg = ("Unable to verify client cert against CA bundle:\n%s" %
-               (r.out))
-        logger.critical(msg)
-        raise SystemExit(msg)
-    logger.info("Verified client cert against CA %s" % (ca_file, ))
+def verify_cert(_, cert_path, ca_path):
+    """ Validate that cert has been signed by the specified CA. """
+    try:
+        # ugh, gotta explicitly send stderr to /dev/null with subprocess
+        with open("/dev/null", "wb") as dev_null:
+            subprocess.check_output("openssl verify -CAfile %s %s" %
+                                    (ca_path, cert_path),
+                                    shell=True, stderr=dev_null)
+        return True
+    except subprocess.CalledProcessError as ex:
+        logger.warning("Unable to verify %s against %s: %s" %
+                       (cert_path, ca_path, ex.output))
+    return False

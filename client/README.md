@@ -56,6 +56,30 @@ development workflows where just want to install a `.deb` and not
 resolve dependencies.
 
 
+Client Certificates
+-------------------
+
+A key component in the CCM security architecture is the VPN that
+connects each client to the cloud environment. It is **ESSENTIAL**
+that the client is using the same CA bundle as the certifier and VPN
+servers that run in the cloud; the client registration process uses
+OpenSSL to verify this and registration will fail if not. This file is
+called `etage-bundle.crt`: on the client and VPN it is placed in the
+`/etc/openvpn` directory, in the certifier it gets created in the
+`pki` subdirectory (as `ca.crt`) and copied to the top-level
+`certifier` directory (as `etage-bundle.crt`).
+
+When installing packages from the CCM package repository the standard
+'Etagecom' CA bundle will be included, and hence the installation of
+that package will overwrite `/etc/openvpn/etage-bundle.crt`. In order
+to support use of a local CA file, within the constraints of the
+current packaging scheme, the client also checks
+`etage-bundle.local.crt` when attempting to verify the client
+certificate. Hence, if copying a locally generated CA bundle into the
+client VM it is strongly recommended that it be copied to
+`/etc/openvpn/etage-bundle.local.crt` in order to avoid subsequent
+replacement by the standard packages.
+
 Testing
 -------
 
