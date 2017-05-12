@@ -8,7 +8,7 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
@@ -31,13 +31,13 @@ def get_version(package_name):
 
 config_db = ConfigDB()
 packages = [('endaga', ['endaga-openbts',
-                        'endaga-osmocom']), 
+                        'endaga-osmocom']),
             ('freeswitch', ['freeswitch']),
             ('gsm', ['openbts-public',
-                     'osmocom-nitb']), 
-            ('python-endaga-core', ['python-endaga-core']),
+                     'osmocom-nitb']),
+            ('python-endaga-core', ['python3-endaga-core']),
             ('python-gsm', ['python-openbts',
-                            'python-osmocom']),
+                            'python3-osmocom']),
         ]
 for package in packages:
     key = package[0]
@@ -49,5 +49,3 @@ for package in packages:
             key = '%s_version' % key
             config_db[key] = res
             break
-
-
