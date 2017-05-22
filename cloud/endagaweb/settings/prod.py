@@ -35,7 +35,7 @@ DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 # Hosts/domain names that are valid for this site; required if DEBUG is False.
 # ALLOWED_HOSTS env variable must be a comma-separated list of domains
 ALLOWED_HOSTS = [_.strip() for _ in
-                 os.environ.get('ALLOWED_HOSTS', "localhost").split(",")]
+                 os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')]
 
 # List of finder classes that know how to find static files in various
 # locations.

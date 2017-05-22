@@ -69,6 +69,9 @@ urlpatterns = [
     # Our homepage.
     url(r'^$', endagaweb.views.static.LandingIndexView.as_view()),
 
+    # ELB testing endpoint
+    url(r'^django-status', endagaweb.views.static.TestView.as_view()),
+
     # Notification emails and phone nnumbers
     url(r'^account/notify_emails/update', endagaweb.views.user.update_notify_emails),
     url(r'^account/notify_numbers/update', endagaweb.views.user.update_notify_numbers),
