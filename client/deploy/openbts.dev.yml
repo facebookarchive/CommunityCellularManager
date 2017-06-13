@@ -57,6 +57,7 @@
           - libspeexdsp-dev
           - libldns-dev
           - libedit-dev
+          - libssl-dev
 
     - name: Setup build requirements for python packages
       apt: pkg={{ item }} state=present update_cache=no

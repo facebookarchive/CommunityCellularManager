@@ -39,6 +39,7 @@
       with_items:
           - ruby-dev
           - build-essential
+          - libssl-dev
 
     - name: Setup FPM so we can build packages
       shell: gem install fpm
@@ -46,10 +47,17 @@
     - name: Setup build requirements for python packages
       apt: pkg={{ item }} state=present update_cache=no
       with_items:
-          - python3-pip
           - python3-babel
           - python3-dev
           - python3-setuptools
+
+    - name: Get pip3 installer (not from debian repositories, uses ancient version)
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+
+    - name: Install pip
+      command: python3 /tmp/get-pip.py
 
     - name: Setup requirements for building FS from source (needed to generate working python modules)
       apt: pkg={{ item }} state=present update_cache=no
