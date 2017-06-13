@@ -20,9 +20,6 @@
 
     - include: openbts.yml
 
-    - name: Remove production Etage repo
-      apt_repository: repo='deb http://repo.etagecom.io stable main' state=absent update_cache=no
-
     - name: Make sure (empty) local repo structure exists
       become: no
       shell: mkdir -p ~/endaga-packages/dists/localdev/main/binary-i386/

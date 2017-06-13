@@ -24,9 +24,6 @@
 
     - include: osmocom.yml
 
-    - name: Remove production Etage repo
-      apt_repository: repo='deb http://repo.etagecom.io stable main' state=absent update_cache=no
-
     - name: Add local repo (for local development)
       apt_repository: repo='deb file:/home/vagrant/endaga-packages localdev main' state=present update_cache=no
 
