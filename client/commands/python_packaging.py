@@ -90,7 +90,7 @@ def package_python_openbts(package_requirements='no'):
     if package_requirements == 'yes':
         package_install_requirements(path)
     with cd(path):
-        run('fpm -s python -t %s setup.py' % env.pkgfmt)
+        _run_fpm_python('setup.py')
         run('mv *.%s ~/endaga-packages' % env.pkgfmt)
 
 def package_python_osmocom(package_requirements='no'):
