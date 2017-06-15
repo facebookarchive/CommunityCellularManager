@@ -1,0 +1,305 @@
+{% extends "dashboard/layout.html" %}
+{% comment %}
+Copyright (c) 2016-present, Facebook, Inc.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+{% endcomment %}
+{% load apptags %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+
+
+{% block title %}
+    {% if network.name %}
+        {% tmpl_const "SITENAME" %} | "{{ network.name }}"
+    {% else %}
+        {% tmpl_const "SITENAME" %} | Network
+    {% endif %}
+{% endblock %}
+
+{% block pagestyle %}
+<style>
+
+    .btn{
+        margin-left: 5px;
+    }
+    .btn:last-child{
+        margin-left: 0;
+    }
+    table tbody tr.highlight td {
+        background-color: #ddd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {% include "dashboard/network_detail/header.html" with network=network %}
+
+    <div class='row'>
+        {% include "dashboard/network_detail/nav.html" with active_tab='network-denominations' %}
+
+        <div class='content col-xs-12 col-sm-10 col-md-6'>
+            {% for message in messages %}
+            <div class="message alert alert-{{ message.tags }}">
+                <a href="#" class="close" data-dismiss="alert">&times;</a>
+                {{ message }}
+            </div>
+            {% endfor %}
+            <div class="table-container">
+                {% if denomination %}
+                {% render_table denominations_table %}
+                {% else %}
+                    <p>There are currently no denominations associated with this network.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% if user_profile.user.is_staff %}
+        <div class='content col-xs-12 col-sm-10 col-md-4'>
+            <div class="panel panel-default">
+                <div class="panel-heading">Create Denomination</div>
+                <div class="panel-body">
+                    <div class="row-fluid">
+                        <form action="/dashboard/network/denominations" id="network_form" name="network_form" method="POST"
+                              data-toggle="validator" class="form-horizontal">{% csrf_token %}
+                            <div class="form-group row">
+                                <div class="col-md-12">
+                                    <label for="start_amount" id="ariaLable" class="col-3 col-form-label">
+                                        Start Amount <span class="aseriskField">*</span>
+                                    </label>
+                                    <div class="input-group col-xs-8">
+                                        <input class="form-control number" type="text" id="start_amount" name="start_amount" autocomplete="off"
+                                               placeholder="Enter start amount" maxlength="10" required/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-12">
+                                    <label for="end_amount" id="ariaLable" class="col-3 col-form-label">
+                                        End Amount <span class="aseriskField">*</span>
+                                    </label>
+                                    <div class="input-group col-xs-8">
+                                        <input class="form-control number" type="text" id="end_amount" name="end_amount" autocomplete="off"
+                                               placeholder="Enter end amount" maxlength="10" required/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-12">
+                                    <label for="start_amount" id="ariaLable" class="col-3 col-form-label">
+                                        Validity (days)<span class="aseriskField">*</span>
+                                    </label>
+                                    <div class="input-group col-xs-8">
+                                        <input class="form-control" type="text" id="validity_days" name="validity_days" autocomplete="off"
+                                               placeholder="Enter validity as number of days" required/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-12">
+                                    <div class="input-group col-xs-8">
+                                        <input type="hidden" id="dnm_id" name="dnm_id" value="0" />
+                                        <input type="submit" id="submit" class="btn btn-primary pull-right" value="Create"/>
+                                        <input type="button" id="cancel" class="btn btn-primary pull-right" value="Cancel" style="display: none;"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div class='modal fade' id='delete-denom-modal'>
+        <div class='modal-dialog'>
+            <div class='modal-content'>
+                <div class='modal-header'>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class='modal-title'>
+                        Confirmation
+                    </h4>
+                </div>
+                <div class='modal-body'>
+                    <h4>
+                        Are you sure you want to delete "<span id="denom_text"></span>"?
+                    </h4>
+                </div>
+                <div class='modal-footer'>
+                    <button type='button' class='btn btn-default' data-dismiss='modal'>Cancel</button>
+                    <button class='btn btn-primary' type='button' id='delete-confirm'>Confirm</button>
+                    <div id='user-messages-container'></div>
+                </div>
+            </div>
+        </div>
+    </div><!-- /.delete-user-modal -->
+
+{% endblock %}
+{% block js %}
+
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.10.0/jquery.validate.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('.number').keypress(function (event) {
+                var $this = $(this);
+                if ((event.which != 46 || $this.val().indexOf('.') != -1) &&
+                    ((event.which < 48 || event.which > 57) &&
+                    (event.which != 0 && event.which != 8))) {
+                    event.preventDefault();
+                }
+
+                var text = $(this).val();
+                if(text.length>= 10){
+                    event.preventDefault();
+                    return;
+                }
+                if ((event.which == 46) && (text.indexOf('.') == -1)) {
+                    setTimeout(function () {
+                        if ($this.val().substring($this.val().indexOf('.')).length > 3) {
+                            $this.val($this.val().substring(0, $this.val().indexOf('.') + 3));
+                        }
+                    }, 1);
+                }
+
+                if ((text.indexOf('.') != -1) &&
+                    (text.substring(text.indexOf('.')).length > 2) &&
+                    (event.which != 0 && event.which != 8) &&
+                    ($(this)[0].selectionStart >= text.length - 2)) {
+                    event.preventDefault();
+                }
+            });
+
+            $('.number').bind("paste", function (e) {
+                var text = e.originalEvent.clipboardData.getData('Text');
+                if ($.isNumeric(text)) {
+                    if ((text.substring(text.indexOf('.')).length > 3) && (text.indexOf('.') > -1)) {
+                        e.preventDefault();
+                        $(this).val(text.substring(0, text.indexOf('.') + 3));
+                    }
+                }
+                else {
+                    e.preventDefault();
+                }
+            });
+            $("#validity_days").keydown(function (e) {
+                // Allow: backspace, delete, tab, escape and enter
+                if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110]) !== -1 ||
+                    // Allow: Ctrl+A, Command+A
+                    (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                    // Allow: home, end, left, right, down, up
+                    (e.keyCode >= 35 && e.keyCode <= 40)) {
+                    // let it happen, don't do anything
+                    return;
+                }
+                // Ensure that it is a number and stop the keypress
+                if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                    e.preventDefault();
+                }
+            });
+
+            $('#network_form').validate({
+                highlight: function (element) {
+                    $(element).closest('.form-group').addClass('has-error');
+                },
+                unhighlight: function (element) {
+                    $(element).closest('.form-group').removeClass('has-error');
+                },
+                errorElement: 'span',
+                errorClass: 'help-block',
+                errorPlacement: function (error, element) {
+                    if (element.parent('.input-group').length) {
+                        error.insertAfter(element.parent());
+                    } else {
+                        error.insertAfter(element);
+                    }
+                }
+            });
+            $('#cancel').click(function () {
+                $('#dnm_id').val(0);
+                $('#start_amount').val('');
+                $('#end_amount').val('');
+                $('#validity_days').val('');
+                $('.panel-heading').html("Create Denomination");
+                $('#submit').val("Create");
+                $('#cancel').hide();
+                $('table tbody tr').removeClass('highlight');
+            });
+            $('table tbody tr').on('click', function(event) {
+                $(this).addClass('highlight').siblings().removeClass('highlight');
+            });
+        });
+
+        function doAction(action, id) {
+            $("#dnm_id").val(id);
+            $.ajax({
+                url: '/dashboard/network/denominations?id=' + id,
+                type: 'GET',
+                success: function (response) {
+                    if(action == 'edit') {
+                        $('#network_form').validate().resetForm();
+                        $(".form-group").removeClass("has-error");
+
+                        $('#dnm_id').val(response.data.id);
+                        $('#start_amount').val(response.data.start_amount);
+                        $('#end_amount').val(response.data.end_amount);
+                        $('#validity_days').val(response.data.validity_days);
+                        $('.panel-heading').html("Edit Denomination");
+                        $('#submit').val("Update");
+                        $('#cancel').show();
+                    } else {
+                        var denom_text = response.data.start_amount+"-"+response.data.end_amount+" ("+response.data.validity_days+" days)";
+                        $("#denom_text").html(denom_text);
+                    }
+                }
+            });
+        }
+        $('#delete-confirm').click(function () {
+            // Show a 'working' message.
+            var message = 'Working..';
+            var html = "<div class='alert alert-success'>" + message + "</div>";
+            $('#user-messages-container').html(html).show();
+            // Post to the endagaweb API.
+            $.ajax({
+                url: '/dashboard/network/denominations?id=' + $("#dnm_id").val(),
+                type: 'DELETE',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                },
+                success: function (response) {
+                    // Show a success message after a small delay.
+                    // Then, after some more time has passed, redirect back to /subscribers.
+                    setTimeout(function () {
+                        var message = 'Done!, redirecting..';
+                        var html = "<div class='alert alert-success'>" + message + "</div>";
+                        $('#user-messages-container').html(html).show();
+                    }, 1000);
+                    setTimeout(function () {
+                        $('#delete-user-modal').modal('hide');
+                        window.location.href = '/dashboard/network/denominations';
+                    }, 2000);
+                },
+                error: function (response) {
+                    // Show an error message after a small delay.
+                    setTimeout(function () {
+                        var message = 'Error: ' + response.status;
+                        var html = "<div class='alert alert-danger'>" + message + "</div>";
+                        $('#user-messages-container').html(html).show();
+                    }, 800);
+                },
+            });
+
+        });
+    </script>
+
+{% endblock %}

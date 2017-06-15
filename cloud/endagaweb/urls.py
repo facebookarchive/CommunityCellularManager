@@ -10,7 +10,7 @@ of patent rights can be found in the PATENTS file in the same directory.
 
 from django.conf import settings
 from django.conf.urls import include, url
-from django.contrib import admin, auth
+from django.contrib import admin
 import django.contrib.auth.views
 
 import endagaweb.views
@@ -142,6 +142,9 @@ urlpatterns = [
     url(r'^dashboard/network/prices$',
         endagaweb.views.network.NetworkPrices.as_view(),
         name='network-prices'),
+    url(r'^dashboard/network/denominations$',
+        endagaweb.views.network.NetworkDenomination.as_view(),
+        name='network-denominations'),
     url(r'^dashboard/network/inactive-subscribers$',
         endagaweb.views.network.NetworkInactiveSubscribers.as_view(),
         name='network-inactive-subscribers'),

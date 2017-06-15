@@ -10,18 +10,20 @@ of patent rights can be found in the PATENTS file in the same directory.
 
 import datetime
 import time
+import json
 
 from django import http
 from django import template
 from django.contrib import messages
-from django.core.exceptions import ValidationError
 from django.core import urlresolvers
 from django.db import transaction
 from django.shortcuts import redirect
 import django_tables2 as tables
 from guardian.shortcuts import get_objects_for_user
+from django.conf import settings
 
-from ccm.common.currency import parse_credits, CURRENCIES, DEFAULT_CURRENCY
+from ccm.common.currency import parse_credits, humanize_credits, \
+    CURRENCIES, DEFAULT_CURRENCY
 from endagaweb import models
 from endagaweb.forms import dashboard_forms
 from endagaweb.views.dashboard import ProtectedView
@@ -453,3 +455,199 @@ class NetworkSelectView(ProtectedView):
         user_profile.network = network
         user_profile.save()
         return http.HttpResponseRedirect(request.META.get('HTTP_REFERER', '/dashboard'))
+
+
+class NetworkDenomination(ProtectedView):
+    """Assign denominations bracket for recharge/adjust-credit in network."""
+
+    def get(self, request):
+        """Handles GET requests."""
+        user_profile = models.UserProfile.objects.get(user=request.user)
+        network = user_profile.network
+        currency = network.subscriber_currency
+
+        # Count the associated denomination with selected network.
+        denom = models.NetworkDenomination.objects.filter(network=network)
+        denom_count = denom.count()
+
+        dnm_id = request.GET.get('id', None)
+        if dnm_id:
+            response = {
+                'status': 'ok',
+                'messages': [],
+                'data': {}
+            }
+            denom = models.NetworkDenomination.objects.get(id=dnm_id)
+            denom_data = {
+                'id': denom.id,
+                'start_amount': humanize_credits(denom.start_amount,
+                                                 CURRENCIES[currency]).amount,
+                'end_amount': humanize_credits(denom.end_amount,
+                                               CURRENCIES[currency]).amount,
+                'validity_days': denom.validity_days
+            }
+            response["data"] = denom_data
+            return http.HttpResponse(json.dumps(response),
+                                     content_type="application/json")
+
+        # Configure the table of denominations. Do not show any pagination
+        # controls if the total number of donominations is small.
+        if not user_profile.user.is_staff:
+            denom_table = django_tables.DenominationListTable(list(denom))
+        else:
+            denom_table = django_tables.DenominationTable(list(denom))
+        towers_per_page = 8
+        paginate = False
+        if denom > towers_per_page:
+            paginate = {'per_page': towers_per_page}
+        tables.RequestConfig(request, paginate=paginate).configure(denom_table)
+
+        # Set the context with various stats.
+        context = {
+            'networks': get_objects_for_user(request.user, 'view_network',
+                                             klass=models.Network),
+            'currency': CURRENCIES[user_profile.network.subscriber_currency],
+            'user_profile': user_profile,
+            'network': network,
+            'number_country': NUMBER_COUNTRIES[network.number_country],
+            'denomination': denom_count,
+            'denominations_table': denom_table,
+        }
+        # Render template.
+        info_template = template.loader.get_template(
+            'dashboard/network_detail/denomination.html')
+        html = info_template.render(context, request)
+        return http.HttpResponse(html)
+
+    def post(self, request):
+        """Operators can use this API to add denomination to a network.
+
+        These denomination bracket will be used to recharge subscriber,
+        set balance validity and status
+        """
+        user_profile = models.UserProfile.objects.get(user=request.user)
+        network = user_profile.network
+        try:
+            currency = network.subscriber_currency
+            start_amount_raw = request.POST.get('start_amount')
+            start_amount = parse_credits(start_amount_raw,
+                                         CURRENCIES[currency]).amount_raw
+            end_amount_raw = request.POST.get('end_amount')
+            end_amount = parse_credits(end_amount_raw,
+                                       CURRENCIES[currency]).amount_raw
+            validity_days = int(request.POST.get('validity_days')) or 0
+
+            dnm_id = int(request.POST.get('dnm_id')) or 0
+            if validity_days > settings.ENDAGA['MAX_VALIDITY_DAYS']:
+                message = ('Validity days value exceeds maximum permissible '
+                           'limit (%s Days).' %
+                           (settings.ENDAGA['MAX_VALIDITY_DAYS']))
+                messages.error(
+                    request, message,
+                    extra_tags='alert alert-danger')
+                return redirect(urlresolvers.reverse('network-denominations'))
+            elif start_amount <= 0 or end_amount <= 0:
+                messages.error(request,
+                               'Enter value >0 for start/end amount.',
+                               extra_tags='alert alert-danger')
+                return redirect(urlresolvers.reverse('network-denominations'))
+            elif validity_days <= 0:
+                messages.error(
+                    request, 'Validity can not be 0 day.',
+                    extra_tags='alert alert-danger')
+                return redirect(urlresolvers.reverse('network-denominations'))
+            elif end_amount <= start_amount:
+                messages.error(
+                    request, 'End amount should be greater than start amount.',
+                    extra_tags='alert alert-danger')
+                return redirect(urlresolvers.reverse('network-denominations'))
+
+            user_profile = models.UserProfile.objects.get(user=request.user)
+            with transaction.atomic():
+                if dnm_id > 0:
+                    try:
+                        denom = models.NetworkDenomination.objects.get(
+                            id=dnm_id)
+                        # Check for existing denomination range exist.
+                        denom_exists = \
+                          models.NetworkDenomination.objects.filter(
+                              end_amount__gte=start_amount,
+                              start_amount__lte=end_amount,
+                              network=user_profile.network).exclude(
+                                  id=dnm_id).count()
+                        if denom_exists:
+                            messages.error(
+                                request, 'Denomination range already exists.',
+                                extra_tags='alert alert-danger')
+                            return redirect(
+                                urlresolvers.reverse('network-denominations'))
+                        denom.network = user_profile.network
+                        denom.start_amount = start_amount
+                        denom.end_amount = end_amount
+                        denom.validity_days = validity_days
+                        denom.save()
+                        messages.success(
+                            request, 'Denomination is updated successfully.',
+                            extra_tags='alert alert-success')
+                    except models.NetworkDenomination.DoesNotExist:
+                        messages.error(
+                            request, 'Invalid denomination ID.',
+                            extra_tags='alert alert-danger')
+                        return redirect(
+                            urlresolvers.reverse('network-denominations'))
+                else:
+                    # Check for existing denomination range exist.
+                    denom_exists = models.NetworkDenomination.objects.filter(
+                        end_amount__gte=start_amount,
+                        start_amount__lte=end_amount,
+                        network=user_profile.network).count()
+                    if denom_exists:
+                        messages.error(
+                            request, 'Denomination range already exists.',
+                            extra_tags='alert alert-danger')
+                        return redirect(
+                            urlresolvers.reverse('network-denominations'))
+                    # Create new denomination for selected network
+                    denom = models.NetworkDenomination(
+                        network=user_profile.network)
+                    denom.network = user_profile.network
+                    denom.start_amount = start_amount
+                    denom.end_amount = end_amount
+                    denom.validity_days = validity_days
+                    denom.save()
+                    messages.success(
+                        request, 'Denomination is created successfully.',
+                        extra_tags='alert alert-success')
+        except Exception:
+            messages.error(request,
+                           'Invalid validity value. Enter greater than '
+                           '0 digit value',
+                           extra_tags='alert alert-danger')
+        return redirect(urlresolvers.reverse('network-denominations'))
+
+    def delete(self, request):
+        """Handles delete requests."""
+        response = {
+            'status': 'ok',
+            'messages': [],
+        }
+        dnm_id = request.GET.get('id') or False
+        if dnm_id:
+            try:
+                denom = models.NetworkDenomination.objects.get(id=dnm_id)
+                denom.delete()
+                response['status'] = 'success'
+                messages.success(request, 'Denomination deleted successfully.',
+                                 extra_tags='alert alert-success')
+            except models.NetworkDenomination.DoesNotExist:
+                response['status'] = 'failed'
+                messages.error(
+                    request, 'Invalid denomination ID.',
+                    extra_tags='alert alert-danger')
+        else:
+            response['status'] = 'failed'
+            messages.error(
+                request, 'Invalid request data.',
+                extra_tags='alert alert-danger')
+        return http.HttpResponse(json.dumps(response),
+                                 content_type="application/json")
