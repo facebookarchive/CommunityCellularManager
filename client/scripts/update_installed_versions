@@ -36,7 +36,7 @@ packages = [('endaga', ['endaga-openbts',
             ('gsm', ['openbts-public',
                      'osmocom-nitb']),
             ('python-endaga-core', ['python3-endaga-core']),
-            ('python-gsm', ['python-openbts',
+            ('python-gsm', ['python3-openbts',
                             'python3-osmocom']),
         ]
 for package in packages:
