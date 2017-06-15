@@ -9,6 +9,8 @@ of patent rights can be found in the PATENTS file in the same directory.
 
 """Tasks for setting up and building our client software."""
 
+import re
+
 from fabric.api import cd, local, env, run
 from fabric.operations import sudo
 
@@ -31,26 +33,37 @@ except ImportError:
     from commands.shipping import shipit
 
 # Global packaging settings
-env.pkgfmt = "deb"
-env.gsmeng = "openbts"
-env.depmap = {}
+# Use 'setdefault' so as not to override prior settings, e.g., --set foo=bar
+env.setdefault("pkgfmt", "deb")
+env.setdefault("gsmeng", "openbts")
+env.setdefault("depmap", {})
+
+
+def get_vagrant_conf(vm):
+    vm_conf = local('vagrant ssh-config %s' % (vm, ), capture=True)
+    params = {}
+    for line in vm_conf.split('\n'):
+        vm_param = re.match('^ +(HostName|User|Port|IdentityFile) (.*)', line)
+        if vm_param:
+            # update expects a sequence of pairs, groups() is a pair
+            params.update((vm_param.groups(), ))
+    return (params["HostName"],
+            params["Port"],
+            params["User"],
+            # some installations seem to have quotes around the file location
+            params["IdentityFile"].strip('"'))
 
 
 def dev():
     """ Host config for local Vagrant VM. """
-    host = local('vagrant ssh-config %s | grep HostName' % (env.gsmeng,),
-                          capture=True).split()[1]
-    port = local('vagrant ssh-config %s | grep Port' % (env.gsmeng,),
-                          capture=True).split()[1]
-    env.hosts = ['vagrant@%s:%s' % (host,port)]
-    identity_file = local('vagrant ssh-config %s | grep IdentityFile' %
-                          (env.gsmeng,), capture=True)
+    host, port, user, identity_file = get_vagrant_conf(env.gsmeng)
+    env.hosts = ['%s@%s:%s' % (user, host, port)]
+
     # add Vagrant identity file to any values passed on command line
     if env.key_filename is None:
-        env.key_filename = []
-    # some installations seem to have quotes around the file location
-    env.key_filename.append(identity_file.split()[1].strip('"'))
-    print env.key_filename
+        env.key_filename = []  # no values passed
+    env.key_filename.append(identity_file)
+
 
 def lab():
     """ Host config for real hardware, lab version (i.e., default login). """
@@ -107,7 +120,7 @@ def package(package_requirements='yes', flavor=''):
         package_python_openbts(package_requirements)
     elif (env.gsmeng == "osmocom"):
         package_python_osmocom(package_requirements)
-        package_freeswitch_mod_smpp()
+        package_freeswitch()
 
     # Make .debs on the VM for all python code.
     package_python_sms_utilities(package_requirements)

@@ -19,15 +19,25 @@ from fabric.operations import get
 from fabric.operations import put
 
 
+BASE_DIR = '/home/vagrant/'
 COMMON_DIR = '../common'
+PKG_DIR = BASE_DIR + 'endaga-packages'
+
+
+def _prep(path, package_requirements='no'):
+    if not exists(path):
+        raise Exception('path %s does not exist on the VM, cannot package' %
+                        (path, ))
+    run('mkdir -p ' + PKG_DIR)  # idempotent
+    if package_requirements == 'yes':
+        package_install_requirements(path)
 
 
 def package_python_endaga_core(package_requirements='no',
                                package_common='yes'):
-    run('mkdir -p ~/endaga-packages')
-    path = '/home/vagrant/client'
-    if package_requirements == 'yes':
-        package_install_requirements(path)
+    path = BASE_DIR + 'client'
+    _prep(path, package_requirements)
+    old_gsmeng = env.gsmeng
     if package_common == 'yes':
         (f, modpath, desc) = imp.find_module('fabfile', [COMMON_DIR])
         if f is not None:
@@ -36,6 +46,7 @@ def package_python_endaga_core(package_requirements='no',
             execute(common.package_common_lib)
         else:
             raise ImportError("unable to load %s/fabfile.py" % (COMMON_DIR, ))
+    assert(old_gsmeng == env.gsmeng)
     with cd(path):
         #note flup is a python dep but included here
         #as the pip version breaks compat with python2 --kurtis
@@ -54,7 +65,6 @@ def package_python_endaga_core(package_requirements='no',
                         ' --before-install'
                         ' /home/vagrant/client/deploy/files/endaga-python-core/preinst'
                         ' setup.py')
-        run('mv *.%s ~/endaga-packages' % env.pkgfmt)
 
 
 def package_python_sms_utilities(package_requirements='no'):
@@ -62,17 +72,11 @@ def package_python_sms_utilities(package_requirements='no'):
 
     This is on pypi but our client builds will build from source.
     """
-    path = '/home/vagrant/sms_utilities'
-    if not exists(path):
-        print 'path %s does not exist on the VM, cannot package' % path
-        return
+    path = BASE_DIR + 'sms_utilities'
     print 'packaging %s' % path
-    run('mkdir -p ~/endaga-packages')
-    if package_requirements == 'yes':
-        package_install_requirements(path)
+    _prep(path, package_requirements)
     with cd(path):
         _run_fpm_python('setup.py')
-        run('mv *.%s ~/endaga-packages' % env.pkgfmt)
 
 
 def package_python_openbts(package_requirements='no'):
@@ -81,14 +85,9 @@ def package_python_openbts(package_requirements='no'):
     This is on pypi but we will use debs so that we can enforce a dependency on
     a specific version of openbts.
     """
-    path = '/home/vagrant/openbts-python'
-    if not exists(path):
-        print 'path %s does not exist on the VM, cannot package' % path
-        return
+    path = BASE_DIR + 'openbts-python'
     print 'packaging %s' % path
-    run('mkdir -p ~/endaga-packages')
-    if package_requirements == 'yes':
-        package_install_requirements(path)
+    _prep(path, package_requirements)
     with cd(path):
         _run_fpm_python('setup.py')
         run('mv *.%s ~/endaga-packages' % env.pkgfmt)
@@ -99,27 +98,19 @@ def package_python_osmocom(package_requirements='no'):
     This is on pypi but we will use debs so that we can enforce a dependency on
     a specific version of osmocom.
     """
-    path = '/home/vagrant/osmocom-python'
-    if not exists(path):
-        print 'path %s does not exist on the VM, cannot package' % path
-        return
+    path = BASE_DIR + 'osmocom-python'
     print 'packaging %s' % path
-    run('mkdir -p ~/endaga-packages')
-    if package_requirements == 'yes':
-        package_install_requirements(path)
     with cd(path):
         _run_fpm_python('setup.py')
-        run('mv *.%s ~/endaga-packages' % env.pkgfmt)
 
 
 def package_python_snowflake():
     """Packages snowflake.
     """
     print 'packaging snowflake from pypi'
-    run('mkdir -p ~/endaga-packages')
-    _run_fpm_python('--after-install'
-                    '~/client/deploy/files/snowflake/postinst snowflake')
-    run('mv python-snowflake*.%s ~/endaga-packages' % env.pkgfmt)
+    run('mkdir -p ' + PKG_DIR)
+    _run_fpm_python('--after-install ' + BASE_DIR +
+                    'client/deploy/files/snowflake/postinst snowflake')
 
 
 def package_python_freeswitch():
@@ -137,10 +128,8 @@ def package_python_freeswitch():
     the local freeswitch repo.  The tag we have used in the past is v1.4.6 and
     the FS repo itself is at https://stash.freeswitch.org/scm/fs/freeswitch.git
     """
-    path = '/home/vagrant/freeswitch'
-    if not exists(path):
-        print 'path %s does not exist on the VM, cannot package' % path
-        return
+    path = BASE_DIR + 'freeswitch'
+    _prep(path)
     package_name = 'python-freeswitch-endaga'
     with cd(path):
         version = run('git describe --tags').strip('v')
@@ -173,7 +162,6 @@ def package_python_freeswitch():
             ' src/mod/languages/mod_python/freeswitch.py='
             '/usr/share/freeswitch/scripts/freeswitch.py' % (
                 package_name, env.pkgfmt, version))
-        run('mkdir -p ~/endaga-packages')
         run('mv %s*.%s ~/endaga-packages/' % (package_name, env.pkgfmt))
 
 
@@ -196,10 +184,15 @@ def package_install_requirements(path):
                     # package and will be fulfilled from the Endaga repo.
                     print 'Ignoring dependency %s' % dependency
             # We don't want to clobber dependencies built previously.
-            run('mv -n *.%s ~/endaga-packages/ || exit 0' % env.pkgfmt)
-            run('rm *.%s || exit 0' % env.pkgfmt)
+            run('mv -n *.%s %s' % (env.pkgfmt, PKG_DIR), quiet=True)
+            run('rm *.%s' % (env.pkgfmt, ), quiet=True)
             run('rm package_metadata.json')
 
 def _run_fpm_python(command, **kwargs):
-    return run('fpm -s python --verbose --python-pip pip3 --python-bin python3 '
-               '--python-package-name-prefix python3 -t %s %s' % (env.pkgfmt, command), **kwargs)
+    res = run('fpm -s python --verbose '
+              '--python-pip pip3 --python-bin python3 '
+              '--python-package-name-prefix python3 -t %s %s' %
+              (env.pkgfmt, command), **kwargs)
+    if res.succeeded:
+        run('mv *.%s %s' % (env.pkgfmt, PKG_DIR))
+    return res
