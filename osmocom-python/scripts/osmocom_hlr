@@ -9,17 +9,18 @@ of patent rights can be found in the PATENTS file in the same directory.
 """
 
 import asyncio
+import functools
 import logging
 from osmocom.gsup.processor import Processor
-from osmocom.gsup.protocols.ipa import OsmoIPAccessProtocol
+from osmocom.gsup.protocols.ipa import OsmoIPAServer
 from osmocom.gsup.store.sqlite import SqliteStore
 
 
 def main():
     """ main() for subscriberdb """
 
-    logging.basicConfig(level=logging.DEBUG)
-    
+    logging.basicConfig(level=logging.INFO)
+
     # Initialize a store to keep all subscriber data.
     store = SqliteStore('file::memory:?cache=shared')
 
@@ -28,18 +29,22 @@ def main():
     loop = asyncio.get_event_loop()
 
     # Setup the listening interfaces and protocols for subscriberdb.
-    ipa_server = loop.create_server(
-        lambda: OsmoIPAccessProtocol(processor),
-        '0.0.0.0', 2222)
-    loop.run_until_complete(ipa_server)
+    ipa_server = functools.partial(OsmoIPAServer, processor)
+    server_coro = loop.create_server(ipa_server, '0.0.0.0', 2222)
+    server = loop.run_until_complete(server_coro)
 
     # Run the service loop
     logging.info("Starting server.")
-    loop.run_forever()
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+
 
     # Cleanup the service
-    ipa_server.stop(0)
-    loop.stop()
+    server.close()
+    loop.run_until_complete(server.wait_closed())
+    loop.close()
 
 
 if __name__ == "__main__":
