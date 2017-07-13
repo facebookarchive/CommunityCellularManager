@@ -33,13 +33,11 @@ import django_tables2 as tables
 import csv
 import humanize
 import pytz
-from rest_framework.authtoken.models import Token
 import stripe
 from guardian.shortcuts import get_objects_for_user
 
-from ccm.common.currency import parse_credits, humanize_credits, \
-    CURRENCIES, Money
-from endagaweb.models import (UserProfile, Ledger, Subscriber, UsageEvent,
+from ccm.common.currency import parse_credits, humanize_credits, CURRENCIES
+from endagaweb.models import (UserProfile, Subscriber, UsageEvent,
                               Network, PendingCreditUpdate, Number)
 from endagaweb.util.currency import cents2mc
 from endagaweb.forms import dashboard_forms as dform
