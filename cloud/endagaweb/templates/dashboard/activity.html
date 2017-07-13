@@ -145,6 +145,37 @@ of patent rights can be found in the PATENTS file in the same directory.
         </span>
     </div>
 </div>
+<div class='modal fade' id='pwd-dialog-modal'>
+    <div class='modal-dialog'>
+        <div class='modal-content'>
+            <div class='modal-header'>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class='modal-title'>
+                    <p>Hello <strong>{{ user_profile.display_name }}</strong>, please enter your password for authorization.</p>
+                 </h4>
+            </div>
+            <div class='modal-body'>
+                 <div id='messages-container'></div>
+                <form id='password-authorization'>
+                    <div class='form-group'>
+                        <div class='controls'>
+                              <input class='textinput textInput form-control' id='pwd-input' name='pwd' type='password'>
+                        </div>
+                    </div><!-- /.form-group -->
+
+                </form>
+            </div> <!-- /.modal-body -->
+            <div class='modal-footer' id="modal-footerId">
+                <button type='button' class='btn btn-default' data-dismiss='modal'>Cancel</button>
+                <button class='btn btn-primary' type='button' id='pwd-dialog-submit'>
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="row">
     <div class="col-xs-12">
@@ -152,7 +183,7 @@ of patent rights can be found in the PATENTS file in the same directory.
     {% if event_count > 100000 %}
         Too many results to export, try a shorter date range.
     {% elif event_count > 0 %}
-        <a href="?page={{ events.number }}&csv=1">Export results as CSV</a>
+        <a href='#' data-toggle='modal' data-target='#pwd-dialog-modal'>Export results as CSV</a>
     {% endif %}
     </p>
     </div>
@@ -175,4 +206,58 @@ of patent rights can be found in the PATENTS file in the same directory.
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.14.30/js/bootstrap-datetimepicker.min.js"></script>
 <script src="/static/js/dashboard/activity.js"></script>
+<script>
+
+      // Handle clicks on the pwd-dialog-submit button.
+      $('#pwd-dialog-submit').click(function() {
+        submitPwdDialogData();
+      });
+
+      // Handle <enter> keypress on pwd-dialog-submit.
+      $('input, #pwd-dialog-submit').keypress(function(e) {
+        if (e.keyCode == 13) {
+          e.preventDefault();
+          submitPwdDialogData();
+        }
+      });
+
+      $('#pwd-dialog-modal').on('hide.bs.modal', function (e) {
+        $(this).find('form').trigger('reset');
+      });
+
+    function submitPwdDialogData() {
+
+      var data = {
+        password: $('#pwd-input').val(),
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+      };
+      $.post('/dashboard/activity', data, function(response) {
+        if (response['status'] == 'ok') {
+          // Clear out any old messages and show the div again.
+          $('#messages-container').html();
+          $('#messages-container').css('opacity', 1);
+          var message = 'Password Authorization Successful.';
+          var html = '<div class="alert alert-success">' + message + '</div>';
+          $('#messages-container').html(html);
+          setTimeout(function() {
+             window.location="?page={{ events.number }}&csv=1"
+             $('#pwd-dialog-modal').modal('hide');
+             $('#messages-container').fadeTo(200, 0);
+          }, 2000);
+        } else {
+          $('#messages-container').html();
+          $('#messages-container').css('opacity', 1);
+          var message = 'Incorrect password.';
+          var html = '<div class="alert alert-danger">' + message + '</div>';
+          $('#messages-container').html(html);
+          setTimeout(function() {
+            $('#messages-container').html("")
+            $('#pwd-input').val("");
+          }, 2000);
+        }
+      });
+    }
+
+  </script>
+
 {% endblock %}
