@@ -9,31 +9,54 @@ of patent rights can be found in the PATENTS file in the same directory.
 
 import asyncio
 import logging
+import random
 import struct
+from abc import ABC, abstractmethod
 
 from . import gsup
 
 
-# IPA constants
+# IPA Constants
+# References:
+# - http://ftp.osmocom.org/docs/latest/osmobts-abis.pdf
+# - http://ftp.osmocom.org/docs/latest/osmobsc-usermanual.pdf
+
+# IPA Misc
 IPA_HEADER_LEN = 3
+
+# IPA Stream ID
 IPA_STREAM_CCM = 0xfe
 IPA_STREAM_OSMO = 0xee
 
-# IPA OSMO Extenstions
+# IPA Osmo Extenstions
 IPA_OSMO_GSUP = 0x05
 IPA_OSMO_OAP = 0x06
+IPA_OSMO_CTRL = 0x00
 
 # IPA CCM messages
 IPA_CCM_PING = 0x00
 IPA_CCM_PONG = 0x01
 
+# IPA ports
+TCP_PORT_OML = 3002
+TCP_PORT_RSL = 3003
+TCP_PORT_NITB = 4249
 
-class OsmoIPAccessProtocol(asyncio.Protocol):
+# IPA cmds
+GET_CMD = 'GET'
+SET_CMD = 'SET'
+TRAP_CMD = 'TRAP'
+
+
+class OsmoIPAccessProtocol(asyncio.Protocol, ABC):
 
     """
     IP Access is layer is used above TCP/IP to:
     - multiplex multiple protocols over the same connection
     - abstract segmentation so higher protocols can handle msg as a whole
+
+    References:
+    - http://ftp.osmocom.org/docs/latest/osmobts-abis.pdf
 
     IPA multiplexing layer:
 
@@ -52,29 +75,32 @@ class OsmoIPAccessProtocol(asyncio.Protocol):
 
     """
 
-    def __init__(self, gsm_processor):
-        self._gsm_processor = gsm_processor
-        self._gsup_manager = None
-        self._ccm_manager = None
-        # bytesarray is more efficient to append fragments of reads
+    def __init__(self, gsup_callback=None, ctrl_callback=None):
+        self._gsup_callback = gsup_callback
+        self._ctrl_callback = ctrl_callback
         self._readbuf = bytearray()
 
     def connection_made(self, transport):
         """
-        Handle the new IPA connection.
+        Serves to initialize all protocol managers and their writers with each
+        protocol's respective headers.
 
-        Args:
-            transport (asynio.Transport): the transport for the new connection
-        Returns:
-            None
+        In the case of server subclasses, this connection_made() may
+        be sufficent, while the server waits for data to be received.
+
+        However most client subclasses, further functionality will generally be
+        required in their connection_made() to transmit client message.
         """
-        logging.info("Connection received!")
+        logging.info("Connection made!")
 
         writer = IPAWriter(transport, IPA_STREAM_OSMO, IPA_OSMO_GSUP)
-        self._gsup_manager = gsup.GSUPManager(self._gsm_processor, writer)
+        self._gsup_manager = gsup.GSUPManager(self._gsup_callback, writer)
 
         writer = IPAWriter(transport, IPA_STREAM_CCM)
         self._ccm_manager = IPAConnectionManager(writer)
+
+        writer = IPAWriter(transport, IPA_STREAM_OSMO, IPA_OSMO_CTRL)
+        self._ctrl_manager = OsmoCtrlManager(self._ctrl_callback, writer)
 
     def data_received(self, data):
         """
@@ -82,6 +108,11 @@ class OsmoIPAccessProtocol(asyncio.Protocol):
         if the entire message has been received.
         Unparsed bytes will be left in readbuf and will be parsed when
         more data is received in the future.
+
+        Strips away outer headers of the IPA packet:
+        - payload length
+        - IPA Stream ID
+        - converts remainder of packet into a memoryview object
 
         Args:
             data (bytes): new data read from the transport
@@ -98,16 +129,17 @@ class OsmoIPAccessProtocol(asyncio.Protocol):
 
         while remain >= IPA_HEADER_LEN:
             # Parse the header
-            (payload_len, stream) = struct.unpack_from('!HB', memview, begin)
+            (payload_len, ipa_stream_id) = struct.unpack_from('!HB', memview, begin)
             msg_len = IPA_HEADER_LEN + payload_len
             if remain < msg_len:
                 # Need more data for the payload
                 return
 
             # Handle the IPA message
-            payload = memview[begin + IPA_HEADER_LEN:begin + msg_len]
+            payload = memview[(begin + IPA_HEADER_LEN):(begin + msg_len)]
             try:
-                self._handle_ipa_msg(payload_len, stream, payload)
+                self._handle_ipa_msg(payload_len, ipa_stream_id, payload)
+
             except Exception as exc:  # pylint: disable=broad-except
                 # Handle any exceptions with message handling, without
                 # affecting other messages/users
@@ -120,6 +152,7 @@ class OsmoIPAccessProtocol(asyncio.Protocol):
         # Get the unparsed bytes
         self._readbuf = bytearray(memview[begin:])
 
+    @abstractmethod
     def connection_lost(self, exc):
         """
         The IPA connection has been lost.
@@ -129,36 +162,115 @@ class OsmoIPAccessProtocol(asyncio.Protocol):
         Returns:
             None
         """
-        logging.warning("Connection lost!")
-        self._gsup_manager = None
-        self._ccm_manager = None
+        if exc:
+            logging.warning("Connection lost, Exception: {}".format(exc))
+        else:
+            logging.info("Closing connection")
+
 
     def _handle_ipa_msg(self, length, stream_id, payload):
         """
-        Handle the payload of an IPA message. This would be
-        called after a full IPA message is received.
+        Handle the payload of an IPA message, strips away a header
+        and sends the remainder of the packet to the respective manager:
+        based the IPA Stream ID, and IPA Osmo Extenstions where appropriate.
+
+        This would be called after a full IPA message is received.
+
+        Strips away  headers of the IPA packet:
+        - IPA Osmo extension
 
         Args:
             length (int): length of the payload
             stream_id (int): IPA stream id
-            payload (bytes): the underlying message
+            payload (memoryview): the underlying message
         Returns:
             None
         """
-        if stream_id == IPA_STREAM_CCM:  # IPA Connection Management
+        if stream_id == IPA_STREAM_CCM and self._ccm_manager is not None:
             self._ccm_manager.handle_msg(payload)
             return
-        elif stream_id == IPA_STREAM_OSMO:  # Osmo extensions
-            if payload[0] == IPA_OSMO_GSUP:  # GSUP msgs
+        elif stream_id == IPA_STREAM_OSMO:
+            if payload[0] == IPA_OSMO_GSUP and self._gsup_manager is not None:
                 self._gsup_manager.handle_msg(payload[1:])
                 return
-            elif payload[0] == IPA_OSMO_OAP:  # OAP msgs
+            elif payload[0] == IPA_OSMO_OAP:
                 logging.debug("OAP message received")
                 return
+            elif payload[0] == IPA_OSMO_CTRL and self._ctrl_manager is not None:
+                self._ctrl_manager.handle_msg(payload[1:])
+                return
 
-        logging.warning("Unhandled IPA msg: length: %d, stream_id: %d, "
-                        "payload: %s", length, stream_id,
-                        payload.decode("utf-8"))
+        raise RuntimeError("Unhandled IPA msg: length: %d, stream_id: %d, "
+                           "payload: %s", length, stream_id,
+                           bytearray(payload).decode("utf-8"))
+
+
+class OsmoIPAServer(OsmoIPAccessProtocol):
+
+    """
+    Handle the new IPA connection as a server.
+
+    Currently server supports GSUP, and CCM protocols.
+
+    Two steps are required to start the server, first use the event loop to create
+    a new server object using this protocol class and hostname / socket to listen on.
+    Because create_server() returns a coroutine (generator in case of python 3.4),
+    the OsmoIPAServer process will begin only after the loop is started on the coroutine
+    with a command like: `run_until_complete`
+
+    An example of this is in `osmocom_hlr`:
+    ```
+    loop = asyncio.get_event_loop()
+
+    ipa_server = functools.partial(OsmoIPAServer, processor)
+    server_coro = loop.create_server(ipa_server, '0.0.0.0', 2222)
+    server = loop.run_until_complete(server_coro)
+    ````
+    """
+    def __init__(self, gsup_callback=None):
+        super().__init__(gsup_callback=gsup_callback)
+
+    def connection_lost(self, exc):
+        super().connection_lost(exc)
+        self._gsup_manager = None
+        self._ccm_manager = None
+
+
+class OsmoIPAClient(OsmoIPAccessProtocol):
+
+    """
+    Handle the new IPA connection as a client.
+
+    Two steps are required to start the client, first use the event loop to create
+    a new connection object using this protocol class and hostname / socket to send to,
+    as well as the message to send.
+
+    Because create_connection() returns a coroutine (generator in case of python 3.4),
+    the OsmoIPAClient process will begin only after the loop is started on the coroutine
+    with a command like: `run_until_complete`
+
+    An example of this is in `osmocom_ctrl`:
+
+
+    ```
+    loop = asyncio.get_event_loop()
+    ...
+    ctrl_client = functools.partial(OsmoCtrlClient, msg, callback)
+    client_coro = loop.create_connection(ctrl_client, HOST, PORT)
+
+    try:
+        _, protocol = loop.run_until_complete(client_coro)
+    finally:
+        protocol.connection_lost(exc=None)
+    ````
+    """
+
+    def __init__(self, ctrl_callback=None):
+        super().__init__(ctrl_callback=ctrl_callback)
+
+    def connection_lost(self, exc):
+        super().connection_lost(exc)
+        self._ctrl_manager = None
 
 
 class IPAWriter:
@@ -173,7 +285,7 @@ class IPAWriter:
         self._stream_id = stream_id
         self._osmo_extn = osmo_extn
         self._header_len = IPA_HEADER_LEN
-        if self._osmo_extn:  # occupies one more byte
+        if self._osmo_extn is not None:  # occupies one more byte
             self._header_len += 1
 
     def get_write_buf(self, length):
@@ -202,7 +314,7 @@ class IPAWriter:
         Returns:
             None
         """
-        if self._osmo_extn:
+        if self._osmo_extn is not None:  # Ctrl extn is 0x00
             struct.pack_into('!HBB', buf, 0, length + 1,
                              self._stream_id, self._osmo_extn)
         else:
@@ -218,6 +330,9 @@ class IPAConnectionManager:
     """
     Class to perform connection management operations.
     We might need to run a timer and proactively perform Pings if needed.
+
+    Reference:
+    - http://ftp.osmocom.org/docs/latest/osmobts-abis.pdf
 
     IPA CCM (Connection Management):
 
@@ -253,4 +368,88 @@ class IPAConnectionManager:
         """
         (buf, offset) = self._ipa_writer.get_write_buf(1)
         buf[offset] = IPA_CCM_PONG
+        self._ipa_writer.write(buf)
+
+
+class OsmoCtrlManager:
+
+    """
+    Class to perform management for the CTRL interface (which is
+    exposed at the various layers of the Osmocom GSM stack).
+
+    References:
+    - http://ftp.osmocom.org/docs/latest/*-usermanual.pdf
+    i.e.
+    - http://ftp.osmocom.org/docs/latest/osmobsc-usermanual.pdf
+
+    An example CTRL packets look at follows:
+    b'\x00\x0e\xee\x00SET 14686 mnc 2
+
+    - x00\x0e   : payload length
+    - xee       : IPA_STREAM_OSMO header
+    - x00       : IPA_OSMO_CTRL header extension
+    - SET       : GET, SET or TRAP command
+    - 14686     : unique message ID
+    - mnc       : variable being set
+    - 2         : value variable is being set to
+    """
+
+    def __init__(self, ctrl_callback=None, ipa_writer=None):
+        self._ipa_writer = ipa_writer
+        self._ctrl_callback = ctrl_callback
+
+    def handle_msg(self, payload):
+        """
+        Handle the Ctrl messages.
+
+        Args:
+            payload (memoryview): payload of IPA Ctrl message
+                        - packet minus IPA Straem ID and Osmo extension headers
+            request_id (int): random id that was associated client's request
+
+        Returns:
+            None
+
+        Prints:
+            response (dict): variable value pairs from contents of the msg
+        """
+        (msg_type, msg_id, msg) = bytearray(payload).split(None, 2)
+        msg_id = int(msg_id)
+        response = {'msg_type': msg_type.decode('utf-8'), 'id': msg_id}
+        if response['msg_type'] == "ERROR":
+            response['error'] = msg.decode('utf-8')
+
+        else:
+            split = msg.split(None, 1)
+            response['var'] = split[0].decode('utf-8')
+            if len(split) > 1:
+                response['val'] = split[1].decode('utf-8')
+            else:
+                response['val'] = None
+
+        self._ctrl_callback.process_response(response)
+
+    @staticmethod
+    def generate_msg(var, val=None):
+        """
+        Generate SET/GET command message: returns (msg_id, cmd).
+        """
+        msg_id = random.randint(10000, 20000)
+        if val is not None:
+            return msg_id, "%s %s %s %s" % (SET_CMD, msg_id, var, val)
+        return msg_id, "%s %s %s" % (GET_CMD, msg_id, var)
+
+    def generate_packet(self, message):
+        """
+        Encodes and sends the message to the IPA layer.
+        """
+        buf_size = len(message)
+        # offset accounts for header_len
+        (buf, offset) = self._ipa_writer.get_write_buf(buf_size)
+
+        msg_byte_list = memoryview(bytearray(message.encode('utf-8'))).tolist()
+        for i, byte in enumerate(msg_byte_list):
+            buf[offset+i] = byte
+
+        # Write the encoded msg
         self._ipa_writer.write(buf)
