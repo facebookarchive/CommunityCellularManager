@@ -309,9 +309,6 @@ def migrate(application="", migration="", fake_initial=""):
                 abort("Can't migrations the staff env, run on prod instead.")
     except AttributeError:
         abort("No deployment target specified.")
-    username = getpass.getuser()
-    text = '%s is running a DB migration on `%s` using branch `%s`' % (
-        username, env.deploy_target, branch)
     # Get a machine to ssh into from the specified deployment target.
     host = "ubuntu@%s" % get_machines(env.deploy_target)[0]
     # Run the migration.
@@ -322,13 +319,10 @@ def migrate(application="", migration="", fake_initial=""):
     with settings(host_string=host):
         with cd("/var/www"):
             result = run("envdir /var/opt/endagaweb-envdir %s" % cmd)
-    # Tell slack how it went.
-    if result.succeeded:
-        text_a = 'the DB migration initiated by %s is complete:' % username
-        text_b = ' `%s` is migrated to `%s`' % (env.deploy_target, branch)
-        text = text_a + text_b
-    else:
-        text = 'the DB migration initiated by %s was unsuccessful' % username
+    # tell user how it went
+    msg = (("[%s] DB migration to `%s` " % (env.deploy_target, branch)) +
+           ("is complete" if result.succeeded else "was unsuccessful"))
+    print msg
 
 
 def restart(service):
