@@ -73,7 +73,7 @@ def package_python_sms_utilities(package_requirements='no'):
     This is on pypi but our client builds will build from source.
     """
     path = BASE_DIR + 'sms_utilities'
-    print 'packaging %s' % path
+    print('packaging %s' % path)
     _prep(path, package_requirements)
     with cd(path):
         _run_fpm_python('setup.py')
@@ -86,7 +86,7 @@ def package_python_openbts(package_requirements='no'):
     a specific version of openbts.
     """
     path = BASE_DIR + 'openbts-python'
-    print 'packaging %s' % path
+    print('packaging %s' % path)
     _prep(path, package_requirements)
     with cd(path):
         _run_fpm_python('setup.py')
@@ -99,7 +99,7 @@ def package_python_osmocom(package_requirements='no'):
     a specific version of osmocom.
     """
     path = BASE_DIR + 'osmocom-python'
-    print 'packaging %s' % path
+    print('packaging %s' % path)
     with cd(path):
         _run_fpm_python('setup.py')
 
@@ -107,7 +107,7 @@ def package_python_osmocom(package_requirements='no'):
 def package_python_snowflake():
     """Packages snowflake.
     """
-    print 'packaging snowflake from pypi'
+    print('packaging snowflake from pypi')
     run('mkdir -p ' + PKG_DIR)
     _run_fpm_python('--after-install ' + BASE_DIR +
                     'client/deploy/files/snowflake/postinst snowflake')
@@ -182,7 +182,7 @@ def package_install_requirements(path):
                        warn_only=True).failed:
                     # If this fails, it is likely that this is an Endaga python
                     # package and will be fulfilled from the Endaga repo.
-                    print 'Ignoring dependency %s' % dependency
+                    print('Ignoring dependency %s' % dependency)
             # We don't want to clobber dependencies built previously.
             run('mv -n *.%s %s' % (env.pkgfmt, PKG_DIR), quiet=True)
             run('rm *.%s' % (env.pkgfmt, ), quiet=True)

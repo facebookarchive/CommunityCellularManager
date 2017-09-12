@@ -19,7 +19,7 @@ def package_freeswitch_config():
     """Packages our freeswitch config files and drops them in /etc."""
     run('mkdir -p ~/endaga-packages')
     path = '~/client/conf/freeswitch-conf-endaga'
-    print 'packaging %s' % path
+    print('packaging %s' % path)
     with cd(path):
         run('fpm -s dir -t %s -a all -n freeswitch-conf-endaga -v `cat VERSION`'
             ' --description "Endaga Freeswitch config files"'
@@ -34,7 +34,7 @@ def package_endaga_lang_config():
     compile_lang()
     run('mkdir -p ~/endaga-packages')
     path = '~/client/endaga-lang'
-    print 'packaging %s' % path
+    print('packaging %s' % path)
     with cd(path):
         run('fpm -s dir -t %s -a all -n endaga-lang -v `cat VERSION`'
             ' --description "Endaga translation files"'

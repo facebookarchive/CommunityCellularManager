@@ -113,7 +113,7 @@ def package(package_requirements='yes', flavor=''):
     """
     # Setup a location for storing all of the packages.
     run('mkdir -p ~/endaga-packages')
-    print 'current contents of ~/endaga-packages:'
+    print('current contents of ~/endaga-packages:')
     run('ls ~/endaga-packages')
 
     if (env.gsmeng == "openbts"):
@@ -132,7 +132,7 @@ def package(package_requirements='yes', flavor=''):
     package_python_endaga_core(package_requirements)
     # Make the metapackage.
     package_endaga(flavor)
-    print 'packaging complete.'
+    print('packaging complete.')
 
 
 def package_endaga(flavor=''):

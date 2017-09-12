@@ -27,7 +27,7 @@ def package_freeswitch(fs_version='1.6.16~33~e6d643b-1~jessie+1'):
     """
     path = '/home/vagrant/freeswitch'
     if not exists(path):
-        print 'path %s does not exist on the VM, cannot package' % path
+        print('path %s does not exist on the VM, cannot package' % path)
         return
     with cd(path):
         run('cp ../client/packaging/py3.h src/mod/languages/mod_python')
@@ -83,12 +83,12 @@ def _package_external(directory, package_name, make_clean):
       package_name: the name of the debian package that will be created
     """
     if env.pkgfmt != "deb":
-        print "External packages only support deb, not building."
+        print("External packages only support deb, not building.")
         return
     if not exists(directory):
-        print 'path %s does not exist, cannot package' % directory
+        print('path %s does not exist, cannot package' % directory)
         return
-    print 'packaging %s as %s' % (directory, package_name)
+    print('packaging %s as %s' % (directory, package_name))
     run('mkdir -p ~/endaga-packages')
     with cd('/home/vagrant/'):
         with cd(directory):

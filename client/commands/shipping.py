@@ -41,7 +41,7 @@ def _push_packages_to_repo(repo_name="dev"):
         # We only support freight, which is only for deb packages. We'd need to
         # add something that understands RPM repos as well if we want to add
         # support for CentOS here.
-        print "Only pushing deb packages is supported, not pushing."
+        print("Only pushing deb packages is supported, not pushing.")
         return
     run('mkdir -p /tmp/endaga-packages-deploy')
     put(local_path='/tmp/endaga-packages-deploy/*.deb',
@@ -60,7 +60,7 @@ def _kirby_dance(wait=5):
     kirby = "<('-'<) ^('-')^ (>'-')> v('-')v".split()
     idx = 0
     while idx < wait:
-        print kirby[idx % len(kirby)]
+        print(kirby[idx % len(kirby)])
         time.sleep(1)
         idx += 1
 
@@ -71,24 +71,24 @@ def shipit():
         # Since we don't support pushing packages to non-deb repos, just fail
         # early. This can be removed when _push_packages_to_repo has CentOS
         # support.
-        print "Only shipping deb packages is supported, not shipping."
+        print("Only shipping deb packages is supported, not shipping.")
         return
 
     execute(_get_packages)
 
     release = prompt('Specify release branch', default='dev',
                      validate='^(dev|test|beta|stable|trusty)$')
-    print "HEY! LISTEN! You're about to make a release to '%s'." % release
-    print "We'll ship whatever is in /tmp/endaga-packages-deploy!"
-    print "Namely, these:"
+    print("HEY! LISTEN! You're about to make a release to '%s'." % release)
+    print("We'll ship whatever is in /tmp/endaga-packages-deploy!")
+    print("Namely, these:")
     local("ls -lrth /tmp/endaga-packages-deploy/*.deb")
-    print "This will probably affect lots of users! Think this through!"
+    print("This will probably affect lots of users! Think this through!")
     _kirby_dance(8)
     sure = prompt("Are you sure you want to continue (yes/no)?",
                   default="no", validate='^(yes|no)$')
     if sure != "yes":
         exit()
-    print "Releasing to '%s'." % release
+    print("Releasing to '%s'." % release)
     execute(_push_packages_to_repo, release)
     execute(_cleanup_package_deploy)
 
@@ -107,7 +107,7 @@ def promote_metapackage(version, from_repo, to_repo):
     usage: fab dev promote_metapackage:version=0.4.2,from_repo=dev,to_repo=beta
     """
     if env.pkgfmt != "deb":
-        print "Only shipping deb packages is supported, not shipping."
+        print("Only shipping deb packages is supported, not shipping.")
         return
 
     # Validate first.
