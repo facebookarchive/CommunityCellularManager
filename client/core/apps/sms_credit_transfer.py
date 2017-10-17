@@ -57,6 +57,10 @@ def process_transfer(from_imsi, to_imsi, amount):
     Returns:
       boolean indicating success
     """
+    # Error when user tries to transfer to his own account
+    if from_imsi == to_imsi:
+        return False, gt("Transaction Failed. Sharing load to " 
+                         "your own account is not allowed.")
     from_balance = int(subscriber.get_account_balance(from_imsi))
     # Error when user tries to transfer more credit than they have.
     if not from_balance or from_balance < amount:
