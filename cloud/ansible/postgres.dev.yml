@@ -7,7 +7,7 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 - hosts: db
-  sudo: yes
+  become: true
   vars:
     db_name: endagaweb_dev
     db_user: endaga_dev
@@ -39,19 +39,19 @@
           - python-psycopg2
 
     - name: Add Endaga DB
-      sudo_user: postgres
+      become_user: postgres
       postgresql_db: name={{ db_name }} state=present
 
     - name: Add Endaga DB user
-      sudo_user: postgres
+      become_user: postgres
       postgresql_user: db={{ db_name }} name={{ db_user }} password={{ db_password }} priv=ALL role_attr_flags=CREATEDB
 
     - name: Add postgis support
-      sudo_user: postgres
+      become_user: postgres
       postgresql_ext: name=postgis db={{ db_name }}
 
     - name: Enable postgres support
-      sudo_user: postgres
+      become_user: postgres
       shell: psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS postgis;"
 
     - name: Listen for remote connections
