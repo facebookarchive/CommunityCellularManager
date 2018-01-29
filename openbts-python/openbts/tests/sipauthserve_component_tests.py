@@ -420,5 +420,5 @@ class GPRSTest(unittest.TestCase):
         'downloaded_bytes': 139771,
       },
     }
-    print self.sipauthserve.get_gprs_usage()
+    print self.sipauthserve.get_gprs_usage()  # noqa: E999 T25377293 Grandfathered in
     self.assertEqual(expected_usage, self.sipauthserve.get_gprs_usage())

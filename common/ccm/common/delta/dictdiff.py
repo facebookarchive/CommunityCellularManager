@@ -135,7 +135,7 @@ def _diff_lists(new_list, old_list):
 def _uni_hash(self):
     try:
         return json.dumps(self, skipkeys=True, sort_keys=True).__hash__()
-    except:
+    except:  # noqa: B001 T25377293 Grandfathered in
         return "Invalid Object's Hash".__hash__()  # all invalid object will share a bucket...
 
 

@@ -33,7 +33,7 @@ def check_sofia_status(dp):
         if (m):
             name = m.group(1)
             typee = m.group(2)
-            addr = m.group(3)
+            addr = m.group(3)  # noqa: F841 T25377293 Grandfathered in
             status = m.group(4)
             dp.append({'entity': 'etagecom.cloud.freeswitch.%s.%s' %
                        (name, typee),

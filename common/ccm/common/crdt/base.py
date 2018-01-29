@@ -15,7 +15,7 @@ NAME = None
 try:
     import snowflake
     NAME = snowflake.snowflake()
-except:
+except:  # noqa: B001 T25377293 Grandfathered in
     pass
 
 #snowflake sometimes fails silently, if so
@@ -118,7 +118,7 @@ class GCounter(StateCRDT):
             keys = set(set(new.state.keys()) | set(state.keys()))
             new.state = dict([(k, max(new.state.get(k, 0), state.get(k, 0))) for k in keys])
             [int(_) for _ in new.state.values()] # make sure everything is an int
-        except:
+        except:  # noqa: B001 T25377293 Grandfathered in
             raise ValueError("Invalid state for GCounter")
         return new
 
@@ -168,7 +168,7 @@ class PNCounter(StateCRDT):
         try:
             new.P = GCounter.from_state(state['p'], name=new.name)
             new.N = GCounter.from_state(state['n'], name=new.name)
-        except:
+        except:  # noqa: B001 T25377293 Grandfathered in
             raise ValueError("Invalid state for PN counter")
         return new
 

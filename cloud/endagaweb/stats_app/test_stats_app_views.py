@@ -37,7 +37,7 @@ class StatsAPITest(APITestCase):
         cls.user = models.User(username=cls.username, email=email)
         cls.user.set_password(cls.password)
         cls.user.save()
-        user_profile = models.UserProfile.objects.get(user=cls.user)
+        user_profile = models.UserProfile.objects.get(user=cls.user)  # noqa: F841 T25377293 Grandfathered in
         # TODO(matt): need to link UserProfile and Network?
         # Setup a network.
         network_name = 'test-network-name'

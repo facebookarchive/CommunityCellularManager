@@ -18,11 +18,11 @@ SMPP_PORT = 2775
 SMPP_USER = 'OSMPP'
 SMPP_PASSWORD = 'etagecom'
 
-class OsmocomFakePhone(BaseFakePhone):
+class OsmocomFakePhone(BaseFakePhone):  # noqa: F821 T25377293 Grandfathered in
 
     def __init__(self, user, port, call_handler, sms_handler,
                  self_ip="127.0.0.1", other_ip="127.0.0.1"):
-        BaseFakePhone.__init__(self, user, port, call_handler, sms_handler,
+        BaseFakePhone.__init__(self, user, port, call_handler, sms_handler,  # noqa: F821 T25377293 Grandfathered in
                                self_ip=self_ip, other_ip=other_ip)
         self.user = user
         self.conf = ConfigDB()

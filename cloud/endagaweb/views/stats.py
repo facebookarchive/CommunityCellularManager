@@ -20,7 +20,7 @@ from endagaweb.models import UserProfile
 @login_required(login_url='/login/')
 def numbers(request):
     user_profile = UserProfile.objects.get(user=request.user)
-    truncate_date = connection.ops.date_trunc_sql('month','created')
+    truncate_date = connection.ops.date_trunc_sql('month','created')  # noqa: F841 T25377293 Grandfathered in
 
     try:
         numbers = Number.objects.get(user=user_profile).order_by("-created")

@@ -43,7 +43,7 @@ class GCounterTestCase(TestCase):
             g = base.GCounter.from_state(state, name="test")
         state = 1
         with self.assertRaises(ValueError):
-            g = base.GCounter.from_state(state, name="test")
+            g = base.GCounter.from_state(state, name="test")  # noqa: F841 T25377293 Grandfathered in
 
     def test_is_used(self):
         self.assertFalse(self.g.is_used())
@@ -90,7 +90,7 @@ class PNCounterTestCase(TestCase):
             pn = base.PNCounter.from_state(state)
         state = {'a': 1, 'b': 2}
         with self.assertRaises(ValueError):
-            pn = base.PNCounter.from_state(state)
+            pn = base.PNCounter.from_state(state)  # noqa: F841 T25377293 Grandfathered in
 
     def test_is_used(self):
         self.assertFalse(self.pn.is_used())

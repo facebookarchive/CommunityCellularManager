@@ -28,17 +28,17 @@ class VersionTest(unittest.TestCase):
   def test_query_openbts_version(self):
     connection = openbts.components.OpenBTS()
     response = connection.get_version()
-    self.assertTrue(isinstance(response.data, unicode))
+    self.assertTrue(isinstance(response.data, unicode))  # noqa: F821 T25377293 Grandfathered in
 
   def test_query_sipauthserve_version(self):
     connection = openbts.components.SIPAuthServe()
     response = connection.get_version()
-    self.assertTrue(isinstance(response.data, unicode))
+    self.assertTrue(isinstance(response.data, unicode))  # noqa: F821 T25377293 Grandfathered in
 
   def test_query_smqueue_version(self):
     connection = openbts.components.SMQueue()
     response = connection.get_version()
-    self.assertTrue(isinstance(response.data, unicode))
+    self.assertTrue(isinstance(response.data, unicode))  # noqa: F821 T25377293 Grandfathered in
 
 
 class ConfigReadTest(unittest.TestCase):
