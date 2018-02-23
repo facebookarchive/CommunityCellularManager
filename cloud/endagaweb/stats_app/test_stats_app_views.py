@@ -8,7 +8,7 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
@@ -37,8 +37,6 @@ class StatsAPITest(APITestCase):
         cls.user = models.User(username=cls.username, email=email)
         cls.user.set_password(cls.password)
         cls.user.save()
-        user_profile = models.UserProfile.objects.get(user=cls.user)  # noqa: F841 T25377293 Grandfathered in
-        # TODO(matt): need to link UserProfile and Network?
         # Setup a network.
         network_name = 'test-network-name'
         cls.network = models.Network(name=network_name)

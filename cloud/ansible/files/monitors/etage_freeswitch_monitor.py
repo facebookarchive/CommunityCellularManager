@@ -25,6 +25,7 @@ SOFIA_STATUS_RE = re.compile("^\s+(\w+)\s(gateway|profile)"
                              "(\w+)")
 SOFIA_PROFILE_STATUS_RE = re.compile("^([\w|/-]+)\s+(\d+)")
 
+
 def check_sofia_status(dp):
     res = subprocess.check_output('/usr/bin/fs_cli -x "sofia status"',
                                   shell=True).split("\n")
@@ -33,7 +34,6 @@ def check_sofia_status(dp):
         if (m):
             name = m.group(1)
             typee = m.group(2)
-            addr = m.group(3)  # noqa: F841 T25377293 Grandfathered in
             status = m.group(4)
             dp.append({'entity': 'etagecom.cloud.freeswitch.%s.%s' %
                        (name, typee),
@@ -52,7 +52,10 @@ def check_sofia_status(dp):
                                        'key': m.group(1),
                                        'value': int(m.group(2))})
 
+
 NUM_ACTIVE_CALLS_RE = re.compile("^(\d+) total.")
+
+
 def count_active_calls(dp):
     res = subprocess.check_output('/usr/bin/fs_cli -x "show calls"',
                                   shell=True).split("\n")
@@ -64,6 +67,7 @@ def count_active_calls(dp):
                        'key': 'active_calls',
                        'value': int(count)})
             break
+
 
 datapoints = []
 check_sofia_status(datapoints)

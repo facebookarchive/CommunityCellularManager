@@ -12,7 +12,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import time
-import types
 import copy
 from .protocol import DeltaProtocolCtx, DeltaProtocol
 
@@ -77,7 +76,7 @@ class DeltaProtocolOptimizer(object):
 
             try:
                 return self.ctx.apply_delta(dict_or_delta)
-            except:  # noqa: B001 T25377293 Grandfathered in
+            except Exception:
                 # apply_delta will throw if there is sig mismatch,
                 # we need to clear state
                 self.ctx.reset()
@@ -200,7 +199,7 @@ class DeltaProtocolOptimizerFactory(object):
         self._last_gc_time = tm
         stale_time = tm - self._ttl
         # first - delete all stale optimizers
-        for k, v in self._optimizers.iteritems():  # noqa: B301 T25377293 Grandfathered in
+        for k, v in self._optimizers.items():
             if (not isinstance(v, DeltaProtocolOptimizer) or
                     v.last_used_ts < stale_time):
                 self._optimizers.pop(k)
@@ -210,10 +209,10 @@ class DeltaProtocolOptimizerFactory(object):
         # to be utilized, we'll have to tune it later...
         if len(self._optimizers) > self._max_size:
             oldest_sort = sorted(
-                self._optimizers.iteritems(),  # noqa: B301 T25377293 Grandfathered in
+                self._optimizers.items(),
                 key=lambda k, v: v.last_used_ts
             )
-            for k, v in oldest_sort[:len(self._optimizers) - self._max_size]:  # noqa: B007 T25377293 Grandfathered in
+            for k, _ in oldest_sort[:len(self._optimizers) - self._max_size]:
                 self._optimizers.pop(k)
 
     def clear(self):  # delete all optimizers

@@ -3,13 +3,14 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
 from unittest import TestCase
 
 from .. import base
+
 
 class GCounterTestCase(TestCase):
     def setUp(self):
@@ -37,18 +38,20 @@ class GCounterTestCase(TestCase):
         self.assertEqual(g.name, "gtest")
 
     def test_from_invalid_state(self):
-        # note, this is a valid PNCounter state
+        # note, this is a valid PNCounter state (but an invalid GCounter state)
         state = {'p': {'pn4': 4, 'pn5': 5}, 'n': {'pn6': 6, 'pn5': 5}}
         with self.assertRaises(ValueError):
-            g = base.GCounter.from_state(state, name="test")
+            base.GCounter.from_state(state, name="test")
+        # this is not a valid state
         state = 1
         with self.assertRaises(ValueError):
-            g = base.GCounter.from_state(state, name="test")  # noqa: F841 T25377293 Grandfathered in
+            base.GCounter.from_state(state, name="test")
 
     def test_is_used(self):
         self.assertFalse(self.g.is_used())
         self.g.increment()
         self.assertTrue(self.g.is_used())
+
 
 class PNCounterTestCase(TestCase):
     def setUp(self):
@@ -87,10 +90,10 @@ class PNCounterTestCase(TestCase):
     def test_from_invalid_state(self):
         state = {'p': {'pn4': 4, 'pn5': 5}}
         with self.assertRaises(ValueError):
-            pn = base.PNCounter.from_state(state)
+            base.PNCounter.from_state(state)
         state = {'a': 1, 'b': 2}
         with self.assertRaises(ValueError):
-            pn = base.PNCounter.from_state(state)  # noqa: F841 T25377293 Grandfathered in
+            base.PNCounter.from_state(state)
 
     def test_is_used(self):
         self.assertFalse(self.pn.is_used())

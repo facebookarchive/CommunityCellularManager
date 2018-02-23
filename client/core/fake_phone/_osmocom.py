@@ -8,21 +8,22 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
-from threading import Thread
-
 from ESL import ESLconnection
 from core.config_database import ConfigDB
 from core.subscriber import subscriber
+
+from .base import BaseFakePhone
 
 SMPP_PORT = 2775
 SMPP_USER = 'OSMPP'
 SMPP_PASSWORD = 'etagecom'
 
-class OsmocomFakePhone(BaseFakePhone):  # noqa: F821 T25377293 Grandfathered in
+
+class OsmocomFakePhone(BaseFakePhone):
 
     def __init__(self, user, port, call_handler, sms_handler,
                  self_ip="127.0.0.1", other_ip="127.0.0.1"):
-        BaseFakePhone.__init__(self, user, port, call_handler, sms_handler,  # noqa: F821 T25377293 Grandfathered in
+        BaseFakePhone.__init__(self, user, port, call_handler, sms_handler,
                                self_ip=self_ip, other_ip=other_ip)
         self.user = user
         self.conf = ConfigDB()

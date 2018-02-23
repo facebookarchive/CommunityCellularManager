@@ -159,9 +159,6 @@ class RegisterTest(test.TestCase):
         BTS returns the SAME number for that IMSI. Note, this is a change in
         behavior from the GET endpoint.
         """
-        endpoint = self.endpoint  # noqa: F841 T25377293 Grandfathered in
-        (
-            self.bts.uuid, self.available_number.number, self.subscriber.imsi)
         token = self.user_profile.network.api_token
         header = {
             'HTTP_AUTHORIZATION': 'Token %s' % token

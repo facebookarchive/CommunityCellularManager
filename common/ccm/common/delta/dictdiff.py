@@ -23,14 +23,18 @@ DIFF_REMOVE_TAG = '-'
 
 def diff(new, old):
     """
-    produces a diff (delta) between two dictionaries recursively, returns a tuple of elements to
-    remove & add from/into 'old' dictionary to get 'new' dictionary
+    Produces a diff (delta) between two dictionaries recursively, returns a
+    tuple of elements to remove & add from/into 'old' dictionary to get 'new'
+    dictionary.
 
     Args:
-        new: new dictionary which should be a result of applaying delta to old dict
-        old: old dictionary to apply the returned delta on in order to create the new dict
+        new: new dictionary which should be a result of applaying delta to old
+             dict
+        old: old dictionary to apply the returned delta on in order to create
+             the new dict
 
-    Returns: delta to apply on old dictionary to make the new one ({ '+': ..., '-': ... })
+    Returns: delta to apply on old dictionary to make the new one
+               ({ '+': ..., '-': ... })
              Both, '+' (add) & '-' (remove) keys are optional
              if old & new dictionaries are identical {} will be returned
              Throws TypeError if new or old are not valid dictionaries
@@ -79,7 +83,9 @@ def apply_delta(old, delta):
     """
     Args:
         old: dictionary to apply delta on (old dictionary)
-        delta: the delta to apply, delta can be 1) empty: {} or 2) { '+': ..., '-': ... }
+        delta: the delta to apply, delta can be
+          1) empty: {} or
+          2) { '+': ..., '-': ... }
 
     Returns:
         modified dictionary, modifies old dictionary in place
@@ -135,8 +141,9 @@ def _diff_lists(new_list, old_list):
 def _uni_hash(self):
     try:
         return json.dumps(self, skipkeys=True, sort_keys=True).__hash__()
-    except:  # noqa: B001 T25377293 Grandfathered in
-        return "Invalid Object's Hash".__hash__()  # all invalid object will share a bucket...
+    except Exception:
+        # all invalid objects will share a hash bucket
+        return "Invalid Object's Hash".__hash__()
 
 
 def _make_hashable(o):

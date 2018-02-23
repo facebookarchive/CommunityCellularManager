@@ -3,7 +3,7 @@ Copyright (c) 2016-present, Facebook, Inc.
 All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree. An additional grant 
+LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 """
 
@@ -17,10 +17,11 @@ from endagaweb.models import Number
 from endagaweb.models import Transaction
 from endagaweb.models import UserProfile
 
+
 @login_required(login_url='/login/')
 def numbers(request):
     user_profile = UserProfile.objects.get(user=request.user)
-    truncate_date = connection.ops.date_trunc_sql('month','created')  # noqa: F841 T25377293 Grandfathered in
+    connection.ops.date_trunc_sql('month', 'created')
 
     try:
         numbers = Number.objects.get(user=user_profile).order_by("-created")
@@ -29,6 +30,7 @@ def numbers(request):
 
     resp = [n.created for n in numbers]
     return HttpResponse(json.dumps(resp), content_type="application/json")
+
 
 @login_required(login_url='/login/')
 def totals(request):

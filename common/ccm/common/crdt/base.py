@@ -15,14 +15,15 @@ NAME = None
 try:
     import snowflake
     NAME = snowflake.snowflake()
-except:  # noqa: B001 T25377293 Grandfathered in
+except Exception:
     pass
 
-#snowflake sometimes fails silently, if so
-#(or if not loaded) use UUID -kurtis
+# snowflake sometimes fails silently, if so
+# (or if not loaded) use UUID -kurtis
 if not NAME:
     import uuid
     NAME = str(uuid.uuid4())
+
 
 class StateCRDT(object):
     """
@@ -96,7 +97,7 @@ class GCounter(StateCRDT):
 
     def is_used(self):
         for s in self.state.keys():
-            if (self.state[s] !=  0):
+            if (self.state[s] != 0):
                 return True
         return False
 
@@ -108,17 +109,30 @@ class GCounter(StateCRDT):
         For each key, in each, return the max value of the two.
         """
         keys = set(set(x.state.keys()) | set(y.state.keys()))
-        z = dict([(k, max(x.state.get(k, 0), y.state.get(k, 0))) for k in keys])
+        z = {
+            k: max(x.state.get(k, 0), y.state.get(k, 0)) for k in keys
+        }
         return GCounter.from_state(z, name=name)
 
     @classmethod
     def from_state(cls, state, name=None):
+        def max_int(k, a, b):
+            """ Get the max value of a key from two counters """
+            a_val = a.get(k, 0)
+            if not isinstance(a_val, int):
+                raise ValueError("expected int, got '%s'" % (a_val, ))
+            b_val = b.get(k, 0)
+            if not isinstance(b_val, int):
+                raise ValueError("expected int, got '%s'" % (b_val, ))
+            return max(a_val, b_val)
+
         new = GCounter(name=name)
         try:
             keys = set(set(new.state.keys()) | set(state.keys()))
-            new.state = dict([(k, max(new.state.get(k, 0), state.get(k, 0))) for k in keys])
-            [int(_) for _ in new.state.values()] # make sure everything is an int
-        except:  # noqa: B001 T25377293 Grandfathered in
+            new.state = {
+                k: max_int(k, new.state, state) for k in keys
+            }
+        except Exception:
             raise ValueError("Invalid state for GCounter")
         return new
 
@@ -168,7 +182,7 @@ class PNCounter(StateCRDT):
         try:
             new.P = GCounter.from_state(state['p'], name=new.name)
             new.N = GCounter.from_state(state['n'], name=new.name)
-        except:  # noqa: B001 T25377293 Grandfathered in
+        except Exception:
             raise ValueError("Invalid state for PN counter")
         return new
 
