@@ -28,6 +28,20 @@ def get_tag_text(nodelist):
     return ''.join(rc)
 
 
+def get_hangup_cause(cdr_dom):
+    """ Get the FS hangup cause from the XML CDR
+        Returns a text string indicating the hangup cause as documented in
+        https://freeswitch.org/confluence/display/FREESWITCH/Hangup+Cause+Code+Table
+        or 'UNKOWN' if tag does not exists
+    """
+    try:
+        hangup = get_tag_text(
+            cdr_dom.getElementsByTagName("hangup_cause")[0].childNodes)
+    except IndexError:
+        hangup = 'UNKNOWN'
+    return hangup
+
+
 class cdr(object):
 
     def GET(self):
@@ -72,6 +86,7 @@ class cdr(object):
                 break
         if callee[0] == "+":
             callee = callee[1:]
+        hangupcause = get_hangup_cause(cdr_dom)
         # This is where we get the info we need to do billing.
         if len(cdr_dom.getElementsByTagName("service_type")) > 0:
             service_type = get_tag_text(
@@ -130,8 +145,8 @@ class cdr(object):
                     service_type, 'call', destination_number=to_number)
                 cost = billing.get_call_cost(billsec, service_type,
                                              destination_number=to_number)
-                reason = "%s sec call to %s (%s)" % (
-                    billsec, to_number, service_type)
+                reason = "%s sec call to %s (%s/%s)" % (
+                    billsec, to_number, service_type, hangupcause)
                 old_balance = subscriber.get_account_balance(from_imsi)
                 subscriber.subtract_credit(from_imsi, str(cost))
                 owner_imsi = from_imsi
@@ -147,8 +162,8 @@ class cdr(object):
                     service_type = 'local_recv_call'
                 tariff = billing.get_service_tariff(service_type, 'call')
                 cost = billing.get_call_cost(billsec, service_type)
-                reason = "%d sec call from %s (%s)" % (
-                    billsec, from_number, service_type)
+                reason = "%d sec call from %s (%s/%s)" % (
+                    billsec, from_number, service_type, hangupcause)
                 # Note! This is different than how we bill for a caller --
                 # we're deducting from the 'to_imsi' (the callee) instead.
                 old_balance = subscriber.get_account_balance(to_imsi)
