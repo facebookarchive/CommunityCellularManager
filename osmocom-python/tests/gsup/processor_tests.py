@@ -11,11 +11,11 @@ import unittest
 
 from unittest.mock import Mock
 
-from osmocom.util import SIDUtils
 from osmocom.gsup.crypto.utils import CryptoError
 from osmocom.gsup import processor
 from osmocom.gsup.store.base import SubscriberNotFoundError
 from osmocom.gsup.store.sqlite import SqliteStore
+from osmocom.gsup.store.util import SIDUtils
 from osmocom.gsup.store.protos.subscriber_pb2 import (GSMSubscription,
                                      SubscriberData, SubscriberState)
 
