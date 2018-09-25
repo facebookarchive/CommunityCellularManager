@@ -1,3 +1,11 @@
+## Deprecated
+
+This project is no longer maintained by the team at Facebook, and ongoing
+development takes place in the community-maintained fork:
+
+    https://github.com/co-cell/ccm
+
+
 ## Overview
 
 Community Cellular Manager (CCM) is a set of programs which allow for
